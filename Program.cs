@@ -1,6 +1,5 @@
-﻿using System.Text;
-using PrevueCommander.Commands;
-using PrevueCommander.Model;
+﻿using Prevue.Commands;
+using Prevue.Commands.Model;
 using SockNet.ClientSocket;
 
 namespace PrevueCommander
@@ -56,7 +55,7 @@ namespace PrevueCommander
 
                 await PrintAndSendCommand(client, new LocalAdResetCommand());
 
-                var adCommands = Helpers.GenerateAdCommands(new[]
+                var adCommands = LocalAdCommand.GenerateAdCommands(new[]
                 {
                     "%COLOR%%BLACK%%CYAN%You all want some..." +
                     "%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?" +
