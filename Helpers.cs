@@ -1,3 +1,5 @@
+using PrevueCommander.Commands;
+
 namespace PrevueCommander;
 
 public static class Helpers
@@ -124,5 +126,15 @@ public static class Helpers
         */
 
         return bytes.ToArray();
+    }
+
+    public static List<LocalAdCommand> GenerateAdCommands(string[] ads)
+    {
+        var commands = new List<LocalAdCommand>();
+        for (var i = 1; i <= ads.Length; i++)
+        {
+            commands.Add(new LocalAdCommand(i, ads[i - 1]));
+        }
+        return commands;
     }
 }

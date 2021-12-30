@@ -39,15 +39,15 @@ namespace PrevueCommander
                     SourceName = "PREV01",
                     TimeSlotMask = null
                 };
-                    
+
                 await PrintAndSendCommand(client, new ChannelLineUpCommand(date, new[] { poop, prevue }));
-                
+
                 for (var i = 0; i < 64; i += 6)
                 {
                     await PrintAndSendCommand(client, new ChannelProgramCommand((byte)i, date, poop.SourceName,
                         false, "You're watching the POOP CHANNEL."));
                 }
-                
+
                 for (var i = 0; i < 64; i += 6)
                 {
                     await PrintAndSendCommand(client, new ChannelProgramCommand((byte)i, date, prevue.SourceName,
@@ -55,10 +55,22 @@ namespace PrevueCommander
                 }
 
                 await PrintAndSendCommand(client, new LocalAdResetCommand());
-                await PrintAndSendCommand(client, new LocalAdCommand(1, "%COLOR%%BLACK%%CYAN%You all want some..." +
-                                                                        "%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?" +
-                                                                        "%RIGHT%%COLOR%%BLACK%%RED%No problem!"));
-                
+
+                var adCommands = Helpers.GenerateAdCommands(new[]
+                {
+                    "%COLOR%%BLACK%%CYAN%You all want some..." +
+                    "%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?" +
+                    "%RIGHT%%COLOR%%BLACK%%RED%No problem!",
+                    "Hello, world!"
+                });
+
+                foreach (var adCommand in adCommands)
+                {
+                    await PrintAndSendCommand(client, adCommand);
+                }
+
+                await PrintAndSendCommand(client, new TitleCommand("PREVUE GUIDE"));
+
                 await PrintAndSendCommand(client, new BoxOffCommand());
             }
         }
