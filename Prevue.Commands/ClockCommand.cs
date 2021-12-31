@@ -6,7 +6,7 @@ public class ClockCommand : BaseCommand
 
     public ClockCommand(DateTime dateTime) : base((byte)'K')
     {
-        _dateTime = dateTime;
+        _dateTime = dateTime.AddHours(-1);
     }
 
     protected override byte[] GetMessageBytes()
