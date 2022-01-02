@@ -10,7 +10,7 @@ public class ChannelProgramCommand : BaseCommand
     private readonly string _sourceName;
     private readonly bool _isMovie;
     private readonly string _description;
-    
+
     public ChannelProgramCommand(DateTime startDateTime, string sourceName,
         bool isMovie, string description) : base((byte)'P')
     {
@@ -20,12 +20,11 @@ public class ChannelProgramCommand : BaseCommand
         _isMovie = isMovie;
         _description = description;
     }
-    
+
     private byte CalculateTimeSlot(DateTime dateTime)
     {
         const int uvsgHourOffset = 10; // Their day starts at 5AM, 5 * 2 = 10
-        // var ts = ((dateTime.Hour * 2) + 1 - uvsgHourOffset);
-        var ts = ((dateTime.Hour * 2) - uvsgHourOffset);
+        var ts = ((dateTime.Hour * 2) + 1 - uvsgHourOffset);
 
         if (dateTime.Minute >= 15 && dateTime.Minute < 45)
         {
@@ -61,7 +60,7 @@ public class ChannelProgramCommand : BaseCommand
 
         messageBytes.Add((byte)(!_isMovie ? 0x1 : 0x3));
         messageBytes.AddRange(Helpers.ConvertStringToBytes(_description, Helpers.GuideFontTokenMapper));
-        
+
         return messageBytes.ToArray();
     }
 }

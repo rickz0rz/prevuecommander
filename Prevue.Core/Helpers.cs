@@ -4,7 +4,8 @@ public static class Helpers
 {
     public static byte GetJulianDate(DateTime dateTime)
     {
-        var p = dateTime.DayOfYear - 1; // Start at zero?
+        // Do more testing on this with dates past 255 days
+        var p = dateTime.DayOfYear;
         return (byte)((p >= 256) ? (p - 255) : p);
     }
 

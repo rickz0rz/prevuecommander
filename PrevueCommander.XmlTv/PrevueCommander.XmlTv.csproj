@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <OutputType>Exe</OutputType>
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
@@ -9,7 +8,6 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Prevue.Commands\Prevue.Commands.csproj" />
-      <ProjectReference Include="..\PrevueCommander.XmlTv\PrevueCommander.XmlTv.csproj" />
     </ItemGroup>
 
 </Project>
