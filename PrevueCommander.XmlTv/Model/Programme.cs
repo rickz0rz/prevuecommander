@@ -7,7 +7,7 @@ public class Programme {
     [XmlElement(ElementName="title")]
     public List<Title> Title { get; set; }
     [XmlElement(ElementName="desc")]
-    public Desc Desc { get; set; }
+    public List<Desc> Desc { get; set; }
     [XmlElement(ElementName="date")]
     public string Date { get; set; }
     [XmlElement(ElementName="category")]
@@ -19,7 +19,7 @@ public class Programme {
     [XmlElement(ElementName="previously-shown")]
     public PreviouslyShown PreviouslyShown { get; set; }
     [XmlElement(ElementName="subtitles")]
-    public Subtitles Subtitles { get; set; }
+    public List<Subtitles> Subtitles { get; set; }
     [XmlAttribute(AttributeName="start")]
     public string Start { get; set; }
     [XmlAttribute(AttributeName="stop")]

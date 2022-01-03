@@ -3,7 +3,13 @@ namespace Prevue.Commands;
 public class NewLookConfigurationCommand : BaseCommand
 {
     public NewLookConfigurationCommand() : base((byte)'f')
-    {}
+    {
+    }
+
+    public override string ToString()
+    {
+        return nameof(NewLookConfigurationCommand);
+    }
 
     protected override byte[] GetMessageBytes()
     {

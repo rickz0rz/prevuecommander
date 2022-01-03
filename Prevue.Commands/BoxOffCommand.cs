@@ -6,6 +6,11 @@ public class BoxOffCommand : BaseCommand
     {
     }
 
+    public override string ToString()
+    {
+        return nameof(BoxOffCommand);
+    }
+
     protected override byte[] GetMessageBytes()
     {
         return new byte[] { 0xBB };

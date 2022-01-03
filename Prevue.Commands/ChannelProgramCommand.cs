@@ -21,6 +21,11 @@ public class ChannelProgramCommand : BaseCommand
         _description = description;
     }
 
+    public override string ToString()
+    {
+        return nameof(ChannelProgramCommand);
+    }
+
     private byte CalculateTimeSlot(DateTime dateTime)
     {
         const int uvsgHourOffset = 10; // Their day starts at 5AM, 5 * 2 = 10

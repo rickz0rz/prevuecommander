@@ -62,12 +62,22 @@ public static class XmlTvCore
             var sourceName = HashStringForSourceName(programme.Channel)[..6];
             var parsedDate = ParseXmlTvDate(programme.Start).AddHours(-1);
 
-            if (parsedDate < date.AddHours(24))
+            if (parsedDate < date.AddHours(2)) // 24
             {
+                var title = programme.Title.First(t => t.Lang == "en").Text;
+                var desc = programme.Desc.FirstOrDefault(d => d.Lang == "en")?.Text;
+                var isMovie = programme.Category.Any(x => x.Lang == "en" && x.Text == "Movie") &&
+                              !string.IsNullOrWhiteSpace(desc);
+                var closedCaptioning = programme.Subtitles.Any() ? " %CC%" : string.Empty;
+                var generatedDescription = isMovie
+                    ? $"\"{title}\" {desc} ({programme.Date}){closedCaptioning}"
+                    : $"{title}{closedCaptioning}";
+
                 commands.Add(new ChannelProgramCommand(parsedDate,
                     sourceName,
-                    false,
-                    programme.Title.First(t => t.Lang == "en").Text));
+                    isMovie,
+                    generatedDescription
+                ));
             }
         }
 

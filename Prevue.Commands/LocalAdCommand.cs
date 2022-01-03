@@ -6,11 +6,16 @@ public class LocalAdCommand : BaseCommand
 {
     private readonly int _index;
     private readonly byte[] _ad;
-    
+
     public LocalAdCommand(int index, string ad) : base((byte)'L')
     {
         _index = index;
         _ad = Helpers.ConvertStringToBytes(ad, Helpers.AdFontTokenMapper);
+    }
+
+    public override string ToString()
+    {
+        return nameof(LocalAdCommand);
     }
 
     protected override byte[] GetMessageBytes()
@@ -19,7 +24,7 @@ public class LocalAdCommand : BaseCommand
         messageBytes.AddRange(_ad);
         return messageBytes.ToArray();
     }
-    
+
     public static List<LocalAdCommand> GenerateAdCommands(string[] ads)
     {
         var commands = new List<LocalAdCommand>();

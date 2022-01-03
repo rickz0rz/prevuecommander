@@ -11,6 +11,11 @@ public class TitleCommand : BaseCommand
         _text = text;
     }
 
+    public override string ToString()
+    {
+        return nameof(TitleCommand);
+    }
+
     protected override byte[] GetMessageBytes()
     {
         return Helpers.ConvertStringToBytes(_text, Helpers.GuideFontTokenMapper);

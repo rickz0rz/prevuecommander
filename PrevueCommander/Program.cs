@@ -8,19 +8,7 @@ namespace PrevueCommander
 {
     public static class Program
     {
-        private static async Task PrintAndSendCommand(this Socket socket, BaseCommand command)
-        {
-            var bytes = command.Render();
-            Console.WriteLine(string.Join(' ', bytes.Select(x => x.ToString("X2"))));
-
-            var queue = new Queue<byte>(bytes);
-
-            // Slow things down for testing... probably not necessary.
-            while (queue.TryDequeue(out var b))
-            {
-                await socket.SendAsync(new[] { b }, SocketFlags.None);
-            }
-        }
+        const int MaximumNumberOfChannels = 100;
 
         // TODO: Figure out what the configuration commands are used for.
         //       They're being sent by PrevueCLI so reverse this and re-implement them.
@@ -34,36 +22,36 @@ namespace PrevueCommander
             const int port = 1234;
             var ipEndpoint = new IPEndPoint(IPAddress.Loopback, port);
             var socket = new Socket(ipEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            var writer = new DataWriter(socket);
 
             await socket.ConnectAsync(ipEndpoint);
             if (socket.Connected)
             {
                 // Signal all boxes to listen
-                await PrintAndSendCommand(socket, new AddressCommand("*"));
+                writer.AddCommandToBuffer(new AddressCommand("*"));
 
                 var date = DateTime.Now;
 
                 // Various configuration commands, part 1
-                await PrintAndSendCommand(socket, new ConfigurationCommand());
-                await PrintAndSendCommand(socket, new NewLookConfigurationCommand());
+                writer.AddCommandToBuffer(new ConfigurationCommand());
+                writer.AddCommandToBuffer(new NewLookConfigurationCommand());
 
                 // Set the clock of the guide.
-                await PrintAndSendCommand(socket, new ClockCommand(date));
+                writer.AddCommandToBuffer(new ClockCommand(date));
 
                 // Various configuration commands, part 2
-                await PrintAndSendCommand(socket, new AdditionalConfigurationCommand(0x32));
-                await PrintAndSendCommand(socket, new AdditionalConfigurationCommand(0x33));
+                writer.AddCommandToBuffer(new AdditionalConfigurationCommand(0x32));
+                writer.AddCommandToBuffer(new AdditionalConfigurationCommand(0x33));
 
-                // await CreateTestChannels(client, date);
-                Console.WriteLine(args[0]);
-                var xmlTvCommands = await XmlTvCore.ImportXml(date, args[0], 20);
+                // Console.WriteLine(args[0]);
+                var xmlTvCommands = await XmlTvCore.ImportXml(date, args[0], MaximumNumberOfChannels);
                 foreach (var xmlTvCommand in xmlTvCommands)
                 {
-                    await PrintAndSendCommand(socket, xmlTvCommand);
+                    writer.AddCommandToBuffer(xmlTvCommand);
                 }
 
                 // Remove all local ads.
-                await PrintAndSendCommand(socket, new LocalAdResetCommand());
+                writer.AddCommandToBuffer(new LocalAdResetCommand());
 
                 // Create some new local ads.
                 var adCommands = LocalAdCommand.GenerateAdCommands(new[]
@@ -75,17 +63,17 @@ namespace PrevueCommander
                 });
                 foreach (var adCommand in adCommands)
                 {
-                    await PrintAndSendCommand(socket, adCommand);
+                    writer.AddCommandToBuffer(adCommand);
                 }
 
                 // Set the guide title.
-                await PrintAndSendCommand(socket, new TitleCommand("PREVUE GUIDE"));
+                writer.AddCommandToBuffer(new TitleCommand("PREVUE GUIDE"));
 
                 // Tell all boxes to stop listening.
-                await PrintAndSendCommand(socket, new BoxOffCommand());
+                writer.AddCommandToBuffer(new BoxOffCommand());
+
+                writer.FlushBuffer();
             }
         }
-
-
     }
 }

@@ -8,17 +8,22 @@ public class ChannelLineUpCommand : BaseCommand
 {
     private readonly DateTime _dateTime;
     private readonly IEnumerable<Channel> _channels;
-    
+
     public ChannelLineUpCommand(DateTime dateTime, IEnumerable<Channel> channels) : base((byte)'C')
     {
         _dateTime = dateTime;
         _channels = channels;
     }
 
+    public override string ToString()
+    {
+        return nameof(ChannelLineUpCommand);
+    }
+
     protected override byte[] GetMessageBytes()
     {
         var messageBytes = new List<byte>();
-        
+
         messageBytes.Add(Helpers.GetJulianDate(_dateTime));
 
         foreach (var channel in _channels)

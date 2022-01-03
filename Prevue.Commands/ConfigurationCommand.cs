@@ -6,6 +6,11 @@ public class ConfigurationCommand : BaseCommand
     {
     }
 
+    public override string ToString()
+    {
+        return nameof(ConfigurationCommand);
+    }
+
     protected override byte[] GetMessageBytes()
     {
         return new byte[]

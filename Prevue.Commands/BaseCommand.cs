@@ -14,10 +14,15 @@ public class BaseCommand
         throw new NotImplementedException("Can't render the message bytes of the BaseCommand.");
     }
 
+    public override string ToString()
+    {
+        return nameof(BaseCommand);
+    }
+
     public byte[] Render()
     {
         var bytes = new List<byte>();
-        
+
         bytes.AddRange(new byte[] { 0x55, 0xAA });
         bytes.Add(_commandCode);
         bytes.AddRange(GetMessageBytes());

@@ -9,6 +9,11 @@ public class ClockCommand : BaseCommand
         _dateTime = dateTime.AddHours(-1);
     }
 
+    public override string ToString()
+    {
+        return $"{nameof(ClockCommand)}: Date/time is {_dateTime:O}";
+    }
+
     protected override byte[] GetMessageBytes()
     {
         return new []
@@ -21,6 +26,6 @@ public class ClockCommand : BaseCommand
             (byte)_dateTime.Minute,
             (byte)_dateTime.Second,
             (byte)(_dateTime.IsDaylightSavingTime() ? 0x1 : 0x0)
-        };      
+        };
     }
 }

@@ -6,6 +6,11 @@ public class LocalAdResetCommand : BaseCommand
     {
     }
 
+    public override string ToString()
+    {
+        return nameof(LocalAdResetCommand);
+    }
+
     protected override byte[] GetMessageBytes()
     {
         return new byte[] { 0x92 };

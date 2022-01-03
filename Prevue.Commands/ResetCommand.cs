@@ -6,6 +6,11 @@ public class ResetCommand : BaseCommand
     {
     }
 
+    public override string ToString()
+    {
+        return nameof(ResetCommand);
+    }
+
     protected override byte[] GetMessageBytes()
     {
         return Array.Empty<byte>();
