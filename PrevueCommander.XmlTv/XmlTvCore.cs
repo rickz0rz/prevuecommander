@@ -70,7 +70,7 @@ public static class XmlTvCore
                               !string.IsNullOrWhiteSpace(desc);
                 var closedCaptioning = programme.Subtitles.Any() ? " %CC%" : string.Empty;
                 var generatedDescription = isMovie
-                    ? $"\"{title}\" {desc} ({programme.Date}){closedCaptioning}"
+                    ? $"\"{title}\" ({programme.Date}) {desc} {closedCaptioning}"
                     : $"{title}{closedCaptioning}";
 
                 commands.Add(new ChannelProgramCommand(parsedDate,
