@@ -17,7 +17,7 @@ public class ChannelLineUpCommand : BaseCommand
 
     public override string ToString()
     {
-        return nameof(ChannelLineUpCommand);
+        return $"{nameof(ChannelLineUpCommand)}: {_channels.Count()} channel(s)";
     }
 
     protected override byte[] GetMessageBytes()

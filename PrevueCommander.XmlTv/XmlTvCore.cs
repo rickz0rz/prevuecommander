@@ -13,7 +13,8 @@ public static class XmlTvCore
     private static string HashStringForSourceName(string str)
     {
         var shaM = SHA512.Create();
-        return Convert.ToHexString(shaM.ComputeHash(Encoding.ASCII.GetBytes(str)));
+        var hashString =  Convert.ToHexString(shaM.ComputeHash(Encoding.ASCII.GetBytes(str)));
+        return hashString.Length > 6 ? hashString[..6] : hashString;
     }
 
     private static DateTime ParseXmlTvDate(string date)
@@ -38,15 +39,27 @@ public static class XmlTvCore
 
         var channelsToAdd = new List<Prevue.Commands.Model.Channel>();
         var knownSources = new List<string>();
+        var knownCallSigns = new List<string>();
 
-        for (var i = 0; i < maximumNumberOfChannels; i++)
+        var numberOfChannelsToFetch = (xmlTvData.Channel.Count > maximumNumberOfChannels)
+            ? maximumNumberOfChannels
+            : xmlTvData.Channel.Count;
+
+        for (var i = 0; i < numberOfChannelsToFetch; i++)
         {
+            // Don't add duplicate call signs.
             var xmlTvChannel = xmlTvData.Channel.ElementAt(i);
+            var callSign = xmlTvChannel.Displayname.First(dn => !int.TryParse(dn, out _) && !dn.Contains(" "));
+
+            if (knownCallSigns.Contains(callSign))
+                continue;
+
+            knownCallSigns.Add(callSign);
             var commandChannel = new CommandChannel
             {
-                CallSign = xmlTvChannel.Displayname.First(dn => !int.TryParse(dn, out _) && !dn.Contains(" ")),
+                CallSign = callSign,
                 ChannelNumber = xmlTvChannel.Displayname.First(dn => int.TryParse(dn, out _)),
-                SourceName = HashStringForSourceName(xmlTvChannel.Id)[..6]
+                SourceName = HashStringForSourceName(xmlTvChannel.Id)
             };
             channelsToAdd.Add(commandChannel);
             knownSources.Add(xmlTvChannel.Id);
@@ -59,7 +72,7 @@ public static class XmlTvCore
             if (!knownSources.Contains(programme.Channel))
                 continue;
 
-            var sourceName = HashStringForSourceName(programme.Channel)[..6];
+            var sourceName = HashStringForSourceName(programme.Channel);
             var parsedDate = ParseXmlTvDate(programme.Start).AddHours(-1);
 
             if (parsedDate < date.AddHours(2)) // 24

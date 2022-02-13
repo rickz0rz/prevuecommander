@@ -43,7 +43,7 @@ namespace PrevueCommander
                 writer.AddCommandToBuffer(new AdditionalConfigurationCommand(0x32));
                 writer.AddCommandToBuffer(new AdditionalConfigurationCommand(0x33));
 
-                // Console.WriteLine(args[0]);
+                // Import XMLtv channels and program listings
                 var xmlTvCommands = await XmlTvCore.ImportXml(date, args[0], MaximumNumberOfChannels);
                 foreach (var xmlTvCommand in xmlTvCommands)
                 {
