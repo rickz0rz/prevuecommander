@@ -50,7 +50,8 @@ namespace PrevueCommander
                     writer.AddCommandToBuffer(xmlTvCommand);
                 }
 
-                // Remove all local ads.
+                // Remove all local ads. If you don't do this before writing
+                // new local ads, you will freeze Esquire
                 writer.AddCommandToBuffer(new LocalAdResetCommand());
 
                 // Create some new local ads.

@@ -23,6 +23,42 @@ public static class XmlTvCore
             $"{date[0..4]}-{date[4..6]}-{date[6..8]}T{date[8..10]}:{date[10..12]}:{date[12..14]}{date[15..]}");
     }
 
+    public static string ExtractChannelNumber(IEnumerable<string> displayNames)
+    {
+        foreach (var displayName in displayNames)
+        {
+            var components = displayName.Split(" ");
+            foreach (var component in components)
+            {
+                if (component.ToCharArray().All(c => char.IsDigit(c) || c is '.' or '-'))
+                {
+                    return component;
+                }
+            }
+        }
+
+        throw new Exception("Unable to find channel number in displayName");
+    }
+
+    public static string ExtractCallSign(IEnumerable<string> displayNames)
+    {
+        foreach (var displayName in displayNames)
+        {
+            var components = displayName.Split(" ");
+            foreach (var component in components)
+            {
+                if (component.ToCharArray().Any(char.IsLetter) && !component.Contains(":"))
+                {
+                    return component;
+                }
+            }
+        }
+
+        throw new Exception("Unable to find channel number in displayName");
+
+        return displayNames.First(dn => !int.TryParse(dn, out _) && !dn.Contains(" "));
+    }
+
     public static async Task<List<BaseCommand>> ImportXml(DateTime date, string xmlTvFilename,
         int maximumNumberOfChannels = int.MaxValue)
     {
@@ -49,7 +85,7 @@ public static class XmlTvCore
         {
             // Don't add duplicate call signs.
             var xmlTvChannel = xmlTvData.Channel.ElementAt(i);
-            var callSign = xmlTvChannel.Displayname.First(dn => !int.TryParse(dn, out _) && !dn.Contains(" "));
+            var callSign = ExtractCallSign(xmlTvChannel.Displayname);
 
             if (knownCallSigns.Contains(callSign))
                 continue;
@@ -58,7 +94,7 @@ public static class XmlTvCore
             var commandChannel = new CommandChannel
             {
                 CallSign = callSign,
-                ChannelNumber = xmlTvChannel.Displayname.First(dn => int.TryParse(dn, out _)),
+                ChannelNumber = ExtractChannelNumber(xmlTvChannel.Displayname),
                 SourceName = HashStringForSourceName(xmlTvChannel.Id)
             };
             channelsToAdd.Add(commandChannel);
@@ -74,6 +110,10 @@ public static class XmlTvCore
 
             var sourceName = HashStringForSourceName(programme.Channel);
             var parsedDate = ParseXmlTvDate(programme.Start).AddHours(-1);
+
+            // Find the current show in progress.
+            // Also, find programming up to the next half-hour after the last visible
+            // time block (so we can determine if we need to show >> or not)
 
             if (parsedDate < date.AddHours(2)) // 24
             {
