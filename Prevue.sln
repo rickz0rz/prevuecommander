@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Prevue.Core", "Prevue.Core\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrevueCommander.XmlTv", "PrevueCommander.XmlTv\PrevueCommander.XmlTv.csproj", "{97FC0FE5-F62F-4AE9-9EAF-F95AD44850F0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrevueCommander.Tests", "PrevueCommander.Tests\PrevueCommander.Tests.csproj", "{D9C99793-19B3-4571-9C51-7E6D820B66CC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{97FC0FE5-F62F-4AE9-9EAF-F95AD44850F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{97FC0FE5-F62F-4AE9-9EAF-F95AD44850F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{97FC0FE5-F62F-4AE9-9EAF-F95AD44850F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
