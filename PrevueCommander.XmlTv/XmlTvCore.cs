@@ -117,9 +117,16 @@ public static class XmlTvCore
 
             if (parsedDate < date.AddHours(2)) // 24
             {
-                var title = programme.Title.First(t => t.Lang == "en").Text;
-                var desc = programme.Desc.FirstOrDefault(d => d.Lang == "en")?.Text;
-                var isMovie = programme.Category.Any(x => x.Lang == "en" && x.Text == "Movie") &&
+                var title = programme.Title
+                    .First(t => t.Lang.Split(",")
+                        .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase))).Text;
+                var desc = programme.Desc
+                    .FirstOrDefault(t => t.Lang.Split(",")
+                        .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text;
+                var isMovie = programme.Category.Any(x =>
+                                  x.Lang.Split(",").Any(y =>
+                                      y.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)) &&
+                                  x.Text == "Movie") &&
                               !string.IsNullOrWhiteSpace(desc);
                 var closedCaptioning = programme.Subtitles.Any() ? " %CC%" : string.Empty;
                 var generatedDescription = isMovie
