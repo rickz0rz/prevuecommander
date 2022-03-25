@@ -5,9 +5,9 @@ namespace PrevueCommander.Model;
 
 public record Playbook
 {
-    [YamlMember(Alias = "config")]
+    [YamlMember]
     public Configuration Configuration { get; init; } = null!;
 
-    [YamlMember(Alias = "commands")]
+    [YamlMember]
     public List<IBasePlaybookCommand> Commands { get; init; } = null!;
 }

@@ -11,27 +11,58 @@ namespace PrevueCommander
 {
     public static class Program
     {
-        // TODO: Figure out what the configuration commands are used for.
-        //       They're being sent by PrevueCLI so reverse this and re-implement them.
-        //       Also, try to figure out how to remove as many as the +1/-1 hour manipulations
-        //       being used on listings.
-        //       The AdditionalConfigurationCommand(s) are listed in PrevueCLI as 'DSTCommand'
-        //       so perhaps they're used for setting daylight savings time or timezones?
-
-        private static List<(TagName tagName, Type tagType)> GenerateTags()
+        private static IEnumerable<(TagName tagName, Type tagType)> GenerateTags()
         {
-            return new List<(TagName tagName, Type tagType)>
+            var type = typeof(IBasePlaybookCommand);
+            var assignableTypes = AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany(s => s.GetTypes())
+                .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
+
+            return from assignableType in assignableTypes
+                let name = System.Text.Json.JsonNamingPolicy.CamelCase.
+                    ConvertName(assignableType.Name.Replace("PlaybookCommand", string.Empty))
+                select (new TagName($"tag:yaml.org,2002:{name}"), assignableType);
+        }
+
+        private static string GenerateDefaultYaml()
+        {
+            var yamlSerializerBuidler = new SerializerBuilder().WithNamingConvention(CamelCaseNamingConvention.Instance);
+            yamlSerializerBuidler = GenerateTags().Aggregate(yamlSerializerBuidler,
+                (current, tag) => current.WithTagMapping(tag.tagName, tag.tagType));
+            var yamlSerializer = yamlSerializerBuidler.Build();
+
+            var yaml = yamlSerializer.Serialize(new Playbook
             {
-                (new TagName("tag:yaml.org,2002:additional-config"), typeof(AdditionalConfigurationPlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:address"), typeof(AddressBasePlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:boxoff"), typeof(BoxOffPlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:clock"), typeof(ClockPlaybookCommmand)),
-                (new TagName("tag:yaml.org,2002:configuration"), typeof(ConfigurationPlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:local-ads"), typeof(LocalAdsPlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:new-look-configuration"), typeof(NewLookConfigurationPlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:title"), typeof(TitlePlaybookCommand)),
-                (new TagName("tag:yaml.org,2002:xmltv-import"), typeof(XmlTvImportPlaybookCommand))
-            };
+                Commands = new List<IBasePlaybookCommand>
+                {
+                    new AddressBasePlaybookCommand { Target = "*" },
+                    new ConfigurationPlaybookCommand(),
+                    new NewLookConfigurationPlaybookCommand(),
+                    new ClockPlaybookCommand { UseCurrentDate = true },
+                    new AdditionalConfigurationPlaybookCommand { Payload = 0x32 },
+                    new AdditionalConfigurationPlaybookCommand { Payload = 0x33 },
+                    new XmlTvImportPlaybookCommand { XmlFile = "xmltv.xml", MaximumNumberOfChannels = 5 },
+                    new LocalAdsPlaybookCommand
+                    {
+                        Ads = new List<string>
+                        {
+                            "%COLOR%%BLACK%%CYAN%You all want some..." +
+                            "%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?" +
+                            "%RIGHT%%COLOR%%BLACK%%RED%No problem!",
+                            "Hello, world!"
+                        }
+                    },
+                    new TitlePlaybookCommand { Text = "PREVUE GUIDE"},
+                    new BoxOffPlaybookCommand()
+                },
+                Configuration = new Configuration
+                {
+                    Hostname = "127.0.0.1",
+                    Port = 1234
+                }
+            });
+
+            return yaml;
         }
 
         public static async Task Main(string[] args)
@@ -43,6 +74,11 @@ namespace PrevueCommander
             var yamlDeserializer = yamlDeserializerBuilder.Build();
 
             var targetYamlFile = args.Length == 0 ? "playbook.yaml" : args[0];
+            if (!File.Exists(targetYamlFile))
+            {
+                await File.WriteAllTextAsync(targetYamlFile, GenerateDefaultYaml());
+            }
+
             var playbook = yamlDeserializer.Deserialize<Playbook>(await File.ReadAllTextAsync(targetYamlFile));
 
             var ipAddress = IPAddress.Parse(playbook.Configuration.Hostname);

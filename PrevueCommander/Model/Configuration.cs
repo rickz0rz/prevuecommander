@@ -4,8 +4,8 @@ namespace PrevueCommander.Model;
 
 public record Configuration
 {
-    [YamlMember(Alias = "hostname")]
+    [YamlMember]
     public string Hostname { get; init; }
-    [YamlMember(Alias = "port")]
+    [YamlMember]
     public int Port { get; init; }
 }

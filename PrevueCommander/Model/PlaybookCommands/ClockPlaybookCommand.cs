@@ -3,12 +3,12 @@ using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record ClockPlaybookCommmand : IBasePlaybookCommand
+public record ClockPlaybookCommand : IBasePlaybookCommand
 {
-    [YamlMember(Alias = "useCurrentDate")]
+    [YamlMember]
     public bool UseCurrentDate { get; init; }
 
-    [YamlMember(Alias = "date")]
+    [YamlMember]
     public string Date { get; set; }
 
     public Task<List<BaseCommand>> Transform()

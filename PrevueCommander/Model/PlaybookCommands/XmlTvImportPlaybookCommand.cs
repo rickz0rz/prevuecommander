@@ -6,9 +6,9 @@ namespace PrevueCommander.Model.PlaybookCommands;
 
 public record XmlTvImportPlaybookCommand : IBasePlaybookCommand
 {
-    [YamlMember(Alias = "xmlFile")]
+    [YamlMember]
     public string XmlFile { get; init; }
-    [YamlMember(Alias = "maximumNumberOfChannels")]
+    [YamlMember]
     public int MaximumNumberOfChannels { get; init; }
 
     public async Task<List<BaseCommand>> Transform()

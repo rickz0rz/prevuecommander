@@ -5,7 +5,7 @@ namespace PrevueCommander.Model.PlaybookCommands;
 
 public record AdditionalConfigurationPlaybookCommand : IBasePlaybookCommand
 {
-    [YamlMember(Alias = "payload")]
+    [YamlMember]
     public byte Payload { get; init; }
 
     public Task<List<BaseCommand>> Transform()
