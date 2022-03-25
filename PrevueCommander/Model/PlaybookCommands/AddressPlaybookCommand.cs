@@ -3,7 +3,7 @@ using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record AddressBasePlaybookCommand : IBasePlaybookCommand
+public record AddressPlaybookCommand : IBasePlaybookCommand
 {
     [YamlMember]
     public string Target { get; init; }

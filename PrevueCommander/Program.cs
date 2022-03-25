@@ -35,7 +35,7 @@ namespace PrevueCommander
             {
                 Commands = new List<IBasePlaybookCommand>
                 {
-                    new AddressBasePlaybookCommand { Target = "*" },
+                    new AddressPlaybookCommand { Target = "*" },
                     new ConfigurationPlaybookCommand(),
                     new NewLookConfigurationPlaybookCommand(),
                     new ClockPlaybookCommand { UseCurrentDate = true },

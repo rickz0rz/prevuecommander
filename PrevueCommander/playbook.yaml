@@ -2,13 +2,13 @@ configuration:
   hostname: 127.0.0.1
   port: 1234
 commands:
-- !!addressBase
+- !!address
   target: '*'
 - !!configuration {}
 - !!newLookConfiguration {}
 - !!clock
   useCurrentDate: true
-  date: 
+  date:
 - !!additionalConfiguration
   payload: 50
 - !!additionalConfiguration
