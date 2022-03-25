@@ -16,6 +16,7 @@ commands:
 - !!xmlTvImport
   xmlFile: xmltv.xml
   maximumNumberOfChannels: 5
+  sendChannelLineUp: true
 - !!localAds
   ads:
   - '%COLOR%%BLACK%%CYAN%You all want some...%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?%RIGHT%%COLOR%%BLACK%%RED%No problem!'

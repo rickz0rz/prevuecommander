@@ -41,7 +41,8 @@ namespace PrevueCommander
                     new ClockPlaybookCommand { UseCurrentDate = true },
                     new AdditionalConfigurationPlaybookCommand { Payload = 0x32 },
                     new AdditionalConfigurationPlaybookCommand { Payload = 0x33 },
-                    new XmlTvImportPlaybookCommand { XmlFile = "xmltv.xml", MaximumNumberOfChannels = 5 },
+                    new XmlTvImportPlaybookCommand { XmlFile = "xmltv.xml", SendChannelLineUp = true,
+                        MaximumNumberOfChannels = 5 },
                     new LocalAdsPlaybookCommand
                     {
                         Ads = new List<string>

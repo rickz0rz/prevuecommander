@@ -60,7 +60,7 @@ public static class XmlTvCore
     }
 
     public static async Task<List<BaseCommand>> ImportXml(DateTime date, string xmlTvFilename,
-        int maximumNumberOfChannels = int.MaxValue)
+        bool sendChannelLineUp = true, int maximumNumberOfChannels = int.MaxValue)
     {
         var commands = new List<BaseCommand>();
 
@@ -91,13 +91,18 @@ public static class XmlTvCore
                 continue;
 
             knownCallSigns.Add(callSign);
-            var commandChannel = new CommandChannel
+
+            if (sendChannelLineUp)
             {
-                CallSign = callSign,
-                ChannelNumber = ExtractChannelNumber(xmlTvChannel.Displayname),
-                SourceName = HashStringForSourceName(xmlTvChannel.Id)
-            };
-            channelsToAdd.Add(commandChannel);
+                var commandChannel = new CommandChannel
+                {
+                    CallSign = callSign,
+                    ChannelNumber = ExtractChannelNumber(xmlTvChannel.Displayname),
+                    SourceName = HashStringForSourceName(xmlTvChannel.Id)
+                };
+                channelsToAdd.Add(commandChannel);
+            }
+
             knownSources.Add(xmlTvChannel.Id);
         }
 

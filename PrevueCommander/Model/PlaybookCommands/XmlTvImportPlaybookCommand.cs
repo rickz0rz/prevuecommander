@@ -10,9 +10,11 @@ public record XmlTvImportPlaybookCommand : IBasePlaybookCommand
     public string XmlFile { get; init; }
     [YamlMember]
     public int MaximumNumberOfChannels { get; init; }
+    [YamlMember]
+    public bool SendChannelLineUp { get; init; }
 
     public async Task<List<BaseCommand>> Transform()
     {
-        return await XmlTvCore.ImportXml(DateTime.Now, XmlFile, MaximumNumberOfChannels);
+        return await XmlTvCore.ImportXml(DateTime.Now, XmlFile, SendChannelLineUp, MaximumNumberOfChannels);
     }
 }
