@@ -1,0 +1,25 @@
+config:
+  hostname: 127.0.0.1
+  port: 1234
+commands:
+- !!address
+  target: '*'
+- !!configuration {}
+- !!new-look-configuration {}
+- !!clock
+  useCurrentDate: true
+  date: 
+- !!additional-config
+  payload: 50
+- !!additional-config
+  payload: 51
+- !!xmltv-import
+  xmlFile: xmltv.xml
+  maximumNumberOfChannels: 5
+- !!local-ads
+  ads:
+  - '%COLOR%%BLACK%%CYAN%You all want some...%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?%RIGHT%%COLOR%%BLACK%%RED%No problem!'
+  - Hello, world!
+- !!title
+  text: PREVUE GUIDE
+- !!boxoff {}

@@ -1,15 +1,16 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using Prevue.Commands;
-using PrevueCommander.XmlTv;
+using PrevueCommander.Model;
+using PrevueCommander.Model.PlaybookCommands;
+using YamlDotNet.Core;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 using CommandChannel = Prevue.Commands.Model.Channel;
 
 namespace PrevueCommander
 {
     public static class Program
     {
-        const int MaximumNumberOfChannels = 100;
-
         // TODO: Figure out what the configuration commands are used for.
         //       They're being sent by PrevueCLI so reverse this and re-implement them.
         //       Also, try to figure out how to remove as many as the +1/-1 hour manipulations
@@ -17,61 +18,49 @@ namespace PrevueCommander
         //       The AdditionalConfigurationCommand(s) are listed in PrevueCLI as 'DSTCommand'
         //       so perhaps they're used for setting daylight savings time or timezones?
 
+        private static List<(TagName tagName, Type tagType)> GenerateTags()
+        {
+            return new List<(TagName tagName, Type tagType)>
+            {
+                (new TagName("tag:yaml.org,2002:additional-config"), typeof(AdditionalConfigurationPlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:address"), typeof(AddressBasePlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:boxoff"), typeof(BoxOffPlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:clock"), typeof(ClockPlaybookCommmand)),
+                (new TagName("tag:yaml.org,2002:configuration"), typeof(ConfigurationPlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:local-ads"), typeof(LocalAdsPlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:new-look-configuration"), typeof(NewLookConfigurationPlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:title"), typeof(TitlePlaybookCommand)),
+                (new TagName("tag:yaml.org,2002:xmltv-import"), typeof(XmlTvImportPlaybookCommand))
+            };
+        }
+
         public static async Task Main(string[] args)
         {
-            const int port = 1234;
-            var ipEndpoint = new IPEndPoint(IPAddress.Loopback, port);
+            var yamlDeserializerBuilder = new DeserializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance);
+            yamlDeserializerBuilder = GenerateTags().Aggregate(yamlDeserializerBuilder,
+                (current, tag) => current.WithTagMapping(tag.tagName, tag.tagType));
+            var yamlDeserializer = yamlDeserializerBuilder.Build();
+
+            var targetYamlFile = args.Length == 0 ? "playbook.yaml" : args[0];
+            var playbook = yamlDeserializer.Deserialize<Playbook>(await File.ReadAllTextAsync(targetYamlFile));
+
+            var ipAddress = IPAddress.Parse(playbook.Configuration.Hostname);
+            var ipEndpoint = new IPEndPoint(ipAddress, playbook.Configuration.Port);
             var socket = new Socket(ipEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
             var writer = new DataWriter(socket);
 
             await socket.ConnectAsync(ipEndpoint);
+
             if (socket.Connected)
             {
-                // Signal all boxes to listen
-                writer.AddCommandToBuffer(new AddressCommand("*"));
-
-                var date = DateTime.Now;
-
-                // Various configuration commands, part 1
-                writer.AddCommandToBuffer(new ConfigurationCommand());
-                writer.AddCommandToBuffer(new NewLookConfigurationCommand());
-
-                // Set the clock of the guide.
-                writer.AddCommandToBuffer(new ClockCommand(date));
-
-                // Various configuration commands, part 2
-                writer.AddCommandToBuffer(new AdditionalConfigurationCommand(0x32));
-                writer.AddCommandToBuffer(new AdditionalConfigurationCommand(0x33));
-
-                // Import XMLtv channels and program listings
-                var xmlTvCommands = await XmlTvCore.ImportXml(date, args[0], MaximumNumberOfChannels);
-                foreach (var xmlTvCommand in xmlTvCommands)
+                foreach (var command in playbook.Commands)
                 {
-                    writer.AddCommandToBuffer(xmlTvCommand);
+                    foreach (var subCommand in await command.Transform())
+                    {
+                        writer.AddCommandToBuffer(subCommand);
+                    }
                 }
-
-                // Remove all local ads. If you don't do this before writing
-                // new local ads, you will freeze Esquire
-                writer.AddCommandToBuffer(new LocalAdResetCommand());
-
-                // Create some new local ads.
-                var adCommands = LocalAdCommand.GenerateAdCommands(new[]
-                {
-                    "%COLOR%%BLACK%%CYAN%You all want some..." +
-                    "%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?" +
-                    "%RIGHT%%COLOR%%BLACK%%RED%No problem!",
-                    "Hello, world!"
-                });
-                foreach (var adCommand in adCommands)
-                {
-                    writer.AddCommandToBuffer(adCommand);
-                }
-
-                // Set the guide title.
-                writer.AddCommandToBuffer(new TitleCommand("PREVUE GUIDE"));
-
-                // Tell all boxes to stop listening.
-                writer.AddCommandToBuffer(new BoxOffCommand());
 
                 writer.FlushBuffer();
             }

@@ -1,0 +1,11 @@
+using Prevue.Commands;
+
+namespace PrevueCommander.Model.PlaybookCommands;
+
+public record NewLookConfigurationPlaybookCommand : IBasePlaybookCommand
+{
+    public Task<List<BaseCommand>> Transform()
+    {
+        return Task.FromResult(new List<BaseCommand> { new NewLookConfigurationCommand() });
+    }
+}
