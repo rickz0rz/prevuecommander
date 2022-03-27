@@ -16,4 +16,10 @@
       <PackageReference Include="YamlDotNet" Version="11.2.1" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="playbook.yaml">
+        <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>
