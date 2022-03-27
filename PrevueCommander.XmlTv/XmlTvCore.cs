@@ -92,21 +92,21 @@ public static class XmlTvCore
 
             knownCallSigns.Add(callSign);
 
-            if (sendChannelLineUp)
+            var commandChannel = new CommandChannel
             {
-                var commandChannel = new CommandChannel
-                {
-                    CallSign = callSign,
-                    ChannelNumber = ExtractChannelNumber(xmlTvChannel.Displayname),
-                    SourceName = HashStringForSourceName(xmlTvChannel.Id)
-                };
-                channelsToAdd.Add(commandChannel);
-            }
+                CallSign = callSign,
+                ChannelNumber = ExtractChannelNumber(xmlTvChannel.Displayname),
+                SourceName = HashStringForSourceName(xmlTvChannel.Id)
+            };
+            channelsToAdd.Add(commandChannel);
 
             knownSources.Add(xmlTvChannel.Id);
         }
 
-        commands.Add(new ChannelLineUpCommand(date, channelsToAdd.ToArray()));
+        if (sendChannelLineUp)
+        {
+            commands.Add(new ChannelLineUpCommand(date, channelsToAdd.ToArray()));
+        }
 
         foreach (var programme in xmlTvData.Programme)
         {
