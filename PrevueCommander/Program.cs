@@ -68,6 +68,12 @@ namespace PrevueCommander
 
         public static async Task Main(string[] args)
         {
+            Console.WriteLine("===============================================");
+            Console.WriteLine("| PrevueCommander                             |");
+            Console.WriteLine("| https://github.com/rickz0rz/prevuecommander |");
+            Console.WriteLine("===============================================");
+            Console.WriteLine();
+
             var yamlDeserializerBuilder = new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance);
             yamlDeserializerBuilder = GenerateTags().Aggregate(yamlDeserializerBuilder,
@@ -85,7 +91,7 @@ namespace PrevueCommander
             var ipAddress = IPAddress.Parse(playbook.Configuration.Hostname);
             var ipEndpoint = new IPEndPoint(ipAddress, playbook.Configuration.Port);
             var socket = new Socket(ipEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            var writer = new DataWriter(socket);
+            var writer = new DataWriter(socket, playbook.Configuration.VerboseDataOutput ?? false);
 
             await socket.ConnectAsync(ipEndpoint);
 

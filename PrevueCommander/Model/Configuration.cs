@@ -8,4 +8,6 @@ public record Configuration
     public string Hostname { get; init; }
     [YamlMember]
     public int Port { get; init; }
+    [YamlMember]
+    public bool? VerboseDataOutput { get; init; }
 }

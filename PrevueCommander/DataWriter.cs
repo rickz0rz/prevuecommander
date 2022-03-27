@@ -13,7 +13,7 @@ public class DataWriter
     private readonly Task _task;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
-    public DataWriter(Socket socket, int simulatedBaudRate = 2400)
+    public DataWriter(Socket socket, bool verboseDataOutput = true, int simulatedBaudRate = 2400)
     {
         _commandQueue = new ConcurrentQueue<BaseCommand>();
         _socket = socket;
@@ -31,7 +31,9 @@ public class DataWriter
 
                     foreach (var currentCommandByte in command.Render())
                     {
-                        Console.Write($" {currentCommandByte:X2}");
+                        if (verboseDataOutput)
+                            Console.Write($" {currentCommandByte:X2}");
+
                         await _socket.SendAsync(new[] { currentCommandByte }, SocketFlags.None);
                         await Task.Delay(_delayBetweenBytes);
                     }
