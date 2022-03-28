@@ -3,10 +3,15 @@ namespace Prevue.Commands;
 public class AdditionalConfigurationCommand : BaseCommand
 {
     public readonly byte _unknown;
-    
+
     public AdditionalConfigurationCommand(byte unknown) : base((byte)'g')
     {
         _unknown = unknown;
+    }
+
+    public override string ToString()
+    {
+        return $"{nameof(AdditionalConfigurationCommand)}: Unknown Byte = 0x{_unknown:X2}";
     }
 
     protected override byte[] GetMessageBytes()

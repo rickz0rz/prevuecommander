@@ -1,6 +1,7 @@
 configuration:
   hostname: 127.0.0.1
   port: 1234
+  verboseDataOutput: true
 commands:
 - !!address
   target: '*'
@@ -23,4 +24,5 @@ commands:
   - Hello, world!
 - !!title
   text: PREVUE GUIDE
+- !!save {}
 - !!boxOff {}

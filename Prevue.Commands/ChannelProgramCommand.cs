@@ -23,7 +23,7 @@ public class ChannelProgramCommand : BaseCommand
 
     public override string ToString()
     {
-        return nameof(ChannelProgramCommand);
+        return $"{nameof(ChannelProgramCommand)}: ({_sourceName} @ {_startDateTime}) {_description}";
     }
 
     private byte CalculateTimeSlot(DateTime dateTime)

@@ -26,4 +26,6 @@ public class Programme {
     public string Stop { get; set; }
     [XmlAttribute(AttributeName="channel")]
     public string Channel { get; set; }
+    [XmlElement(ElementName="rating")]
+    public List<Value> Rating { get; set; }
 }

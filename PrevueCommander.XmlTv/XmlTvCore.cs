@@ -122,14 +122,12 @@ public static class XmlTvCore
 
             if (parsedDate < date.AddHours(2)) // 24
             {
-                var title = programme.Title.Count == 1
-                    ? programme.Title.First().Text
-                    : programme.Title.First(t => t.Lang.Split(",")
-                        .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase))).Text;
-                var desc = programme.Desc.Count == 1
-                    ? programme.Desc.First().Text
-                    : programme.Desc.FirstOrDefault(t => t.Lang.Split(",")
-                        .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text;
+                var title = programme.Title.FirstOrDefault(t => t.Lang.Split(",")
+                                .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
+                            programme.Title.FirstOrDefault()?.Text ?? "No Data";
+                var desc = programme.Desc.FirstOrDefault(t => t.Lang.Split(",")
+                               .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
+                           programme.Desc.FirstOrDefault()?.Text ?? "No Data";
                 var isMovie = programme.Category.Any(x =>
                                   x.Lang.Split(",").Any(y =>
                                       y.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)) &&

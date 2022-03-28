@@ -13,7 +13,7 @@ public class TitleCommand : BaseCommand
 
     public override string ToString()
     {
-        return nameof(TitleCommand);
+        return $"{nameof(TitleCommand)}: Title = \"{_text}\"";
     }
 
     protected override byte[] GetMessageBytes()
