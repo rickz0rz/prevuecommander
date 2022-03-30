@@ -1,7 +1,7 @@
 configuration:
   hostname: 127.0.0.1
   port: 1234
-  verboseDataOutput: true
+  verboseDataOutput: 
 commands:
 - !!address
   target: '*'
@@ -9,10 +9,10 @@ commands:
 - !!newLookConfiguration {}
 - !!clock
   useCurrentDate: true
-  date:
-- !!additionalConfiguration
+  date: 
+- !!configureDst
   payload: 50
-- !!additionalConfiguration
+- !!configureDst
   payload: 51
 - !!xmlTvImport
   xmlFile: xmltv.xml
