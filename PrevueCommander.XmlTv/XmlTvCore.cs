@@ -39,6 +39,8 @@ public static class XmlTvCore
         // Also, find programming up to the next half-hour after the last visible
         // time block (so we can determine if we need to show >> or not)
 
+        // Expand this to not include shows more than 2 hours ago
+        // that aren't in progress to potentially reduce transmission size?
         if (parsedDate >= date.AddHours(2))
             return null;
 
@@ -53,10 +55,14 @@ public static class XmlTvCore
                               y.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)) &&
                           x.Text == "Movie") &&
                       !string.IsNullOrWhiteSpace(desc);
+        var foundRating = (programme.Rating?.Value ?? new List<string>())
+            .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r));
+        var rating = foundRating != null ? $" %{foundRating.Replace("-", "")}%" : "";
+        var stereo = string.Empty;
         var closedCaptioning = programme.Subtitles.Any() ? " %CC%" : string.Empty;
         var generatedDescription = isMovie
-            ? $"\"{title}\" ({programme.Date}) {desc} {closedCaptioning}"
-            : $"{title}{closedCaptioning}";
+            ? $"\"{title}\" ({programme.Date}) {desc}{rating}{stereo}{closedCaptioning}"
+            : $"{title}{rating}{stereo}{closedCaptioning}";
 
         return new ChannelProgramCommand(parsedDate,
             sourceName,

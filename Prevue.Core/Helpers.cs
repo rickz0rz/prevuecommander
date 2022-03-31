@@ -11,59 +11,48 @@ public static class Helpers
 
     public static byte[] GuideFontTokenMapper(string token)
     {
-        switch (token)
+        return token switch
         {
-            case "CC":
-                return new byte[] { 0x7C };
-            case "VCRPLUS":
-                return new byte[] { 0x8E };
-            case "DISNEY":
-                return new byte[] { 0x92 };
-            case "TVPG":
-                return new byte[] { 0x9B };
-            case "PREVUE":
-                return new byte[] { 0x9E };
-            default:
-                Console.WriteLine($"Undefined token: {token}");
-                return new[] { (byte)'?' };
-        }
+            "CC" => new byte[] { 0x7C },
+            "VCRPLUS" => new byte[] { 0x8E },
+            "DISNEY" => new byte[] { 0x92 },
+            "R" => new byte[] { 0x84 },
+            "PG" => new byte[] { 0x85 },
+            "PG13" => new byte[] { 0x87 },
+            "TVY" => new byte[] { 0x90 },
+            "TVY7" => new byte[] { 0x93 },
+            "NC17" => new byte[] { 0x8F },
+            "TVG" => new byte[] { 0x99 },
+            "TV14" => new byte[] { 0x9A },
+            "TVPG" => new byte[] { 0x9B },
+            "TVM" => new byte[] { 0xA1 },
+            "TVMA" => new byte[] { 0xA3 },
+            "PREVUE" => new byte[] { 0x9E },
+            _ => new[] { (byte)'?' }
+        };
     }
 
     public static byte[] AdFontTokenMapper(string token)
     {
         // Notes: Some characters like | don't render
         // 40 characters per line
-        switch (token)
+        return token switch
         {
-            case "COLOR":
-                return new[] { (byte)0x03 };
-            case "TRANSPARENT":
-                return new[] { (byte)'0' };
-            case "WHITE":
-                return new[] { (byte)'1' };
-            case "BLACK":
-                return new[] { (byte)'2' };
-            case "YELLOW":
-                return new[] { (byte)'3' };
-            case "RED":
-                return new[] { (byte)'4' };
-            case "CYAN":
-                return new[] { (byte)'5' };
-            case "GRAY":
-            case "GREY":
-                return new[] { (byte)'6' };
-            case "BLUE":
-                return new[] { (byte)'7' };
-            case "LEFT":
-                return new[] { (byte)0x19 };
-            case "CENTER":
-                return new[] { (byte)0x18 };
-            case "RIGHT":
-                return new[] { (byte)0x1A };
-            default:
-                Console.WriteLine($"Undefined token: {token}");
-                return new[] { (byte)'?' };
-        }
+            "COLOR" => new[] { (byte)0x03 },
+            "TRANSPARENT" => new[] { (byte)'0' },
+            "WHITE" => new[] { (byte)'1' },
+            "BLACK" => new[] { (byte)'2' },
+            "YELLOW" => new[] { (byte)'3' },
+            "RED" => new[] { (byte)'4' },
+            "CYAN" => new[] { (byte)'5' },
+            "GRAY" => new[] { (byte)'6' },
+            "GREY" => new[] { (byte)'6' },
+            "BLUE" => new[] { (byte)'7' },
+            "LEFT" => new[] { (byte)0x19 },
+            "CENTER" => new[] { (byte)0x18 },
+            "RIGHT" => new[] { (byte)0x1A },
+            _ => new[] { (byte)'?' }
+        };
     }
 
     public static byte[] ConvertStringToBytes(string str, Func<string, byte[]> tokenMapper)

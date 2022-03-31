@@ -9,7 +9,7 @@ commands:
 - !!newLookConfiguration {}
 - !!clock
   useCurrentDate: true
-  date: 
+  date:
 - !!configureDst {}
 - !!guideDataImport
   xmlTvFiles:
