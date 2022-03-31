@@ -5,7 +5,7 @@ public class NewLookConfigurationCommand : BaseCommand
     // 0x00 0x00 0x36 then...
     // https://prevueguide.com/wiki/Prevue_Emulation:Configuration_File
 
-    public NewLookConfigurationCommand() : base((byte)'f')
+    public NewLookConfigurationCommand() : base('f')
     {
     }
 

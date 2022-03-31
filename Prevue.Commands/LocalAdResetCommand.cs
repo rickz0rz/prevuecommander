@@ -2,7 +2,7 @@ namespace Prevue.Commands;
 
 public class LocalAdResetCommand : BaseCommand
 {
-    public LocalAdResetCommand() : base((byte)'L')
+    public LocalAdResetCommand() : base('L')
     {
     }
 

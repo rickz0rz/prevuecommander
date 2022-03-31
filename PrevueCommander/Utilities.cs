@@ -1,5 +1,6 @@
 using PrevueCommander.Model;
 using PrevueCommander.Model.PlaybookCommands;
+using PrevueCommander.Model.PlaybookCommands.CommandObjects;
 using YamlDotNet.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -36,12 +37,19 @@ public static class Utilities
                 new ConfigurationPlaybookCommand(),
                 new NewLookConfigurationPlaybookCommand(),
                 new ClockPlaybookCommand { UseCurrentDate = true },
-                new ConfigureDstPlaybookCommand { Payload = 0x32 },
-                new ConfigureDstPlaybookCommand { Payload = 0x33 },
-                new XmlTvImportPlaybookCommand
+                new ConfigureDstPlaybookCommand(),
+                new GuideDataImportPlaybookCommand
                 {
-                    XmlFile = "xmltv.xml", SendChannelLineUp = true,
-                    MaximumNumberOfChannels = 5
+                    XmlTvFiles = new()
+                    {
+                        new XmlTvFile
+                        {
+                            Path = "xmltv.xml",
+                            MaximumNumberOfChannels = 5
+                        }
+                    },
+                    SendChannelLineUp = true,
+                    ChannelNumberOrder = SortMode.None,
                 },
                 new LocalAdsPlaybookCommand
                 {
@@ -60,7 +68,8 @@ public static class Utilities
             Configuration = new Configuration
             {
                 Hostname = "127.0.0.1",
-                Port = 1234
+                Port = 1234,
+                Output = Output.Verbose
             }
         });
 

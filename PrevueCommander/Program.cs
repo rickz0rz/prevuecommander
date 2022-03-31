@@ -34,7 +34,7 @@ namespace PrevueCommander
             var ipAddress = IPAddress.Parse(playbook.Configuration.Hostname);
             var ipEndpoint = new IPEndPoint(ipAddress, playbook.Configuration.Port);
             var socket = new Socket(ipEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            var writer = new DataWriter(socket, playbook.Configuration.VerboseDataOutput ?? false);
+            var writer = new DataWriter(socket, playbook.Configuration.Output == Output.Verbose);
 
             await socket.ConnectAsync(ipEndpoint);
 

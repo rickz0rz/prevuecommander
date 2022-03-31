@@ -2,11 +2,26 @@ namespace Prevue.Commands;
 
 public class BaseCommand
 {
-    private readonly byte _commandCode;
+    private readonly byte[] _commandCodes;
 
     protected BaseCommand(byte commandCode)
     {
-        _commandCode = commandCode;
+        _commandCodes = new[] { commandCode };
+    }
+
+    protected BaseCommand(byte[] commandCodes)
+    {
+        _commandCodes = commandCodes;
+    }
+
+    protected BaseCommand(char commandCode)
+    {
+        _commandCodes = new[] { (byte)commandCode };
+    }
+
+    protected BaseCommand(char[] commandCodes)
+    {
+        _commandCodes = commandCodes.Select(c => (byte)c).ToArray();
     }
 
     protected virtual byte[] GetMessageBytes()
@@ -24,7 +39,7 @@ public class BaseCommand
         var bytes = new List<byte>();
 
         bytes.AddRange(new byte[] { 0x55, 0xAA });
-        bytes.Add(_commandCode);
+        bytes.AddRange(_commandCodes);
         bytes.AddRange(GetMessageBytes());
         bytes.Add(0x00); // Terminator
 

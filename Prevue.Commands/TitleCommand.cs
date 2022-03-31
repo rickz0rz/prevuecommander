@@ -6,7 +6,7 @@ public class TitleCommand : BaseCommand
 {
     private readonly string _text;
 
-    public TitleCommand(string text) : base((byte)'T')
+    public TitleCommand(string text) : base('T')
     {
         _text = text;
     }

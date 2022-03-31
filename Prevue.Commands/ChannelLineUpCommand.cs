@@ -9,7 +9,7 @@ public class ChannelLineUpCommand : BaseCommand
     private readonly DateTime _dateTime;
     private readonly IEnumerable<Channel> _channels;
 
-    public ChannelLineUpCommand(DateTime dateTime, IEnumerable<Channel> channels) : base((byte)'C')
+    public ChannelLineUpCommand(DateTime dateTime, IEnumerable<Channel> channels) : base('C')
     {
         _dateTime = dateTime;
         _channels = channels;
@@ -17,7 +17,7 @@ public class ChannelLineUpCommand : BaseCommand
 
     public override string ToString()
     {
-        return $"{nameof(ChannelLineUpCommand)}: {_channels.Count()} channel(s)";
+        return $"{nameof(ChannelLineUpCommand)}: {_channels.Count()} channel(s) -> {string.Join(", ", _channels.Select(c => $"[{c.SourceName}] {c.CallSign} / {c.ChannelNumber}"))}";
     }
 
     protected override byte[] GetMessageBytes()

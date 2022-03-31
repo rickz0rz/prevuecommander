@@ -4,9 +4,13 @@ public class ClockCommand : BaseCommand
 {
     private readonly DateTime _dateTime;
 
-    public ClockCommand(DateTime dateTime) : base((byte)'K')
+    public ClockCommand(DateTime dateTime) : base('K')
     {
-        _dateTime = dateTime.AddHours(-1);
+        // Convert the datetime from eastern to central
+        // _dateTime = dateTime.AddHours(-1);
+
+        var cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
+        _dateTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime.ToUniversalTime(), cstZone);
     }
 
     public override string ToString()

@@ -8,36 +8,39 @@ public class ConfigureDstCommand : BaseCommand
     // are used for though.
     //
     // https://prevueguide.com/Documentation/G2_Command.pdf
+    // Weirdly there's two commands to handle this and G2 mentions specifically that it's based
+    // on CST so you have to offset your values for other timezones. So ugly.
+    //
+    // See also:
     // https://prevueguide.com/Documentation/G3_Command.pdf
+    //
+    // For reference: daylight saving time starts on the second Sunday in March and ends on the first Sunday in November
 
-    public readonly byte _unknown;
-
-    // daylight saving time starts on the second Sunday in March and ends on the first Sunday in November
-
-    public ConfigureDstCommand(byte unknown) : base((byte)'g')
+    public ConfigureDstCommand() : base(new[] { 'g', '2' })
     {
-        _unknown = unknown;
     }
 
     public override string ToString()
     {
-        return $"{nameof(ConfigureDstCommand)}: Unknown Byte = 0x{_unknown:X2}";
+        return $"{nameof(ConfigureDstCommand)}";
     }
 
     protected override byte[] GetMessageBytes()
     {
-        var messageBytes = new List<byte> { _unknown };
+        var payload = new List<byte> {
+            0x04 // G2.inMarker (Control Code: ^D)
+        };
 
-        messageBytes.AddRange(new Byte[]
-        {
-            // 0x32, 0x33 so "227" then "228" ?
-            0x32, 0x37, // "27"
-            0x04, // ?
-            0x32, 0x30, 0x32, 0x32, 0x30, 0x37, 0x31, 0x30, 0x33, 0x3A, 0x30, 0x30, // "202207103:00" (2022, 71st day, 3:00AM)
-            0x13, // ' '
-            0x32, 0x30, 0x32, 0x32, 0x33, 0x30, 0x39, 0x30, 0x31, 0x3A, 0x30, 0x30 // "202230901:00" (2022, 309th day, 1:00AM)
-        });
+        // DST Start: "202207103:00" (71st day, 3/12/2022 @ 3:00AM)
+        payload.AddRange("202207103:00".ToCharArray().Select(c => (byte)c));
+        // G2.outMarker (Control Code: ^S)
+        payload.Add(0x13);
+        // DST Start: "202230901:00" (309th day, 11/5/2022 @ 1:00AM)
+        payload.AddRange("202230901:00".ToCharArray().Select(c => (byte)c));
 
+        // Start the list off with the length of the payload + 1 in ASCII ("27")
+        var messageBytes = new List<byte>($"{payload.Count + 1}".ToCharArray().Select(c => (byte)c));
+        messageBytes.AddRange(payload);
         return messageBytes.ToArray();
     }
 }

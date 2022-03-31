@@ -12,7 +12,7 @@ public class ChannelProgramCommand : BaseCommand
     private readonly string _description;
 
     public ChannelProgramCommand(DateTime startDateTime, string sourceName,
-        bool isMovie, string description) : base((byte)'P')
+        bool isMovie, string description) : base('P')
     {
         _timeSlot = CalculateTimeSlot(startDateTime);
         _startDateTime = startDateTime.AddHours(-1);

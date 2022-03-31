@@ -2,6 +2,12 @@ using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model;
 
+public enum Output
+{
+    Minimal,
+    Verbose
+}
+
 public record Configuration
 {
     [YamlMember]
@@ -9,5 +15,5 @@ public record Configuration
     [YamlMember]
     public int Port { get; init; }
     [YamlMember]
-    public bool? VerboseDataOutput { get; init; }
+    public Output Output { get; init; }
 }

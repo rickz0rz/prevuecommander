@@ -2,7 +2,7 @@ namespace Prevue.Commands;
 
 public class SaveCommand : BaseCommand
 {
-    public SaveCommand() : base((byte)'%')
+    public SaveCommand() : base('%')
     {
     }
 

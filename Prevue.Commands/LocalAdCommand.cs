@@ -7,7 +7,7 @@ public class LocalAdCommand : BaseCommand
     private readonly int _index;
     private readonly byte[] _ad;
 
-    public LocalAdCommand(int index, string ad) : base((byte)'L')
+    public LocalAdCommand(int index, string ad) : base('L')
     {
         _index = index;
         _ad = Helpers.ConvertStringToBytes(ad, Helpers.AdFontTokenMapper);
@@ -28,9 +28,9 @@ public class LocalAdCommand : BaseCommand
     public static List<LocalAdCommand> GenerateAdCommands(string[] ads)
     {
         var commands = new List<LocalAdCommand>();
-        for (var i = 1; i <= ads.Length; i++)
+        for (var i = 0; i < ads.Length; i++)
         {
-            commands.Add(new LocalAdCommand(i, ads[i - 1]));
+            commands.Add(new LocalAdCommand(i + 1, ads[i]));
         }
         return commands;
     }

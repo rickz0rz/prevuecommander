@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using PrevueCommander.XmlTv.Model;
 using Xunit;
 
 namespace PrevueCommander.Tests;
@@ -14,8 +16,14 @@ public class XmlTvTests
     [InlineData("6-1 WTVS", "6-1")]
     public void TestChannelNumberExtraction(string input, string expected)
     {
-        var channelNumber = XmlTv.XmlTvCore.ExtractChannelNumber(new[] { input });
-        Assert.Equal(expected, channelNumber);
+        var channel = new Channel
+        {
+            Displayname = new List<string>
+            {
+                input
+            }
+        };
+        Assert.Equal(expected, channel.ChannelNumber);
     }
 
     [Theory]
@@ -25,7 +33,14 @@ public class XmlTvTests
     [InlineData("WTVS", "WTVS")]
     public void TestCallSignExtraction(string input, string expected)
     {
-        var callSign = XmlTv.XmlTvCore.ExtractCallSign(new[] { input });
-        Assert.Equal(expected, callSign);
+        var channel = new Channel
+        {
+            Displayname = new List<string>
+            {
+                input
+            }
+        };
+
+        Assert.Equal(expected, channel.CallSign);
     }
 }

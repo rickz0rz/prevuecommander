@@ -1,7 +1,7 @@
 configuration:
   hostname: 127.0.0.1
   port: 1234
-  verboseDataOutput: 
+  output: Verbose
 commands:
 - !!address
   target: '*'
@@ -10,14 +10,13 @@ commands:
 - !!clock
   useCurrentDate: true
   date: 
-- !!configureDst
-  payload: 50
-- !!configureDst
-  payload: 51
-- !!xmlTvImport
-  xmlFile: xmltv.xml
-  maximumNumberOfChannels: 5
+- !!configureDst {}
+- !!guideDataImport
+  xmlTvFiles:
+  - path: xmltv.xml
+    maximumNumberOfChannels: 5
   sendChannelLineUp: true
+  channelNumberOrder: None
 - !!localAds
   ads:
   - '%COLOR%%BLACK%%CYAN%You all want some...%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?%RIGHT%%COLOR%%BLACK%%RED%No problem!'

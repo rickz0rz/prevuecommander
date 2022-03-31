@@ -4,7 +4,7 @@ public class AddressCommand : BaseCommand
 {
     private readonly string _target;
 
-    public AddressCommand(string target) : base((byte)'A')
+    public AddressCommand(string target) : base('A')
     {
         _target = target;
     }

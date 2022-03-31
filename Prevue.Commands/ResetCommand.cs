@@ -2,7 +2,7 @@ namespace Prevue.Commands;
 
 public class ResetCommand : BaseCommand
 {
-    public ResetCommand() : base((byte)'R')
+    public ResetCommand() : base('R')
     {
     }
 

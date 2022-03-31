@@ -2,7 +2,7 @@ namespace Prevue.Commands;
 
 public class ConfigurationCommand : BaseCommand
 {
-    public ConfigurationCommand() : base((byte)'F')
+    public ConfigurationCommand() : base('F')
     {
     }
 

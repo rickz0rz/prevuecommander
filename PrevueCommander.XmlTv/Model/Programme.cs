@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using System.Xml.Serialization;
 
 namespace PrevueCommander.XmlTv.Model;
@@ -28,4 +30,17 @@ public class Programme {
     public string Channel { get; set; }
     [XmlElement(ElementName="rating")]
     public List<Value> Rating { get; set; }
+
+    public Programme()
+    {
+        _sourceName = new Lazy<string>(() =>
+        {
+            var shaM = SHA512.Create();
+            var hashString = Convert.ToHexString(shaM.ComputeHash(Encoding.ASCII.GetBytes(Channel)));
+            return hashString.Length > 6 ? hashString[..6] : hashString;
+        });
+    }
+
+    private Lazy<string> _sourceName;
+    public string SourceName => _sourceName.Value;
 }
