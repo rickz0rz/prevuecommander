@@ -27,7 +27,7 @@ public static class XmlTvCore
     }
 
     public static ChannelProgramCommand? GenerateProgramCommand(DateTime date,
-        List<string> knownSources, Programme programme)
+        IEnumerable<string> knownSources, Programme programme)
     {
         if (!knownSources.Contains(programme.SourceName))
             return null;

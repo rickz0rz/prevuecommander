@@ -20,8 +20,8 @@ public record GuideDataImportPlaybookCommand : IBasePlaybookCommand
         return sortMode switch
         {
             SortMode.None => channels,
-            SortMode.Ascending => channels.OrderBy(c => c.ChannelNumber),
-            SortMode.Descending => channels.OrderByDescending(c => c.ChannelNumber),
+            SortMode.Ascending => channels.OrderBy(c => int.Parse(c.ChannelNumber)),
+            SortMode.Descending => channels.OrderByDescending(c => int.Parse(c.ChannelNumber)),
             _ => channels
         };
     }
@@ -42,10 +42,11 @@ public record GuideDataImportPlaybookCommand : IBasePlaybookCommand
         foreach (var xmlTvFile in XmlTvFiles)
         {
             var xmlTvObject = await XmlTvCore.ParseXmlFile(xmlTvFile.Path);
-            var targetChannels = SortChannels(xmlTvObject.Channel, ChannelNumberOrder).ToList();
+            var targetChannels = SortChannels(xmlTvObject.Channel, ChannelNumberOrder)
+                .Take(xmlTvFile.MaximumNumberOfChannels);
             channels.AddRange(targetChannels);
 
-            var knownSources = targetChannels.Select(tc => tc.SourceName).ToList();
+            var knownSources = targetChannels.Select(tc => tc.SourceName);
 
             foreach (var programme in xmlTvObject.Programme)
             {
