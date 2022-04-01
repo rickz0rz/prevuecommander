@@ -6,7 +6,8 @@ namespace PrevueCommander.XmlTv.Model;
 public class EpisodeNum
 {
     [XmlAttribute(AttributeName = "system")]
-    public string System { get; set; }
+    public string? System { get; set; }
 
-    [XmlText] public string Text { get; set; }
+    [XmlText]
+    public string? Text { get; set; }
 }

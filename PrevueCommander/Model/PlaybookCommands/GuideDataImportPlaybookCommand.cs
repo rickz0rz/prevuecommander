@@ -41,14 +41,18 @@ public record GuideDataImportPlaybookCommand : IBasePlaybookCommand
 
         foreach (var xmlTvFile in XmlTvFiles)
         {
+            if (string.IsNullOrWhiteSpace(xmlTvFile.Path) || !File.Exists(xmlTvFile.Path))
+                throw new Exception($"File {xmlTvFile.Path} not valid.");
+
             var xmlTvObject = await XmlTvCore.ParseXmlFile(xmlTvFile.Path);
-            var targetChannels = SortChannels(xmlTvObject.Channel, ChannelNumberOrder)
-                .Take(xmlTvFile.MaximumNumberOfChannels);
+            var targetChannels = SortChannels(xmlTvObject.Channel ?? new List<Channel>(), ChannelNumberOrder)
+                .Take(xmlTvFile.MaximumNumberOfChannels)
+                .ToList();
             channels.AddRange(targetChannels);
 
-            var knownSources = targetChannels.Select(tc => tc.SourceName);
+            var knownSources = targetChannels.Select(tc => tc.SourceName).ToList();
 
-            foreach (var programme in xmlTvObject.Programme)
+            foreach (var programme in xmlTvObject.Programme ?? new List<Programme>())
             {
                 var programCommand = XmlTvCore.GenerateProgramCommand(now, knownSources, programme);
                 if (programCommand != null)

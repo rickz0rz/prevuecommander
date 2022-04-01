@@ -33,6 +33,10 @@ public static class XmlTvCore
             return null;
 
         var sourceName = programme.SourceName;
+
+        if (string.IsNullOrWhiteSpace(programme.Start))
+            throw new Exception("Missing start date on programme.");
+
         var parsedDate = ParseXmlTvDate(programme.Start).AddHours(-1);
 
         // Find the current show in progress.
@@ -44,14 +48,14 @@ public static class XmlTvCore
         if (parsedDate >= date.AddHours(2))
             return null;
 
-        var title = programme.Title.FirstOrDefault(t => t.Lang.Split(",")
+        var title = (programme.Title?.FirstOrDefault(t => (t.Lang ?? "").Split(",")
                         .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
-                    programme.Title.FirstOrDefault()?.Text ?? "No Data";
-        var desc = programme.Desc.FirstOrDefault(t => t.Lang.Split(",")
-                       .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
-                   programme.Desc.FirstOrDefault()?.Text ?? "No Data";
-        var isMovie = programme.Category.Any(x =>
-                          x.Lang.Split(",").Any(y =>
+                    programme.Title?.FirstOrDefault()?.Text ?? "No Data").Replace("%", "%%");
+        var desc = (programme.Desc?.FirstOrDefault(t => (t.Lang ?? "").Split(",")
+                        .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
+                    programme.Desc?.FirstOrDefault()?.Text ?? "No Data").Replace("%", "%%");
+        var isMovie = (programme.Category ?? new List<Category>()).Any(x =>
+                          (x.Lang ?? "").Split(",").Any(y =>
                               y.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)) &&
                           x.Text == "Movie") &&
                       !string.IsNullOrWhiteSpace(desc);
@@ -59,7 +63,7 @@ public static class XmlTvCore
             .FirstOrDefault(r => !string.IsNullOrWhiteSpace(r));
         var rating = foundRating != null ? $" %{foundRating.Replace("-", "")}%" : "";
         var stereo = string.Empty;
-        var closedCaptioning = programme.Subtitles.Any() ? " %CC%" : string.Empty;
+        var closedCaptioning = (programme.Subtitles ?? new List<Subtitles>()).Any() ? " %CC%" : string.Empty;
         var generatedDescription = isMovie
             ? $"\"{title}\" ({programme.Date}) {desc}{rating}{stereo}{closedCaptioning}"
             : $"{title}{rating}{stereo}{closedCaptioning}";

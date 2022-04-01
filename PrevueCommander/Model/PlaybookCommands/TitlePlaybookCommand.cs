@@ -6,10 +6,10 @@ namespace PrevueCommander.Model.PlaybookCommands;
 public record TitlePlaybookCommand : IBasePlaybookCommand
 {
     [YamlMember]
-    public string Text { get; init; }
+    public string? Text { get; init; }
 
     public Task<List<BaseCommand>> Transform()
     {
-        return Task.FromResult(new List<BaseCommand> { new TitleCommand(Text) });
+        return Task.FromResult(new List<BaseCommand> { new TitleCommand(Text ?? string.Empty) });
     }
 }

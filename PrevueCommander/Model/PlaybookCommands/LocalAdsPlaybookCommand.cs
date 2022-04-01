@@ -5,8 +5,8 @@ namespace PrevueCommander.Model.PlaybookCommands;
 
 public record LocalAdsPlaybookCommand : IBasePlaybookCommand
 {
-    [YamlMember]
-    public List<string> Ads { get; init; }
+    [YamlMember] public List<string>? Ads { get; init; }
+
     public Task<List<BaseCommand>> Transform()
     {
         var commands = new List<BaseCommand>
@@ -14,7 +14,7 @@ public record LocalAdsPlaybookCommand : IBasePlaybookCommand
             new LocalAdResetCommand()
         };
 
-        commands.AddRange(Ads.Select((t, i) => new LocalAdCommand(i, t)));
+        commands.AddRange((Ads ?? new List<string>()).Select((t, i) => new LocalAdCommand(i, t)));
 
         return Task.FromResult(commands);
     }

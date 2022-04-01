@@ -1,4 +1,5 @@
 ﻿using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using PrevueCommander.Model;
 using YamlDotNet.Serialization;
@@ -31,10 +32,25 @@ namespace PrevueCommander
 
             var playbook = yamlDeserializer.Deserialize<Playbook>(await File.ReadAllTextAsync(targetYamlFile));
 
-            var ipAddress = IPAddress.Parse(playbook.Configuration.Hostname);
-            var ipEndpoint = new IPEndPoint(ipAddress, playbook.Configuration.Port);
+            var calculatedHostName = string.IsNullOrWhiteSpace(playbook.Configuration?.Hostname)
+                ? "127.0.0.1"
+                : playbook.Configuration?.Hostname;
+
+            if (!IPAddress.TryParse(calculatedHostName, out var ipAddress))
+            {
+                var hostAddresses = await Dns.GetHostAddressesAsync(calculatedHostName);
+                if (hostAddresses.Any())
+                {
+                    ipAddress = hostAddresses.First();
+                }
+            }
+
+            if (ipAddress == null)
+                throw new Exception("Invalid hostname in configuration");
+
+            var ipEndpoint = new IPEndPoint(ipAddress, playbook.Configuration?.Port ?? 1234);
             var socket = new Socket(ipEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            var writer = new DataWriter(socket, playbook.Configuration.Output == Output.Verbose);
+            var writer = new DataWriter(socket, playbook.Configuration?.Output == Output.Verbose);
 
             await socket.ConnectAsync(ipEndpoint);
 

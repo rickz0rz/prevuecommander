@@ -18,7 +18,7 @@ public class XmlTvTests
     {
         var channel = new Channel
         {
-            Displayname = new List<string>
+            DisplayName = new List<string>
             {
                 input
             }
@@ -35,7 +35,7 @@ public class XmlTvTests
     {
         var channel = new Channel
         {
-            Displayname = new List<string>
+            DisplayName = new List<string>
             {
                 input
             }

@@ -6,5 +6,5 @@ namespace PrevueCommander.XmlTv.Model;
 public class PreviouslyShown
 {
     [XmlAttribute(AttributeName = "start")]
-    public string Start { get; set; }
+    public string? Start { get; set; }
 }

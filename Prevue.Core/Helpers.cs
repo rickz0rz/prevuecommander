@@ -71,11 +71,16 @@ public static class Helpers
                     if (inTokenMode)
                     {
                         inTokenMode = false;
-                        if (!string.IsNullOrWhiteSpace(currentToken))
+                        if (string.IsNullOrWhiteSpace(currentToken))
+                        {
+                            bytes.AddRange(new[] { (byte)'%'});
+                        }
+                        else
                         {
                             bytes.AddRange(tokenMapper(currentToken));
-                            currentToken = string.Empty;
                         }
+
+                        currentToken = string.Empty;
                     }
                     else
                     {

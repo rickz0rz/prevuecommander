@@ -17,7 +17,7 @@ public class ChannelLineUpCommand : BaseCommand
 
     public override string ToString()
     {
-        return $"{nameof(ChannelLineUpCommand)}: {_channels.Count()} channel(s) -> {string.Join(", ", _channels.Select(c => $"[{c.SourceName}] {c.CallSign} / {c.ChannelNumber}"))}";
+        return $"{nameof(ChannelLineUpCommand)}: ({GetMessageBytes().Length} bytes) {_channels.Count()} channel(s) -> {string.Join(", ", _channels.Select(c => $"[{c.SourceName}] {c.CallSign} / {c.ChannelNumber}"))}";
     }
 
     protected override byte[] GetMessageBytes()

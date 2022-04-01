@@ -5,5 +5,6 @@ namespace PrevueCommander.XmlTv.Model;
 [XmlRoot(ElementName = "subtitles")]
 public class Subtitles
 {
-    [XmlAttribute(AttributeName = "type")] public string Type { get; set; }
+    [XmlAttribute(AttributeName = "type")]
+    public string? Type { get; set; }
 }

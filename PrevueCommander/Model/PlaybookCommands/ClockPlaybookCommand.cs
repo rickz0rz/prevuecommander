@@ -9,10 +9,17 @@ public record ClockPlaybookCommand : IBasePlaybookCommand
     public bool UseCurrentDate { get; init; }
 
     [YamlMember]
-    public string Date { get; set; }
+    public string? Date { get; set; }
 
     public Task<List<BaseCommand>> Transform()
     {
-        return Task.FromResult(new List<BaseCommand> { new ClockCommand(UseCurrentDate ? DateTime.Now : DateTime.Parse(Date)) });
+        var clockCommand = new ClockCommand(UseCurrentDate || !string.IsNullOrWhiteSpace(Date)
+            ? DateTime.Now
+            : DateTime.Parse(Date));
+
+        return Task.FromResult(new List<BaseCommand>
+        {
+            clockCommand
+        });
     }
 }

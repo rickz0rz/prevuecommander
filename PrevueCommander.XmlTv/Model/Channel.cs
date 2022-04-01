@@ -7,17 +7,26 @@ namespace PrevueCommander.XmlTv.Model;
 [XmlRoot(ElementName = "channel")]
 public class Channel
 {
-    [XmlElement(ElementName = "display-name")]
-    public List<string> Displayname { get; set; }
+    private Lazy<string> _callSign;
+    private Lazy<string> _channelNumber;
+    private Lazy<string> _sourceName;
 
-    [XmlElement(ElementName = "icon")] public Icon Icon { get; set; }
-    [XmlAttribute(AttributeName = "id")] public string Id { get; set; }
+    [XmlElement(ElementName = "display-name")]
+    public List<string>? DisplayName { get; set; }
+    [XmlElement(ElementName = "icon")]
+    public Icon? Icon { get; set; }
+    [XmlAttribute(AttributeName = "id")]
+    public string? Id { get; set; }
+
+    public string CallSign => _callSign.Value;
+    public string ChannelNumber => _channelNumber.Value;
+    public string SourceName => _sourceName.Value;
 
     public Channel()
     {
         _callSign = new Lazy<string>(new Func<string>(() =>
         {
-            foreach (var component in from displayName in Displayname
+            foreach (var component in from displayName in DisplayName
                      select displayName.Split(" ")
                      into components
                      from component in components
@@ -32,7 +41,7 @@ public class Channel
 
         _channelNumber = new Lazy<string>(() =>
         {
-            foreach (var component in from displayName in Displayname
+            foreach (var component in from displayName in DisplayName
                      select displayName.Split(" ")
                      into components
                      from component in components
@@ -47,17 +56,12 @@ public class Channel
 
         _sourceName = new Lazy<string>(() =>
         {
+            if (string.IsNullOrWhiteSpace(Id))
+                throw new Exception("Id not found within Channel");
+
             var shaM = SHA512.Create();
             var hashString = Convert.ToHexString(shaM.ComputeHash(Encoding.ASCII.GetBytes(Id)));
             return hashString.Length > 6 ? hashString[..6] : hashString;
         });
     }
-
-    private Lazy<string> _callSign;
-    private Lazy<string> _channelNumber;
-    private Lazy<string> _sourceName;
-
-    public string CallSign => _callSign.Value;
-    public string ChannelNumber => _channelNumber.Value;
-    public string SourceName => _sourceName.Value;
 }
