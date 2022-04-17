@@ -63,6 +63,7 @@ public static class Utilities
                 },
                 new TitlePlaybookCommand { Text = "PREVUE GUIDE" },
                 new SavePlaybookCommand(),
+                new ReloadPlaybookCommand(),
                 new BoxOffPlaybookCommand()
             },
             Configuration = new Configuration

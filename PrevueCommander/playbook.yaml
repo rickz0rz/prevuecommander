@@ -24,4 +24,5 @@ commands:
 - !!title
   text: PREVUE GUIDE
 - !!save {}
+- !!reload {}
 - !!boxOff {}
