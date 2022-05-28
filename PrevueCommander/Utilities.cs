@@ -35,7 +35,13 @@ public static class Utilities
             {
                 new AddressPlaybookCommand { Target = "*" },
                 new ConfigurationPlaybookCommand(),
-                new NewLookConfigurationPlaybookCommand(),
+                new NewLookConfigurationPlaybookCommand
+                {
+                    Configuration = new NewLookConfiguration
+                    {
+                        DisplayMode = 'S'
+                    }
+                },
                 new ClockPlaybookCommand { UseCurrentDate = true },
                 new ConfigureDstPlaybookCommand(),
                 new GuideDataImportPlaybookCommand

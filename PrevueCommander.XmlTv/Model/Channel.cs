@@ -36,7 +36,8 @@ public class Channel
                 return component;
             }
 
-            throw new Exception("Unable to find channel number in displayName");
+            // throw new Exception("Unable to find channel number in displayName");
+            return string.Empty;
         }));
 
         _channelNumber = new Lazy<string>(() =>
@@ -51,7 +52,8 @@ public class Channel
                 return component;
             }
 
-            throw new Exception("Unable to find channel number in displayName");
+            // throw new Exception("Unable to find channel number in displayName");
+            return string.Empty;
         });
 
         _sourceName = new Lazy<string>(() =>

@@ -1,12 +1,19 @@
+using Prevue.Commands.Model;
+
 namespace Prevue.Commands;
 
 public class NewLookConfigurationCommand : BaseCommand
 {
-    // 0x00 0x00 0x36 then...
-    // https://prevueguide.com/wiki/Prevue_Emulation:Configuration_File
+    private readonly NewLookConfiguration _configuration;
 
     public NewLookConfigurationCommand() : base('f')
     {
+        _configuration = new NewLookConfiguration();
+    }
+
+    public NewLookConfigurationCommand(NewLookConfiguration configuration) : base('f')
+    {
+        _configuration = configuration;
     }
 
     public override string ToString()
@@ -16,13 +23,13 @@ public class NewLookConfigurationCommand : BaseCommand
 
     protected override byte[] GetMessageBytes()
     {
-        return new byte[]
-        {
-            0x00, 0x00, 0x36,
-            0x32, 0x43, 0x30, 0x31, 0x30, 0x38, 0x30, 0x38, 0x47, 0x4E, 0x41, 0x45, 0x30, 0x31,
-            0x4E, 0x4E, 0x4E, 0x4E, 0x4E, 0x4E, 0x4C, 0x32, 0x39, 0x30, 0x36, 0x59, 0x59, 0x59,
-            0x32, 0x33, 0x33, 0x36, 0x30, 0x36, 0x30, 0x31, 0x35, 0x31, 0x30, 0x30, 0x59, 0x4E,
-            0x59, 0x43, 0x8E, 0x38, 0x53, 0x4E, 0x4E, 0x4E, 0x4E, 0x32
-        };
+        var bytes = new List<byte> { 0x00, 0x00 };
+
+        bytes.AddRange($"62C010808{_configuration.DisplayMode}NAE01NNNNNNL2906YYY233606015100YNYC".ToCharArray().
+            Select(c => (byte)c));
+        bytes.Add(0x8E); // This particular character isn't ASCII
+        bytes.AddRange("8SNNNN2".ToCharArray().Select(c => (byte)c));
+
+        return bytes.ToArray();
     }
 }
