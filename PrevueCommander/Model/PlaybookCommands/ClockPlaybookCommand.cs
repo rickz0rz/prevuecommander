@@ -5,11 +5,9 @@ namespace PrevueCommander.Model.PlaybookCommands;
 
 public record ClockPlaybookCommand : IBasePlaybookCommand
 {
-    [YamlMember]
-    public bool UseCurrentDate { get; init; }
+    [YamlMember] public bool UseCurrentDate { get; init; }
 
-    [YamlMember]
-    public string? Date { get; set; }
+    [YamlMember] public string? Date { get; set; }
 
     public Task<List<BaseCommand>> Transform()
     {

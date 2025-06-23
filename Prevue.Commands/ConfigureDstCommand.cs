@@ -27,7 +27,8 @@ public class ConfigureDstCommand : BaseCommand
 
     protected override byte[] GetMessageBytes()
     {
-        var payload = new List<byte> {
+        var payload = new List<byte>
+        {
             0x04 // G2.inMarker (Control Code: ^D)
         };
 

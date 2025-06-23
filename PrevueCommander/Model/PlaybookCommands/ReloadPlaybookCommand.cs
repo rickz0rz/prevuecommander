@@ -2,7 +2,7 @@ using Prevue.Commands;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public class ReloadPlaybookCommand: IBasePlaybookCommand
+public class ReloadPlaybookCommand : IBasePlaybookCommand
 {
     public Task<List<BaseCommand>> Transform()
     {

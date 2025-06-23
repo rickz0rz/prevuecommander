@@ -5,7 +5,9 @@ public record NewLookConfiguration
     public char RollAndHoldTime { get; init; } = '2';
     public char GridSourceChannelOrder { get; init; } = 'C';
     public char MRReviewInFSetting { get; init; } = '0';
+
     public char SBSFrequency { get; init; } = '1';
+
     // 08
     // 08
     public char DisplayMode { get; init; } = 'G';
@@ -30,16 +32,22 @@ public record NewLookConfiguration
     public int PrimeTimePromotionTimeSlotEnd { get; init; } = 36; // "36"
     public int LengthOfLookAheadSportsSummary { get; init; } = 6; // "06"
     public int MinutesToDisplayPPVPostStart { get; init; } = 15; // "015"
+
     public char SummaryCycleFrequency { get; init; } = '1';
+
     // 00
     public char WeatherHoldAndRoll { get; init; } = 'Y';
     public char MilitaryTime { get; init; } = 'N';
     public char CleanUpUnusedLogos { get; init; } = 'Y';
+
     public char DisplayLength { get; init; } = 'C';
+
     // 0x8E
     public char NumberOfColorPalettes { get; init; } = '8';
     public char LocalTextAdSource { get; init; } = 'S';
+
     public char PCDiskSupport { get; init; } = 'N';
+
     // NNN
     public char ClockCommandInFSetting { get; init; } = '2';
 }

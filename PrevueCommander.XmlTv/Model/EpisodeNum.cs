@@ -8,6 +8,5 @@ public class EpisodeNum
     [XmlAttribute(AttributeName = "system")]
     public string? System { get; set; }
 
-    [XmlText]
-    public string? Text { get; set; }
+    [XmlText] public string? Text { get; set; }
 }

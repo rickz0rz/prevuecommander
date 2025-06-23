@@ -15,7 +15,6 @@ public static class TestMethods
     public static void ParseAndPrint(byte[] bytes)
     {
         for (var i = 0; i < bytes.Length; i++)
-        {
             try
             {
                 if (bytes[i] == 0x55 && bytes[i + 1] == 0xAA)
@@ -88,7 +87,6 @@ public static class TestMethods
                                 stringBuilder.AppendLine("\"");
 
                                 while (bytes[i] != 0x00 && bytes[i] != 0x12)
-                                {
                                     switch (bytes[i])
                                     {
                                         case 0x11:
@@ -127,13 +125,13 @@ public static class TestMethods
                                             stringBuilder.Append(
                                                 $"[{i:X4}] {commandName} > Channel[{channelIndex}] > Call Letters: \"");
                                             i++;
+
                                             /*for (var cli = 0; cli < 6; cli++)
                                             {
                                                 stringBuilder.Append((char)bytes[i]);
                                                 cs ^= bytes[i];
                                                 i++;
                                             }*/
-
                                             while (bytes[i] != 0x00 && bytes[i] != 0x12 &&
                                                    bytes[i] != 0x11 && bytes[i] != 0x14 &&
                                                    bytes[i] != 0x01)
@@ -146,7 +144,6 @@ public static class TestMethods
                                             stringBuilder.AppendLine("\"");
                                             break;
                                     }
-                                }
 
                                 channelIndex++;
                             }
@@ -228,7 +225,5 @@ public static class TestMethods
             {
                 Console.WriteLine($"[{i:X4}] ERROR: {e.Message} [{e.StackTrace}]");
             }
-
-        }
     }
 }

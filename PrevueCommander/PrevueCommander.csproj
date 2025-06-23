@@ -9,13 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Prevue.Commands\Prevue.Commands.csproj" />
-      <ProjectReference Include="..\PrevueCommander.ChannelsDVR\PrevueCommander.ChannelsDVR.csproj" />
-      <ProjectReference Include="..\PrevueCommander.XmlTv\PrevueCommander.XmlTv.csproj" />
+        <ProjectReference Include="..\Prevue.Commands\Prevue.Commands.csproj"/>
+        <ProjectReference Include="..\PrevueCommander.ChannelsDVR\PrevueCommander.ChannelsDVR.csproj"/>
+        <ProjectReference Include="..\PrevueCommander.XmlTv\PrevueCommander.XmlTv.csproj"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="YamlDotNet" Version="11.2.1" />
+        <PackageReference Include="YamlDotNet" Version="11.2.1"/>
     </ItemGroup>
 
 </Project>

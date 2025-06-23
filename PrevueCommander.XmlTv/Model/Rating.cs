@@ -5,6 +5,5 @@ namespace PrevueCommander.XmlTv.Model;
 [XmlRoot(ElementName = "rating")]
 public class Rating
 {
-    [XmlElement(ElementName = "value")]
-    public List<string>? Value { get; set; }
+    [XmlElement(ElementName = "value")] public List<string>? Value { get; set; }
 }

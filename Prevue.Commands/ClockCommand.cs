@@ -20,7 +20,7 @@ public class ClockCommand : BaseCommand
 
     protected override byte[] GetMessageBytes()
     {
-        return new []
+        return new[]
         {
             (byte)_dateTime.DayOfWeek,
             (byte)(_dateTime.Month - 1),

@@ -25,8 +25,8 @@ public class NewLookConfigurationCommand : BaseCommand
     {
         var bytes = new List<byte> { 0x00, 0x00 };
 
-        bytes.AddRange($"62C010808{_configuration.DisplayMode}NAE01NNNNNNL2906YYY233606015100YNYC".ToCharArray().
-            Select(c => (byte)c));
+        bytes.AddRange($"62C010808{_configuration.DisplayMode}NAE01NNNNNNL2906YYY233606015100YNYC".ToCharArray()
+            .Select(c => (byte)c));
         bytes.Add(0x8E); // This particular character isn't ASCII
         bytes.AddRange("8SNNNN2".ToCharArray().Select(c => (byte)c));
 

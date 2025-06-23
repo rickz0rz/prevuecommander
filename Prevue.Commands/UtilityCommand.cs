@@ -2,10 +2,10 @@ namespace Prevue.Commands;
 
 public class UtilityCommand : BaseCommand
 {
-    private byte _family;
-    private string _member;
-    private string _subMember;
-    private string _asciiString;
+    private readonly string _asciiString;
+    private readonly byte _family;
+    private readonly string _member;
+    private readonly string _subMember;
 
     public UtilityCommand(byte family, string member = "", string subMember = "", string asciiString = "")
         : base('x')
@@ -18,7 +18,8 @@ public class UtilityCommand : BaseCommand
 
     public override string ToString()
     {
-        return $"{nameof(UtilityCommand)}: Family = {_family}, Member = \"{_member}\", SubMember = \"{_subMember}\", ASCII String: \"{_asciiString}\"";
+        return
+            $"{nameof(UtilityCommand)}: Family = {_family}, Member = \"{_member}\", SubMember = \"{_subMember}\", ASCII String: \"{_asciiString}\"";
     }
 
     protected override byte[] GetMessageBytes()

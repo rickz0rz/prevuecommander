@@ -11,7 +11,9 @@ public static class ChannelsCore
     {
         try
         {
-            var sourceName = channelElement.GetProperty("Station").ToString();
+            // var sourceName = channelElement.GetProperty("Station").ToString();
+            var sourceName = channelElement.GetProperty("CallSign").ToString();
+            if (sourceName.EndsWith("HD")) sourceName = sourceName.Substring(0, sourceName.Length - "HD".Length);
 
             if (knownSources.All(knownSource => knownSource.SourceName != sourceName))
                 return null;
@@ -30,23 +32,25 @@ public static class ChannelsCore
                 return null;
 
             var titleValue = airingElement.GetProperty("Title").GetString();
-            var isMovie = airingElement.TryGetProperty("MovieID", out var _);
+            var isMovie = airingElement.TryGetProperty("MovieID", out _);
             var title = isMovie
-                ? titleValue.Split("\"", StringSplitOptions.RemoveEmptyEntries).First().Split("(").First().Trim().Replace("%", "%%")
+                ? titleValue.Split("\"", StringSplitOptions.RemoveEmptyEntries).First().Split("(").First().Trim()
+                    .Replace("%", "%%")
                 : titleValue.Replace("%", "%%");
-            var summary = airingElement.TryGetProperty("Summary", out var _)
+            var summary = airingElement.TryGetProperty("Summary", out _)
                 ? airingElement.GetProperty("Summary").GetString().Replace("%", "%%")
                 : string.Empty;
-            var foundRating = airingElement.TryGetProperty("ContentRating", out var _)
+            var foundRating = airingElement.TryGetProperty("ContentRating", out _)
                 ? airingElement.GetProperty("ContentRating").GetString()
                 : string.Empty;
             var rating = !string.IsNullOrWhiteSpace(foundRating) ? $" %{foundRating.Replace("-", "")}%" : "";
             var stereo = airingElement.GetProperty("Tags").EnumerateArray().Any(x => x.GetString().Equals("Stereo"))
                 ? "%STEREO%"
                 : string.Empty;
-            var closedCaptioning = airingElement.GetProperty("Tags").EnumerateArray().Any(x => x.GetString().Equals("CC"))
-                ? "%CC%"
-                : string.Empty;
+            var closedCaptioning =
+                airingElement.GetProperty("Tags").EnumerateArray().Any(x => x.GetString().Equals("CC"))
+                    ? "%CC%"
+                    : string.Empty;
             var movieReleaseYear = isMovie
                 ? airingElement.GetProperty("ReleaseYear").GetInt32().ToString()
                 : string.Empty;

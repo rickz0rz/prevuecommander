@@ -5,8 +5,7 @@ namespace PrevueCommander.Model.PlaybookCommands;
 
 public record AddressPlaybookCommand : IBasePlaybookCommand
 {
-    [YamlMember]
-    public string? Target { get; init; }
+    [YamlMember] public string? Target { get; init; }
 
     public Task<List<BaseCommand>> Transform()
     {

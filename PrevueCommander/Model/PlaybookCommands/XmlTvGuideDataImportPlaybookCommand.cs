@@ -9,23 +9,11 @@ namespace PrevueCommander.Model.PlaybookCommands;
 
 public record XmlTvGuideDataImportPlaybookCommand : IBasePlaybookCommand
 {
-    private IEnumerable<Channel> SortChannels(IEnumerable<Channel> channels, SortMode sortMode)
-    {
-        return sortMode switch
-        {
-            SortMode.None => channels,
-            SortMode.Ascending => channels.OrderBy(c => int.Parse(c.ChannelNumber)),
-            SortMode.Descending => channels.OrderByDescending(c => int.Parse(c.ChannelNumber)),
-            _ => channels
-        };
-    }
+    [YamlMember] public List<XmlTvFile>? XmlTvFiles { get; init; }
 
-    [YamlMember]
-    public List<XmlTvFile>? XmlTvFiles { get; init; }
-    [YamlMember]
-    public bool SendChannelLineUp { get; init; }
-    [YamlMember]
-    public SortMode ChannelNumberOrder { get; init; }
+    [YamlMember] public bool SendChannelLineUp { get; init; }
+
+    [YamlMember] public SortMode ChannelNumberOrder { get; init; }
 
     public async Task<List<BaseCommand>> Transform()
     {
@@ -49,10 +37,7 @@ public record XmlTvGuideDataImportPlaybookCommand : IBasePlaybookCommand
             foreach (var programme in xmlTvObject.Programme ?? new List<Programme>())
             {
                 var programCommand = XmlTvCore.GenerateProgramCommand(now, knownSources, programme);
-                if (programCommand != null)
-                {
-                    programCommands.Add(programCommand);
-                }
+                if (programCommand != null) programCommands.Add(programCommand);
             }
         }
 
@@ -62,11 +47,11 @@ public record XmlTvGuideDataImportPlaybookCommand : IBasePlaybookCommand
         {
             var channelsToSend = SortChannels(channels, ChannelNumberOrder)
                 .Select(c => new Prevue.Commands.Model.Channel
-            {
-                CallSign = c.CallSign,
-                ChannelNumber = c.ChannelNumber,
-                SourceName = c.SourceName
-            });
+                {
+                    CallSign = c.CallSign,
+                    ChannelNumber = c.ChannelNumber,
+                    SourceName = c.SourceName
+                });
 
             commands.Add(new ChannelLineUpCommand(now, channelsToSend));
         }
@@ -74,5 +59,16 @@ public record XmlTvGuideDataImportPlaybookCommand : IBasePlaybookCommand
         commands.AddRange(programCommands);
 
         return commands;
+    }
+
+    private IEnumerable<Channel> SortChannels(IEnumerable<Channel> channels, SortMode sortMode)
+    {
+        return sortMode switch
+        {
+            SortMode.None => channels,
+            SortMode.Ascending => channels.OrderBy(c => int.Parse(c.ChannelNumber)),
+            SortMode.Descending => channels.OrderByDescending(c => int.Parse(c.ChannelNumber)),
+            _ => channels
+        };
     }
 }

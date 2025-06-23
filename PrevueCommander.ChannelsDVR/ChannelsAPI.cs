@@ -4,7 +4,7 @@ namespace PrevueCommander.ChannelsDVR;
 
 public class ChannelsAPI
 {
-    private string _address;
+    private readonly string _address;
 
     public ChannelsAPI(string address)
     {

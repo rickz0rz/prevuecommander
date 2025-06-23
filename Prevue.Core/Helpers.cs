@@ -6,7 +6,7 @@ public static class Helpers
     {
         // Do more testing on this with dates past 255 days
         var p = dateTime.DayOfYear;
-        return (byte)((p >= 256) ? (p - 255) : p);
+        return (byte)(p >= 256 ? p - 255 : p);
     }
 
     public static byte[] GuideFontTokenMapper(string token)
@@ -65,7 +65,6 @@ public static class Helpers
         var currentToken = string.Empty;
 
         for (var i = 0; i < chars.Length; i++)
-        {
             switch (chars[i])
             {
                 case '%': // Token start
@@ -73,13 +72,9 @@ public static class Helpers
                     {
                         inTokenMode = false;
                         if (string.IsNullOrWhiteSpace(currentToken))
-                        {
-                            bytes.AddRange(new[] { (byte)'%'});
-                        }
+                            bytes.AddRange(new[] { (byte)'%' });
                         else
-                        {
                             bytes.AddRange(tokenMapper(currentToken));
-                        }
 
                         currentToken = string.Empty;
                     }
@@ -99,17 +94,12 @@ public static class Helpers
                     break;
                 default:
                     if (inTokenMode)
-                    {
                         currentToken += chars[i];
-                    }
                     else
-                    {
                         bytes.Add((byte)chars[i]);
-                    }
 
                     break;
             }
-        }
 
         /*
         // If we left off in the middle of a token..

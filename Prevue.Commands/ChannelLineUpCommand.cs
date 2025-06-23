@@ -6,8 +6,8 @@ namespace Prevue.Commands;
 
 public class ChannelLineUpCommand : BaseCommand
 {
-    private readonly DateTime _dateTime;
     private readonly IEnumerable<Channel> _channels;
+    private readonly DateTime _dateTime;
 
     public ChannelLineUpCommand(DateTime dateTime, IEnumerable<Channel> channels) : base('C')
     {
@@ -17,7 +17,8 @@ public class ChannelLineUpCommand : BaseCommand
 
     public override string ToString()
     {
-        return $"{nameof(ChannelLineUpCommand)}: ({GetMessageBytes().Length} bytes) {_channels.Count()} channel(s) -> {string.Join(", ", _channels.Select(c => $"[{c.SourceName}] {c.CallSign} / {c.ChannelNumber}"))}";
+        return
+            $"{nameof(ChannelLineUpCommand)}: ({GetMessageBytes().Length} bytes) {_channels.Count()} channel(s) -> {string.Join(", ", _channels.Select(c => $"[{c.SourceName}] {c.CallSign} / {c.ChannelNumber}"))}";
     }
 
     protected override byte[] GetMessageBytes()
@@ -36,7 +37,8 @@ public class ChannelLineUpCommand : BaseCommand
             if (!string.IsNullOrWhiteSpace(channel.ChannelNumber))
             {
                 messageBytes.Add(0x11);
-                messageBytes.AddRange(Helpers.ConvertStringToBytes(channel.ChannelNumber, Helpers.GuideFontTokenMapper));
+                messageBytes.AddRange(Helpers.ConvertStringToBytes(channel.ChannelNumber,
+                    Helpers.GuideFontTokenMapper));
             }
 
             // TODO: Add channel line-up time slots.

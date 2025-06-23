@@ -1,5 +1,4 @@
 using Prevue.Commands;
-using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 

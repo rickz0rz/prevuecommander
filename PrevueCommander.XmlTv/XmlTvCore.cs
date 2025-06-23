@@ -2,7 +2,6 @@ using System.Xml;
 using System.Xml.Serialization;
 using Prevue.Commands;
 using PrevueCommander.XmlTv.Model;
-using CommandChannel = Prevue.Commands.Model.Channel;
 
 namespace PrevueCommander.XmlTv;
 
@@ -11,7 +10,7 @@ public static class XmlTvCore
     private static DateTime ParseXmlTvDate(string date)
     {
         return DateTime.Parse(
-            $"{date[0..4]}-{date[4..6]}-{date[6..8]}T{date[8..10]}:{date[10..12]}:{date[12..14]}{date[15..]}");
+            $"{date[..4]}-{date[4..6]}-{date[6..8]}T{date[8..10]}:{date[10..12]}:{date[12..14]}{date[15..]}");
     }
 
     public static async Task<Tv> ParseXmlFile(string xmlTvFilename)
@@ -49,8 +48,8 @@ public static class XmlTvCore
             return null;
 
         var title = (programme.Title?.FirstOrDefault(t => (t.Lang ?? "").Split(",")
-                        .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
-                    programme.Title?.FirstOrDefault()?.Text ?? "No Data").Replace("%", "%%");
+                         .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
+                     programme.Title?.FirstOrDefault()?.Text ?? "No Data").Replace("%", "%%");
         var desc = (programme.Desc?.FirstOrDefault(t => (t.Lang ?? "").Split(",")
                         .Any(l => l.Trim().Equals("en", StringComparison.OrdinalIgnoreCase)))?.Text ??
                     programme.Desc?.FirstOrDefault()?.Text ?? "No Data").Replace("%", "%%");

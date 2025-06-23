@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Prevue.Core;
 using PrevueCommander.Model;
 using PrevueCommander.Model.PlaybookCommands;
@@ -18,7 +19,7 @@ public static class Utilities
             .Where(p => type.IsAssignableFrom(p) && !p.IsInterface);
 
         return from assignableType in assignableTypes
-            let name = System.Text.Json.JsonNamingPolicy.CamelCase.ConvertName(
+            let name = JsonNamingPolicy.CamelCase.ConvertName(
                 assignableType.Name.Replace("PlaybookCommand", string.Empty))
             select (new TagName($"tag:yaml.org,2002:{name}"), assignableType);
     }
@@ -63,14 +64,14 @@ public static class Utilities
                 {
                     ChannelsDVRServers = new List<ChannelsDVRServer>
                     {
-                        new ChannelsDVRServer
+                        new()
                         {
                             ServerAddress = "http://192.168.0.119:8089",
                             MaximumNumberOfChannels = 100
                         }
                     },
                     SendChannelLineUp = true,
-                    ChannelNumberOrder = SortMode.None,
+                    ChannelNumberOrder = SortMode.None
                 },
                 new LocalAdsPlaybookCommand
                 {

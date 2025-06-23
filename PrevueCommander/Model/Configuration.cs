@@ -10,10 +10,9 @@ public enum Output
 
 public record Configuration
 {
-    [YamlMember]
-    public string? Hostname { get; init; }
-    [YamlMember]
-    public int? Port { get; init; }
-    [YamlMember]
-    public Output? Output { get; init; }
+    [YamlMember] public string? Hostname { get; init; }
+
+    [YamlMember] public int? Port { get; init; }
+
+    [YamlMember] public Output? Output { get; init; }
 }

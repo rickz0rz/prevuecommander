@@ -11,20 +11,9 @@ public class Channel
     private Lazy<string> _channelNumber;
     private Lazy<string> _sourceName;
 
-    [XmlElement(ElementName = "display-name")]
-    public List<string>? DisplayName { get; set; }
-    [XmlElement(ElementName = "icon")]
-    public Icon? Icon { get; set; }
-    [XmlAttribute(AttributeName = "id")]
-    public string? Id { get; set; }
-
-    public string CallSign => _callSign.Value;
-    public string ChannelNumber => _channelNumber.Value;
-    public string SourceName => _sourceName.Value;
-
     public Channel()
     {
-        _callSign = new Lazy<string>(new Func<string>(() =>
+        _callSign = new Lazy<string>(() =>
         {
             foreach (var component in from displayName in DisplayName
                      select displayName.Split(" ")
@@ -32,13 +21,11 @@ public class Channel
                      from component in components
                      where component.ToCharArray().Any(char.IsLetter) && !component.Contains(':')
                      select component)
-            {
                 return component;
-            }
 
             // throw new Exception("Unable to find channel number in displayName");
             return string.Empty;
-        }));
+        });
 
         _channelNumber = new Lazy<string>(() =>
         {
@@ -48,9 +35,7 @@ public class Channel
                      from component in components
                      where component.ToCharArray().All(c => char.IsDigit(c) || c is '.' or '-')
                      select component)
-            {
                 return component;
-            }
 
             // throw new Exception("Unable to find channel number in displayName");
             return string.Empty;
@@ -66,4 +51,15 @@ public class Channel
             return hashString.Length > 6 ? hashString[..6] : hashString;
         });
     }
+
+    [XmlElement(ElementName = "display-name")]
+    public List<string>? DisplayName { get; set; }
+
+    [XmlElement(ElementName = "icon")] public Icon? Icon { get; set; }
+
+    [XmlAttribute(AttributeName = "id")] public string? Id { get; set; }
+
+    public string CallSign => _callSign.Value;
+    public string ChannelNumber => _channelNumber.Value;
+    public string SourceName => _sourceName.Value;
 }
