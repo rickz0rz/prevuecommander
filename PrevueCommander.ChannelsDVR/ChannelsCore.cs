@@ -29,23 +29,34 @@ public static class ChannelsCore
             if (parsedDate >= date.AddHours(2))
                 return null;
 
-            var title = airingElement.GetProperty("Title").GetString().Replace("%", "%%");
+            var titleValue = airingElement.GetProperty("Title").GetString();
+            var isMovie = airingElement.TryGetProperty("MovieID", out var _);
+            var title = isMovie
+                ? titleValue.Split("\"", StringSplitOptions.RemoveEmptyEntries).First().Split("(").First().Trim().Replace("%", "%%")
+                : titleValue.Replace("%", "%%");
             var summary = airingElement.TryGetProperty("Summary", out var _)
                 ? airingElement.GetProperty("Summary").GetString().Replace("%", "%%")
                 : string.Empty;
-            var isMovie = airingElement.TryGetProperty("MovieID", out var _);
             var foundRating = airingElement.TryGetProperty("ContentRating", out var _)
                 ? airingElement.GetProperty("ContentRating").GetString()
                 : string.Empty;
             var rating = !string.IsNullOrWhiteSpace(foundRating) ? $" %{foundRating.Replace("-", "")}%" : "";
-            var stereo = string.Empty;
-            var closedCaptioning = string.Empty;
+            var stereo = airingElement.GetProperty("Tags").EnumerateArray().Any(x => x.GetString().Equals("Stereo"))
+                ? "%STEREO%"
+                : string.Empty;
+            var closedCaptioning = airingElement.GetProperty("Tags").EnumerateArray().Any(x => x.GetString().Equals("CC"))
+                ? "%CC%"
+                : string.Empty;
             var movieReleaseYear = isMovie
                 ? airingElement.GetProperty("ReleaseYear").GetInt32().ToString()
                 : string.Empty;
+            var extraString = isMovie
+                ? $"{summary}{rating}{stereo}{closedCaptioning}"
+                : $"{rating}{stereo}{closedCaptioning}".Trim();
+            extraString = string.IsNullOrWhiteSpace(extraString) ? string.Empty : $" {extraString}".TrimEnd();
             var generatedDescription = isMovie
-                ? $"\"{title}\" ({movieReleaseYear}) {summary}{rating}{stereo}{closedCaptioning}"
-                : $"{title}{rating}{stereo}{closedCaptioning}";
+                ? $"\"{title.Trim()}\" ({movieReleaseYear}){extraString}"
+                : $"{title.Trim()}{extraString}";
 
             return new ChannelProgramCommand(parsedDate,
                 sourceName,

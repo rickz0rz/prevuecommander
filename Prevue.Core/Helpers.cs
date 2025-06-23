@@ -14,6 +14,7 @@ public static class Helpers
         return token switch
         {
             "CC" => new byte[] { 0x7C },
+            "STEREO" => new byte[] { 0x91 },
             "VCRPLUS" => new byte[] { 0x8E },
             "DISNEY" => new byte[] { 0x92 },
             "R" => new byte[] { 0x84 },
