@@ -11,10 +11,10 @@ commands:
   useCurrentDate: true
   date:
 - !!configureDst {}
-- !!guideDataImport
-  xmlTvFiles:
-  - path: xmltv.xml
-    maximumNumberOfChannels: 5
+- !!channelsDVRGuideDataImport
+  channelsDVRServers:
+  - serverAddress: http://192.168.0.119:8089
+    maximumNumberOfChannels: 100
   sendChannelLineUp: true
   channelNumberOrder: None
 - !!localAds

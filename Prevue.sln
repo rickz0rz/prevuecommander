@@ -10,6 +10,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrevueCommander.XmlTv", "Pr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrevueCommander.Tests", "PrevueCommander.Tests\PrevueCommander.Tests.csproj", "{D9C99793-19B3-4571-9C51-7E6D820B66CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrevueCommander.ChannelsDVR", "PrevueCommander.ChannelsDVR\PrevueCommander.ChannelsDVR.csproj", "{C73392DF-BB05-431D-8987-EB6AC7EF7763}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -36,5 +38,9 @@ Global
 		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D9C99793-19B3-4571-9C51-7E6D820B66CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C73392DF-BB05-431D-8987-EB6AC7EF7763}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C73392DF-BB05-431D-8987-EB6AC7EF7763}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C73392DF-BB05-431D-8987-EB6AC7EF7763}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C73392DF-BB05-431D-8987-EB6AC7EF7763}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

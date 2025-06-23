@@ -1,4 +1,5 @@
 using Prevue.Commands;
+using Prevue.Core;
 using PrevueCommander.Model.PlaybookCommands.CommandObjects;
 using PrevueCommander.XmlTv;
 using PrevueCommander.XmlTv.Model;
@@ -6,14 +7,7 @@ using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public enum SortMode
-{
-    None,
-    Ascending,
-    Descending
-}
-
-public record GuideDataImportPlaybookCommand : IBasePlaybookCommand
+public record XmlTvGuideDataImportPlaybookCommand : IBasePlaybookCommand
 {
     private IEnumerable<Channel> SortChannels(IEnumerable<Channel> channels, SortMode sortMode)
     {
@@ -27,7 +21,7 @@ public record GuideDataImportPlaybookCommand : IBasePlaybookCommand
     }
 
     [YamlMember]
-    public List<XmlTvFile> XmlTvFiles { get; init; }
+    public List<XmlTvFile>? XmlTvFiles { get; init; }
     [YamlMember]
     public bool SendChannelLineUp { get; init; }
     [YamlMember]
@@ -39,7 +33,7 @@ public record GuideDataImportPlaybookCommand : IBasePlaybookCommand
         var programCommands = new List<ChannelProgramCommand>();
         var now = DateTime.Now;
 
-        foreach (var xmlTvFile in XmlTvFiles)
+        foreach (var xmlTvFile in XmlTvFiles ?? Enumerable.Empty<XmlTvFile>())
         {
             if (string.IsNullOrWhiteSpace(xmlTvFile.Path) || !File.Exists(xmlTvFile.Path))
                 throw new Exception($"File {xmlTvFile.Path} not valid.");

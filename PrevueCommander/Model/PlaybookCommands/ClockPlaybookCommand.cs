@@ -14,7 +14,7 @@ public record ClockPlaybookCommand : IBasePlaybookCommand
     public Task<List<BaseCommand>> Transform()
     {
         var clockCommand = new ClockCommand(UseCurrentDate || !string.IsNullOrWhiteSpace(Date)
-            ? DateTime.Now
+            ? DateTime.Now.AddHours(1)
             : DateTime.Parse(Date));
 
         return Task.FromResult(new List<BaseCommand>

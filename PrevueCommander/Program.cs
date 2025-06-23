@@ -1,10 +1,8 @@
 ﻿using System.Net;
-using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using PrevueCommander.Model;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using CommandChannel = Prevue.Commands.Model.Channel;
 
 namespace PrevueCommander
 {

@@ -1,3 +1,4 @@
+using Prevue.Core;
 using PrevueCommander.Model;
 using PrevueCommander.Model.PlaybookCommands;
 using PrevueCommander.Model.PlaybookCommands.CommandObjects;
@@ -31,8 +32,8 @@ public static class Utilities
 
         var yaml = yamlSerializer.Serialize(new Playbook
         {
-            Commands = new List<IBasePlaybookCommand>
-            {
+            Commands =
+            [
                 new AddressPlaybookCommand { Target = "*" },
                 new ConfigurationPlaybookCommand(),
                 new NewLookConfigurationPlaybookCommand
@@ -42,16 +43,30 @@ public static class Utilities
                         DisplayMode = 'S'
                     }
                 },
+
                 new ClockPlaybookCommand { UseCurrentDate = true },
                 new ConfigureDstPlaybookCommand(),
-                new GuideDataImportPlaybookCommand
+                /*new XmlTvGuideDataImportPlaybookCommand
                 {
-                    XmlTvFiles = new()
-                    {
+                    XmlTvFiles =
+                    [
                         new XmlTvFile
                         {
                             Path = "xmltv.xml",
                             MaximumNumberOfChannels = 5
+                        }
+                    ],
+                    SendChannelLineUp = true,
+                    ChannelNumberOrder = SortMode.None,
+                },*/
+                new ChannelsDVRGuideDataImportPlaybookCommand
+                {
+                    ChannelsDVRServers = new List<ChannelsDVRServer>
+                    {
+                        new ChannelsDVRServer
+                        {
+                            ServerAddress = "http://192.168.0.119:8089",
+                            MaximumNumberOfChannels = 100
                         }
                     },
                     SendChannelLineUp = true,
@@ -59,19 +74,21 @@ public static class Utilities
                 },
                 new LocalAdsPlaybookCommand
                 {
-                    Ads = new List<string>
-                    {
+                    Ads =
+                    [
                         "%COLOR%%BLACK%%CYAN%You all want some..." +
                         "%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?" +
                         "%RIGHT%%COLOR%%BLACK%%RED%No problem!",
+
                         "Hello, world!"
-                    }
+                    ]
                 },
+
                 new TitlePlaybookCommand { Text = "PREVUE GUIDE" },
                 new SavePlaybookCommand(),
                 new ReloadPlaybookCommand(),
                 new BoxOffPlaybookCommand()
-            },
+            ],
             Configuration = new Configuration
             {
                 Hostname = "127.0.0.1",
