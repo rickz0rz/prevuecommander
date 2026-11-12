@@ -1,51 +1,50 @@
+using System.Text;
+
 namespace Prevue.Commands;
 
-public class BaseCommand
+/// <summary>
+/// A command of the Prevue serial data feed. ESQ reads a command as <c>55 AA</c>, the command code, the payload, a NUL
+/// byte and a checksum. The checksum is the XOR of all the bytes before it, which is <c>$FF</c> XOR the command code
+/// XOR the payload (<c>_ESQ_GenerateXorChecksumByte</c>).
+/// </summary>
+public abstract class BaseCommand
 {
-    private readonly byte[] _commandCodes;
+    private static readonly byte[] Preamble = [0x55, 0xAA];
 
-    protected BaseCommand(byte commandCode)
+    private readonly byte[] _commandCode;
+
+    protected BaseCommand(params byte[] commandCode)
     {
-        _commandCodes = new[] { commandCode };
+        _commandCode = commandCode;
     }
 
-    protected BaseCommand(byte[] commandCodes)
+    protected BaseCommand(char commandCode) : this((byte)commandCode)
     {
-        _commandCodes = commandCodes;
     }
 
-    protected BaseCommand(char commandCode)
+    /// <summary>The bytes between the command code and the NUL terminator.</summary>
+    protected abstract byte[] GetPayload();
+
+    /// <summary>The bytes of the command, ready to send.</summary>
+    public virtual byte[] Render() => Frame([.. _commandCode, .. GetPayload(), 0x00]);
+
+    public override string ToString() => GetType().Name;
+
+    /// <summary>Puts the preamble before the bytes and the checksum after them.</summary>
+    protected static byte[] Frame(byte[] body)
     {
-        _commandCodes = new[] { (byte)commandCode };
+        byte[] frame = [.. Preamble, .. body, 0x00];
+        frame[^1] = Checksum(frame.AsSpan(0, frame.Length - 1));
+        return frame;
     }
 
-    protected BaseCommand(char[] commandCodes)
+    protected static byte Checksum(ReadOnlySpan<byte> bytes)
     {
-        _commandCodes = commandCodes.Select(c => (byte)c).ToArray();
+        byte checksum = 0;
+        foreach (var value in bytes)
+            checksum ^= value;
+        return checksum;
     }
 
-    protected virtual byte[] GetMessageBytes()
-    {
-        throw new NotImplementedException("Can't render the message bytes of the BaseCommand.");
-    }
-
-    public override string ToString()
-    {
-        return nameof(BaseCommand);
-    }
-
-    public byte[] Render()
-    {
-        var bytes = new List<byte>();
-
-        bytes.AddRange(new byte[] { 0x55, 0xAA });
-        bytes.AddRange(_commandCodes);
-        bytes.AddRange(GetMessageBytes());
-        bytes.Add(0x00); // Terminator
-
-        var checkSum = bytes.Aggregate(0, (current, t) => current ^ t);
-        bytes.Add((byte)checkSum);
-
-        return bytes.ToArray();
-    }
+    protected static byte[] Ascii(string text) => Encoding.ASCII.GetBytes(text);
 }

@@ -1,28 +1,40 @@
+# An example PrevueCommander playbook. See the README for all the commands and their settings.
 configuration:
   hostname: 127.0.0.1
-  port: 1234
-  output: Verbose
+  # The TCP port of the serial bridge of the emulator. Esquire uses 5400.
+  port: 5400
+  # Minimal or Verbose (shows the bytes of each command).
+  output: Minimal
+  # The speed of the line. 0 sends at full speed, for an emulator that paces the line.
+  baudRate: 2400
 commands:
+# Select all units.
 - !!address
   target: '*'
-- !!configuration {}
+# The status packet. ESQ needs it before the channel lineup and the local ads.
+- !!configuration
+  configuration:
+    timeZone: '6'
 - !!newLookConfiguration {}
-- !!clock
-  useCurrentDate: true
-  date:
+- !!clock {}
 - !!configureDst {}
-- !!channelsDVRGuideDataImport
-  channelsDVRServers:
-  - serverAddress: http://192.168.0.119:8089
-    maximumNumberOfChannels: 100
+- !!xmlTvGuideDataImport
+  xmlTvFiles:
+  - path: xmltv.xml
+    maximumNumberOfChannels: 50
   sendChannelLineUp: true
-  channelNumberOrder: None
+  channelNumberOrder: Ascending
+# - !!channelsDVRGuideDataImport
+#   channelsDVRServers:
+#   - serverAddress: http://192.168.0.10:8089
+#     maximumNumberOfChannels: 50
+#     filterOnlyHDChannels: true
+#   channelNumberOrder: Ascending
+#   premiumChannels: [HBOHD]
 - !!localAds
   ads:
   - '%COLOR%%BLACK%%CYAN%You all want some...%CENTER%%COLOR%%BLACK%%YELLOW%... colored ads?%RIGHT%%COLOR%%BLACK%%RED%No problem!'
   - Hello, world!
-- !!title
-  text: PREVUE GUIDE
+# ESQ saves the data at the box off command after a save command.
 - !!save {}
-- !!reload {}
 - !!boxOff {}

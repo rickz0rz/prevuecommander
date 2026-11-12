@@ -1,58 +1,74 @@
-﻿using System.Net;
 using System.Net.Sockets;
+using Prevue.Commands;
+using PrevueCommander;
 using PrevueCommander.Model;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
+using PrevueCommander.Model.PlaybookCommands;
+using YamlDotNet.Core;
 
-namespace PrevueCommander;
+Console.WriteLine("PrevueCommander - https://github.com/rickz0rz/prevuecommander");
+Console.WriteLine();
 
-public static class Program
+var playbookPath = Path.GetFullPath(args.Length == 0 ? "playbook.yaml" : args[0]);
+if (!File.Exists(playbookPath))
 {
-    public static async Task Main(string[] args)
-    {
-        Console.WriteLine("===============================================");
-        Console.WriteLine("| PrevueCommander                             |");
-        Console.WriteLine("| https://github.com/rickz0rz/prevuecommander |");
-        Console.WriteLine("===============================================");
-        Console.WriteLine();
+    await File.WriteAllTextAsync(playbookPath, PlaybookLoader.Example());
+    Console.WriteLine($"No playbook found. An example playbook is now at {playbookPath}.");
+    Console.WriteLine("Edit it, and then run PrevueCommander again.");
+    return 1;
+}
 
-        var yamlDeserializerBuilder = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance);
-        yamlDeserializerBuilder = Utilities.GenerateTags().Aggregate(yamlDeserializerBuilder,
-            (current, tag) => current.WithTagMapping(tag.tagName, tag.tagType));
-        var yamlDeserializer = yamlDeserializerBuilder.Build();
+using var cancellation = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) =>
+{
+    e.Cancel = true;
+    cancellation.Cancel();
+};
 
-        var targetYamlFile = args.Length == 0 ? "playbook.yaml" : args[0];
-        if (!File.Exists(targetYamlFile)) await File.WriteAllTextAsync(targetYamlFile, Utilities.GenerateDefaultYaml());
+try
+{
+    var playbook = PlaybookLoader.Parse(await File.ReadAllTextAsync(playbookPath, cancellation.Token));
+    var context = new PlaybookContext(DateTime.Now, Path.GetDirectoryName(playbookPath)!, Console.Out);
 
-        var playbook = yamlDeserializer.Deserialize<Playbook>(await File.ReadAllTextAsync(targetYamlFile));
+    // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
+    var commands = new List<BaseCommand>();
+    foreach (var playbookCommand in playbook.Commands)
+        commands.AddRange(await playbookCommand.TransformAsync(context, cancellation.Token));
 
-        var calculatedHostName = string.IsNullOrWhiteSpace(playbook.Configuration?.Hostname)
-            ? "127.0.0.1"
-            : playbook.Configuration?.Hostname;
+    var configuration = playbook.Configuration;
+    using var client = new TcpClient();
+    Console.WriteLine($"Connecting to {configuration.Hostname}:{configuration.Port}.");
+    await client.ConnectAsync(configuration.Hostname, configuration.Port, cancellation.Token);
 
-        if (!IPAddress.TryParse(calculatedHostName, out var ipAddress))
-        {
-            var hostAddresses = await Dns.GetHostAddressesAsync(calculatedHostName);
-            if (hostAddresses.Any()) ipAddress = hostAddresses.First();
-        }
+    await using var stream = client.GetStream();
+    var writer = new SerialWriter(stream, configuration.BaudRate,
+        TimeSpan.FromMilliseconds(configuration.CommandDelay), configuration.Output == Output.Verbose, Console.Out);
+    foreach (var command in commands)
+        await writer.SendAsync(command, cancellation.Token);
 
-        if (ipAddress == null)
-            throw new Exception("Invalid hostname in configuration");
-
-        var ipEndpoint = new IPEndPoint(ipAddress, playbook.Configuration?.Port ?? 1234);
-        var socket = new Socket(ipEndpoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-        var writer = new DataWriter(socket, playbook.Configuration?.Output == Output.Verbose);
-
-        await socket.ConnectAsync(ipEndpoint);
-
-        if (socket.Connected)
-        {
-            foreach (var command in playbook.Commands)
-            foreach (var subCommand in await command.Transform())
-                writer.AddCommandToBuffer(subCommand);
-
-            writer.FlushBuffer();
-        }
-    }
+    client.Client.Shutdown(SocketShutdown.Send);
+    Console.WriteLine($"Sent {commands.Count} commands.");
+    return 0;
+}
+catch (YamlException e)
+{
+    Console.Error.WriteLine($"The playbook {playbookPath} is not valid: {e.Message}");
+    if (e.InnerException != null)
+        Console.Error.WriteLine(e.InnerException.Message);
+    return 2;
+}
+catch (SocketException e)
+{
+    Console.Error.WriteLine($"Cannot connect to the serial bridge: {e.Message}");
+    return 3;
+}
+catch (OperationCanceledException)
+{
+    Console.Error.WriteLine("Stopped.");
+    return 130;
+}
+catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException or IOException
+                              or HttpRequestException)
+{
+    Console.Error.WriteLine($"Error: {e.Message}");
+    return 4;
 }

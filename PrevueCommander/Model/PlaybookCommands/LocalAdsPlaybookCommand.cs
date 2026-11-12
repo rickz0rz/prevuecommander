@@ -1,21 +1,18 @@
 using Prevue.Commands;
-using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record LocalAdsPlaybookCommand : IBasePlaybookCommand
+/// <summary>Deletes the local ads of ESQ and sends new ones. ESQ needs a configuration command before it.</summary>
+public record LocalAdsPlaybookCommand : SimplePlaybookCommand
 {
-    [YamlMember] public List<string>? Ads { get; init; }
+    public List<string> Ads { get; init; } = [];
 
-    public Task<List<BaseCommand>> Transform()
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context)
     {
-        var commands = new List<BaseCommand>
-        {
-            new LocalAdResetCommand()
-        };
+        if (Ads.Count > LocalAdCommand.MaximumAds)
+            throw new InvalidOperationException(
+                $"The playbook has {Ads.Count} local ads. ESQ keeps a maximum of {LocalAdCommand.MaximumAds}.");
 
-        commands.AddRange((Ads ?? new List<string>()).Select((t, i) => new LocalAdCommand(i, t)));
-
-        return Task.FromResult(commands);
+        return [new ResetLocalAdsCommand(), .. Ads.Select((ad, i) => new LocalAdCommand(i + 1, ad))];
     }
 }

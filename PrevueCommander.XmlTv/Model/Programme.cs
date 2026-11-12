@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using System.Xml.Serialization;
 
 namespace PrevueCommander.XmlTv.Model;
@@ -7,21 +5,6 @@ namespace PrevueCommander.XmlTv.Model;
 [XmlRoot(ElementName = "programme")]
 public class Programme
 {
-    private Lazy<string> _sourceName;
-
-    public Programme()
-    {
-        _sourceName = new Lazy<string>(() =>
-        {
-            if (string.IsNullOrWhiteSpace(Channel))
-                throw new Exception("Programme missing channel information.");
-
-            var shaM = SHA512.Create();
-            var hashString = Convert.ToHexString(shaM.ComputeHash(Encoding.ASCII.GetBytes(Channel)));
-            return hashString.Length > 6 ? hashString[..6] : hashString;
-        });
-    }
-
     [XmlElement(ElementName = "title")] public List<Title>? Title { get; set; }
 
     [XmlElement(ElementName = "desc")] public List<Desc>? Desc { get; set; }
@@ -49,7 +32,5 @@ public class Programme
     [XmlAttribute(AttributeName = "channel")]
     public string? Channel { get; set; }
 
-    [XmlElement(ElementName = "rating")] public Rating? Rating { get; set; }
-
-    public string SourceName => _sourceName.Value;
+    [XmlElement(ElementName = "rating")] public List<Rating>? Rating { get; set; }
 }

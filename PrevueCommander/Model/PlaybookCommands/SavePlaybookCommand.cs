@@ -2,10 +2,8 @@ using Prevue.Commands;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public class SavePlaybookCommand : IBasePlaybookCommand
+/// <summary>Tells ESQ to save the received data to its drive at the next box off.</summary>
+public record SavePlaybookCommand : SimplePlaybookCommand
 {
-    public Task<List<BaseCommand>> Transform()
-    {
-        return Task.FromResult(new List<BaseCommand> { new SaveCommand() });
-    }
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) => [new SaveCommand()];
 }

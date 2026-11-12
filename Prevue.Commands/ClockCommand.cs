@@ -1,35 +1,25 @@
 namespace Prevue.Commands;
 
-public class ClockCommand : BaseCommand
+/// <summary>
+/// The 'K' command: the date and the time of the clock of ESQ. ESQ applies it only when the last field of the 'f'
+/// configuration is '2'. ESQ adds (time zone - 6) hours when it shows the clock, so with the time zone '6' of the
+/// 'F' command the clock shows the time as sent.
+/// </summary>
+public class ClockCommand(DateTime dateTime) : BaseCommand('K')
 {
-    private readonly DateTime _dateTime;
+    public DateTime DateTime { get; } = dateTime;
 
-    public ClockCommand(DateTime dateTime) : base('K')
-    {
-        // Convert the datetime from eastern to central
-        // _dateTime = dateTime.AddHours(-1);
+    public override string ToString() => $"{nameof(ClockCommand)}: {DateTime:yyyy-MM-dd HH:mm:ss}";
 
-        var cstZone = TimeZoneInfo.FindSystemTimeZoneById("Central Standard Time");
-        _dateTime = TimeZoneInfo.ConvertTimeFromUtc(dateTime.ToUniversalTime(), cstZone);
-    }
-
-    public override string ToString()
-    {
-        return $"{nameof(ClockCommand)}: Date/time is {_dateTime:O}";
-    }
-
-    protected override byte[] GetMessageBytes()
-    {
-        return new[]
-        {
-            (byte)_dateTime.DayOfWeek,
-            (byte)(_dateTime.Month - 1),
-            (byte)(_dateTime.Day - 1),
-            (byte)(_dateTime.Year - 1900),
-            (byte)_dateTime.Hour,
-            (byte)_dateTime.Minute,
-            (byte)_dateTime.Second,
-            (byte)(_dateTime.IsDaylightSavingTime() ? 0x1 : 0x0)
-        };
-    }
+    protected override byte[] GetPayload() =>
+    [
+        (byte)DateTime.DayOfWeek,
+        (byte)(DateTime.Month - 1),
+        (byte)(DateTime.Day - 1),
+        (byte)(DateTime.Year - 1900),
+        (byte)DateTime.Hour,
+        (byte)DateTime.Minute,
+        (byte)DateTime.Second,
+        (byte)(DateTime.IsDaylightSavingTime() ? 1 : 0)
+    ];
 }

@@ -2,10 +2,8 @@ using Prevue.Commands;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record BoxOffPlaybookCommand : IBasePlaybookCommand
+/// <summary>Ends the session. ESQ saves its data first if a save command came before.</summary>
+public record BoxOffPlaybookCommand : SimplePlaybookCommand
 {
-    public Task<List<BaseCommand>> Transform()
-    {
-        return Task.FromResult(new List<BaseCommand> { new BoxOffCommand() });
-    }
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) => [new BoxOffCommand()];
 }

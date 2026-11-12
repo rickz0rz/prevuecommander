@@ -1,18 +1,10 @@
 namespace Prevue.Commands;
 
-public class BoxOffCommand : BaseCommand
+/// <summary>
+/// The box off command ($BB): ESQ stops accepting commands until the next 'A' command. If a save command came
+/// before it, ESQ first saves its data to its drive.
+/// </summary>
+public class BoxOffCommand() : BaseCommand(0xBB)
 {
-    public BoxOffCommand() : base(0xBB)
-    {
-    }
-
-    public override string ToString()
-    {
-        return nameof(BoxOffCommand);
-    }
-
-    protected override byte[] GetMessageBytes()
-    {
-        return new byte[] { 0xBB };
-    }
+    protected override byte[] GetPayload() => [0xBB];
 }
