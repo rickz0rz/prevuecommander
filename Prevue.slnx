@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Prevue.Commands/Prevue.Commands.csproj" />
+  <Project Path="Prevue.Core/Prevue.Core.csproj" />
+  <Project Path="PrevueCommander.ChannelsDVR/PrevueCommander.ChannelsDVR.csproj" />
+  <Project Path="PrevueCommander.Tests/PrevueCommander.Tests.csproj" />
+  <Project Path="PrevueCommander.XmlTv/PrevueCommander.XmlTv.csproj" />
+  <Project Path="PrevueCommander/PrevueCommander.csproj" />
+</Solution>
