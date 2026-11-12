@@ -116,6 +116,7 @@ The two imports also have these settings:
 | `channelNumberOrder` | `None` | `None`, `Ascending` or `Descending`. |
 | `premiumChannels` | | Channel numbers or call signs. ESQ shows their programs on a red background. |
 | `excludedChannels` | | Channel numbers or call signs to leave out. |
+| `channelLogos` | | Sends a logo for each channel that has a logo image. See [Channel logos](#channel-logos). |
 
 ESQ keeps the listings of two broadcast days. A broadcast day starts at 5:00 AM and has 48 half-hour slots. ESQ changes to the next day at 5:30 AM. An import sends the lineup and the programs of the current day and of the next day.
 
@@ -126,6 +127,35 @@ The import follows these rules:
 - A program goes into the slot in which it starts. If it does not start at :00 or :30, the text starts with the time, for example `( 8:15) News`.
 - The text has the format of the listings tool of Esquire. A movie is `"Title" (year) summary (rating)`. A sports event is `Title: event title`. Programs with closed captions end with `|`, which ESQ shows as the closed caption symbol.
 - Characters outside ASCII become the nearest ASCII characters, or are removed. The text has a maximum of 120 characters.
+
+### Channel logos
+
+With `channelLogos`, an import also sends channel logos. Channels DVR gives a logo image for each channel. An XMLTV file gives it in the `<icon src="...">` element of a channel. Prevue Commander downloads each PNG image and makes a picture of 640 by 240 pixels: the image is on a light card at the left, on the navy of Prevue. ESQ writes the call letters and the channel number on the right side, for example "WJBKDT on Channel 2.4".
+
+The logos go to `DF0:Logos/Channels`. The name of each file is the source name of its channel, for example `WJBKD4`. ESQ shows a channel logo only when its file name is the source name of a channel of the lineup. Then the import sends a new `LOGO.LST` with the lines of `keepLines` and a line for each channel logo. A channel logo line has no comma.
+
+| Setting | Default | Description |
+|---|---|---|
+| `keepLines` | | The other lines of `LOGO.LST`, for example `Logos/tvgsport.uv,`. |
+| `reload` | `false` | Tells ESQ to read the new `LOGO.LST` at once. This needs `cleanUpUnusedLogos: 'N'`, see `ReloadLogoList`. Without it, the logos show after a restart of ESQ. |
+| `cacheDirectory` | | A directory for the downloaded images, so that the next run does not download them again. |
+| `saveTo` | | A local directory that gets a copy of each IFF file. |
+
+A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seconds, so the logos of 50 channels take about 30 minutes. Use `maximumNumberOfChannels` or `excludedChannels` to send fewer logos.
+
+```yaml
+- !!newLookConfiguration
+  configuration:
+    cleanUpUnusedLogos: 'N'
+- !!channelsDVRGuideDataImport
+  channelsDVRServers:
+  - serverAddress: http://192.168.0.10:8089
+    maximumNumberOfChannels: 20
+  channelLogos:
+    keepLines: [ 'Logos/tvgsport.uv,', 'Logos/Enews.uv,' ]
+    reload: true
+    cacheDirectory: logo-cache
+```
 
 ### Local ads
 

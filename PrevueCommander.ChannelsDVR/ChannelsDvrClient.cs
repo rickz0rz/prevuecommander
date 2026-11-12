@@ -10,7 +10,8 @@ public sealed record ChannelsDvrChannel(
     [property: JsonPropertyName("CallSign")] string? CallSign,
     [property: JsonPropertyName("Station")] string? Station,
     [property: JsonPropertyName("HD")] bool HD,
-    [property: JsonPropertyName("Hidden")] bool Hidden);
+    [property: JsonPropertyName("Hidden")] bool Hidden,
+    [property: JsonPropertyName("Image")] string? Image = null);
 
 /// <summary>
 /// A program on a channel. <see cref="Time"/> is a Unix time, and the duration is in seconds. A sports event has an
