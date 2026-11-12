@@ -167,5 +167,10 @@ public class GraphicsTests
         var transfer = commands.OfType<FileTransferCommand>().Single();
         Assert.Equal("DF0:LOGO.LST", transfer.TargetPath);
         Assert.True(transfer.Render().AsSpan().IndexOf("Logos/tvgsport.uv,\r\nLogos/Ads/01PIZZA,\r\n"u8) >= 0);
+        Assert.Empty(commands.OfType<UtilityCommand>());
+
+        var reload = await new LogoListPlaybookCommand { Lines = ["Logos/tvgsport.uv,"], Reload = true }
+            .TransformAsync(Context, TestContext.Current.CancellationToken);
+        Assert.Equal(UtilityAction.ReloadLogoList, Assert.IsType<UtilityCommand>(reload[^1]).Action);
     }
 }
