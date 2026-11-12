@@ -1,16 +1,15 @@
-using System.Net.Sockets;
 using Prevue.Commands;
 using PrevueCommander.Model;
 
 namespace PrevueCommander;
 
 /// <summary>
-/// Sends each command on its serial line of ESQ. The class connects to a line at its first command, so a playbook
-/// with only control line commands does not need the data line.
+/// Sends each command on its serial line of ESQ, through a TCP bridge or a serial port. The class connects to a line at
+/// its first command, so a playbook with only control line commands does not need the data line.
 /// </summary>
 public sealed class SerialLines(Configuration configuration, TextWriter log) : IAsyncDisposable
 {
-    private readonly Dictionary<SerialLine, (TcpClient Client, SerialWriter Writer)> _connections = [];
+    private readonly Dictionary<SerialLine, (LineConnection Connection, SerialWriter Writer)> _connections = [];
 
     /// <summary>
     /// Makes sure that the configuration has a port for each line that <paramref name="commands"/> use.
@@ -18,9 +17,10 @@ public sealed class SerialLines(Configuration configuration, TextWriter log) : I
     /// <exception cref="InvalidOperationException">A command needs the control line, and it has no port.</exception>
     public void Check(IEnumerable<BaseCommand> commands)
     {
-        if (configuration.ControlPort <= 0 && commands.Any(c => c.Line == SerialLine.Control))
+        if (configuration.ControlPort <= 0 && string.IsNullOrEmpty(configuration.ControlSerialPort) &&
+            commands.Any(c => c.Line == SerialLine.Control))
             throw new InvalidOperationException(
-                "The playbook has control line commands. Set controlPort in the configuration.");
+                "The playbook has control line commands. Set controlPort or controlSerialPort in the configuration.");
     }
 
     public async Task SendAsync(BaseCommand command, CancellationToken cancellationToken)
@@ -38,52 +38,40 @@ public sealed class SerialLines(Configuration configuration, TextWriter log) : I
 
     private async Task<SerialWriter> WriterAsync(SerialLine line, CancellationToken cancellationToken)
     {
-        if (_connections.TryGetValue(line, out var connection))
-            return connection.Writer;
+        if (_connections.TryGetValue(line, out var open))
+            return open.Writer;
 
-        var (port, baudRate, name) = line switch
+        var (serialPort, tcpPort, baudRate, name) = line switch
         {
-            SerialLine.Data => (configuration.Port, configuration.BaudRate, "data line"),
-            SerialLine.Control => (configuration.ControlPort, configuration.ControlBaudRate, "control line"),
+            SerialLine.Data => (configuration.SerialPort, configuration.Port, configuration.BaudRate, "data line"),
+            SerialLine.Control => (configuration.ControlSerialPort, configuration.ControlPort,
+                configuration.ControlBaudRate, "control line"),
             _ => throw new ArgumentOutOfRangeException(nameof(line), line, "This line has no connection.")
         };
 
-        log.WriteLine($"Connecting to the {name} on {configuration.Hostname}:{port}.");
-        var client = new TcpClient();
-        try
+        LineConnection connection;
+        if (!string.IsNullOrEmpty(serialPort))
         {
-            await client.ConnectAsync(configuration.Hostname, port, cancellationToken);
+            log.WriteLine($"Opening the serial port {serialPort} at {baudRate} baud for the {name}.");
+            connection = LineConnection.OpenSerial(serialPort, baudRate);
         }
-        catch
+        else
         {
-            client.Dispose();
-            throw;
+            log.WriteLine($"Connecting to the {name} on {configuration.Hostname}:{tcpPort}.");
+            connection = await LineConnection.OpenTcpAsync(configuration.Hostname, tcpPort, cancellationToken);
         }
 
-        var writer = new SerialWriter(client.GetStream(), baudRate, TimeSpan.FromMilliseconds(configuration.CommandDelay),
+        var writer = new SerialWriter(connection.Stream, baudRate, TimeSpan.FromMilliseconds(configuration.CommandDelay),
             configuration.Output == Output.Verbose, log);
-        _connections[line] = (client, writer);
+        _connections[line] = (connection, writer);
         return writer;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        foreach (var (client, _) in _connections.Values)
-        {
-            // Close the send direction first, so that the bridge gets all the bytes before the connection closes.
-            try
-            {
-                client.Client.Shutdown(SocketShutdown.Send);
-            }
-            catch (SocketException)
-            {
-                // The bridge closed the connection already.
-            }
-
-            client.Dispose();
-        }
+        foreach (var (connection, _) in _connections.Values)
+            await connection.DisposeAsync();
 
         _connections.Clear();
-        return ValueTask.CompletedTask;
     }
 }

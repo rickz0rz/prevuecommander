@@ -109,6 +109,15 @@ public class ControlLineTests
         var lines = new SerialLines(new Configuration(), TextWriter.Null);
         Assert.Throws<InvalidOperationException>(() => lines.Check([new ClearTopHalfCommand()]));
         lines.Check([new SaveCommand(), new PauseCommand(TimeSpan.Zero)]);
+
+        var serial = new SerialLines(new Configuration { ControlSerialPort = "/dev/null" }, TextWriter.Null);
+        serial.Check([new ClearTopHalfCommand()]);
+    }
+
+    [Fact]
+    public void SerialPort_NeedsABaudRate()
+    {
+        Assert.Throws<ArgumentException>(() => LineConnection.OpenSerial("/dev/null", 0));
     }
 
     private static string Body(ControlCommand command)

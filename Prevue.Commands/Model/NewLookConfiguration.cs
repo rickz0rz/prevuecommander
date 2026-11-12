@@ -109,6 +109,24 @@ public record NewLookConfiguration
     /// <summary>47: 'Y' mounts PC1: as the graphics drive.</summary>
     public char PCDiskSupport { get; init; } = 'N';
 
+    /// <summary>
+    /// 48: 'L', 'R', 'B' or 'N'. Selects how the control line moves the banner when ESQ enters runtime mode 2
+    /// (<c>_CONFIG_MsnRuntimeModeSelectorChar_LRBN</c>). ESQ uses 'N' for another character.
+    /// </summary>
+    public char LrbnModeSelector { get; init; } = 'N';
+
+    /// <summary>
+    /// 49: 'Y' lets the control line move the banner with the type 1 sub-command '5' (<c>_CONFIG_LRBN_FlagChar</c>).
+    /// ESQ uses 'Y' for a character that is not 'Y' or 'N'.
+    /// </summary>
+    public char LrbnBannerControl { get; init; } = 'N';
+
+    /// <summary>
+    /// 50: 'M' changes the control line promo, logo and text sub-commands to a clear of the top half
+    /// (<c>_CONFIG_MSN_FlagChar</c>).
+    /// </summary>
+    public char MsnMode { get; init; } = 'N';
+
     /// <summary>51: '2' tells ESQ to accept the 'K' clock command. With '1', ESQ keeps its own clock.</summary>
     public char ClockCommandInFSetting { get; init; } = '2';
 }
