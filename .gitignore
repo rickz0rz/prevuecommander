@@ -38,3 +38,7 @@ msbuild.wrn
 
 # Scripts
 *.sh
+
+# Published programs
+publish_*/
+PrevueCommander-osx
