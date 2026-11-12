@@ -64,6 +64,34 @@ public class ControlLineTests
     }
 
     [Fact]
+    public void Promo_WithTextStyle_SendsSubCommand8()
+    {
+        var commands = Promo.Commands(new PromoBox("Roseanne"), null, style: PromoStyle.Text);
+        Assert.Equal("8*", Body(commands[^1]));
+    }
+
+    [Fact]
+    public void MoveGrid_SendsPositionTimeAndPattern()
+    {
+        Assert.Equal("5A010*", Body(new MoveGridCommand(0xA0, TimeSpan.FromSeconds(1), "*")));
+        Assert.Equal("58025", Body(new MoveGridCommand(0x80, TimeSpan.FromSeconds(2.5))));
+        Assert.Throws<ArgumentOutOfRangeException>(() => new MoveGridCommand(0, TimeSpan.FromSeconds(10)));
+    }
+
+    [Fact]
+    public async Task MoveGrid_Playbook_ReadsTheHexPosition()
+    {
+        var command = PlaybookLoader.Parse("""
+            commands:
+            - !!moveGrid { position: '8C', seconds: 0.5 }
+            """).Commands.Single();
+        var commands = await command.TransformAsync(Context, TestContext.Current.CancellationToken);
+        Assert.Equal("58C05", Body((ControlCommand)commands.Single()));
+        await Assert.ThrowsAsync<ArgumentException>(() => new MoveGridPlaybookCommand { Position = "XYZ" }
+            .TransformAsync(Context, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public void RawPacket_Rejects_BadInput()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new RawControlCommand(0, "x"));

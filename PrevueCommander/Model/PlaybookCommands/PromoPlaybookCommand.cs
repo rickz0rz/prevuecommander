@@ -31,6 +31,9 @@ public record PromoPlaybookCommand : SimplePlaybookCommand
     /// <summary>The box that ESQ tries first when the promo has two boxes.</summary>
     public PromoSide First { get; init; } = PromoSide.Right;
 
+    /// <summary><c>Box</c> shows the background of the box. <c>Text</c> draws only the text.</summary>
+    public PromoStyle Style { get; init; } = PromoStyle.Box;
+
     protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) =>
-        Promo.Commands(Right?.ToBox(), Left?.ToBox(), First == PromoSide.Right);
+        Promo.Commands(Right?.ToBox(), Left?.ToBox(), First == PromoSide.Right, Style);
 }

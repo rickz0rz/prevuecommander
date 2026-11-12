@@ -201,7 +201,8 @@ The control line commands go to `controlPort`. ESQ reads them only when its disp
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!promo` | `right`, `left`: a box with `title`, `channels` (`*`) and `brush`. `first` (`Right`) | Shows a promo in the top half of the screen. |
+| `!!promo` | `right`, `left`: a box with `title`, `channels` (`*`) and `brush`. `first` (`Right`). `style` (`Box`) | Shows a promo in the top half of the screen. With `style: Text`, ESQ draws only the text, over what the top half shows at that time. |
+| `!!moveGrid` | `position` (`A0`), `seconds` (`1`), `channels` | Moves the top of the grid up or down. `position` is two hex digits: a larger value is lower on the screen. `seconds` is the time of the move, from 0 to 9.9. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. `!!clearTopHalf` moves the grid back. |
 | `!!clearTopHalf` | | Removes the promo or the logo. The top half shows the genlock video. |
 | `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
 | `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. In a double-quoted YAML text, `\x12` is the separator of the two boxes. |
@@ -241,11 +242,11 @@ The sub-commands of type 1. The results come from tests with Esquire.
 | Body | What ESQ does |
 |---|---|
 | `1<channels>[\x12<channels>]` | Shows a promo in a box (`!!promo`). If the program plays now, the box shows "Now showing" and the next time. |
-| `8<channels>[\x12<channels>]` | Shows the text of the promo without the box background. |
+| `8<channels>[\x12<channels>]` | Shows the text of the promo without the box background, over what the top half shows (`!!promo` with `style: Text`). |
 | `3` | Removes the promo or the logo (`!!clearTopHalf`). |
 | `D` | Shows the loaded logo (`!!showLogo`). |
 | `4<channels>` or `6<channels>` | Finds a channel by its call letters. If ESQ finds the channel, it clears the top half. If not, it shows the logo. |
-| `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. |
+| `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. `!!moveGrid` sends this sub-command. |
 | `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. In the test, it removed the promo and showed nothing. |
 | `F<op><text>` or `X<op><text>` | Sends a command to the text display: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
 | `W0` | Shows the current weather. Without weather data, it shows "No Current Weather Data Available". |
