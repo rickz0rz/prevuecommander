@@ -7,6 +7,8 @@ configuration:
   output: Minimal
   # The speed of the line. 0 sends at full speed, for an emulator that paces the line.
   baudRate: 2400
+  # The TCP port of the control line, for promos and logos. Esquire opens it with --prevue-ctrl-port. 0 means none.
+  controlPort: 0
 commands:
 # Select all units.
 - !!address
@@ -38,3 +40,8 @@ commands:
 # ESQ saves the data at the box off command after a save command.
 - !!save {}
 - !!boxOff {}
+# Promos need controlPort. ESQ finds the program in the listings that it received.
+# - !!pause
+#   seconds: 30
+# - !!promo
+#   right: { title: Seinfeld, brush: AT }
