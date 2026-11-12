@@ -1,6 +1,7 @@
 using Prevue.Commands;
 using Prevue.Commands.Listings;
 using Prevue.Core;
+using PrevueCommander.Model.PlaybookCommands.CommandObjects;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
@@ -25,6 +26,9 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
     /// <summary>Channel numbers or call signs of the channels to leave out.</summary>
     public List<string> ExcludedChannels { get; init; } = [];
 
+    /// <summary>The settings of the channel logos, or null to send no channel logos.</summary>
+    public ChannelLogoSettings? ChannelLogos { get; init; }
+
     public async Task<IReadOnlyList<BaseCommand>> TransformAsync(PlaybookContext context,
         CancellationToken cancellationToken)
     {
@@ -44,7 +48,10 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
                                   $"{ChannelLineUpCommand.MaximumChannels} are sent.");
         }
 
-        return ListingsBuilder.Build(selected, context.Now, SendChannelLineUp);
+        var commands = ListingsBuilder.Build(selected, context.Now, SendChannelLineUp);
+        if (ChannelLogos != null)
+            commands.AddRange(await ChannelLogoBuilder.BuildAsync(selected, ChannelLogos, context, cancellationToken));
+        return commands;
     }
 
     /// <summary>The channels of all the sources, each source already limited to its maximum number of channels.</summary>

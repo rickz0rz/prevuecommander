@@ -2,6 +2,7 @@ using System.Buffers.Binary;
 using System.IO.Compression;
 using System.Text;
 using Prevue.Commands;
+using Prevue.Commands.Listings;
 using Prevue.Graphics;
 using PrevueCommander.Model.PlaybookCommands;
 using Xunit;
@@ -172,5 +173,52 @@ public class GraphicsTests
         var reload = await new LogoListPlaybookCommand { Lines = ["Logos/tvgsport.uv,"], Reload = true }
             .TransformAsync(Context, TestContext.Current.CancellationToken);
         Assert.Equal(UtilityAction.ReloadLogoList, Assert.IsType<UtilityCommand>(reload[^1]).Action);
+    }
+
+    [Fact]
+    public void ChannelLogo_HasTheTextColorsOfESQ()
+    {
+        var (palette, pixels) = ChannelLogo.Render(PngImage.Read(Png(40, 20)));
+        Assert.Equal(ChannelLogo.Width * ChannelLogo.Height, pixels.Length);
+        Assert.Equal(new AmigaColor(0, 0, 4), palette[0]);
+        Assert.Equal(new AmigaColor(15, 15, 15), palette[1]);
+        // The right part stays empty for the call letters and the channel number.
+        Assert.All(Enumerable.Range(300, 300), x => Assert.Equal(0, pixels[120 * ChannelLogo.Width + x]));
+    }
+
+    [Fact]
+    public async Task ChannelLogos_UseTheSourceNamesOfTheLineUp()
+    {
+        var directory = Directory.CreateTempSubdirectory().FullName;
+        try
+        {
+            // The images come from the cache, so the test downloads nothing.
+            const string url = "https://example.invalid/logo.png";
+            var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(Encoding.UTF8.GetBytes(url)));
+            await File.WriteAllBytesAsync(Path.Combine(directory, hash[..16] + ".png"), Png(40, 20),
+                TestContext.Current.CancellationToken);
+
+            GuideChannel[] channels =
+            [
+                new("2.2", "WJBKDT2", [], LogoUrl: url),
+                new("3", "WMYD", []),
+                new("2.3", "WJBKDT3", [], LogoUrl: url)
+            ];
+            var settings = new Model.PlaybookCommands.CommandObjects.ChannelLogoSettings
+                { KeepLines = ["Logos/tvgsport.uv,"], CacheDirectory = directory, Reload = true };
+            var commands = await ChannelLogoBuilder.BuildAsync(channels, settings, Context,
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(["DF0:Logos/Channels/WJBKDT", "DF0:Logos/Channels/WJBKD2", "DF0:LOGO.LST"],
+                commands.OfType<FileTransferCommand>().Select(c => c.TargetPath));
+            var list = commands.OfType<FileTransferCommand>().Last().Render();
+            Assert.True(list.AsSpan().IndexOf(
+                "Logos/tvgsport.uv,\r\nLogos/Channels/WJBKDT\r\nLogos/Channels/WJBKD2\r\n"u8) >= 0);
+            Assert.Equal(UtilityAction.ReloadLogoList, Assert.IsType<UtilityCommand>(commands[^1]).Action);
+        }
+        finally
+        {
+            Directory.Delete(directory, recursive: true);
+        }
     }
 }

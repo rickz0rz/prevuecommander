@@ -22,7 +22,7 @@ public static class ChannelsDvrGuide
             .DistinctBy(entry => entry.Channel.Number)
             .DistinctBy(entry => CallSign(entry.Channel))
             .Select(entry => new GuideChannel(entry.Channel.Number, CallSign(entry.Channel),
-                (entry.Airings ?? []).Select(Program).ToList()));
+                (entry.Airings ?? []).Select(Program).ToList(), LogoUrl: entry.Channel.Image));
     }
 
     private static string CallSign(ChannelsDvrChannel channel) =>

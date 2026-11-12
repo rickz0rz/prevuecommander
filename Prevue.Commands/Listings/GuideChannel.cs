@@ -5,8 +5,9 @@ namespace Prevue.Commands.Listings;
 /// <param name="CallSign">The call sign or the name of the channel.</param>
 /// <param name="Programs">The programs of the channel.</param>
 /// <param name="Premium">True to show the programs on a red background.</param>
+/// <param name="LogoUrl">The address of a PNG image of the station, or null.</param>
 public sealed record GuideChannel(string Number, string CallSign, IReadOnlyList<GuideProgram> Programs,
-    bool Premium = false);
+    bool Premium = false, string? LogoUrl = null);
 
 /// <summary>A program of a guide.</summary>
 /// <param name="Start">The local start time.</param>

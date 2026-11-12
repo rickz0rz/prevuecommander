@@ -30,7 +30,7 @@ public static class XmlTvGuide
         return (tv.Channel ?? [])
             .Where(c => c.Id != null)
             .Select(c => new GuideChannel(c.ChannelNumber, c.CallSign,
-                programmes[c.Id!].Select(Program).OfType<GuideProgram>().ToList()));
+                programmes[c.Id!].Select(Program).OfType<GuideProgram>().ToList(), LogoUrl: c.Icon?.Src));
     }
 
     /// <summary>A date of XMLTV, for example "20201101160000 +0000", as a local time.</summary>
