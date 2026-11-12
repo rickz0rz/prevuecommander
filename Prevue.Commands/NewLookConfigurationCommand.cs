@@ -54,7 +54,7 @@ public class NewLookConfigurationCommand(NewLookConfiguration? configuration = n
             .. Encoding.ASCII.GetBytes(text),
             0x8E, // 44: the banner value that 'C' at byte 43 selects
             (byte)c.NumberOfColorPalettes, (byte)c.LocalTextAdSource, (byte)c.PCDiskSupport,
-            .. "NNN"u8, // 48-50
+            (byte)c.LrbnModeSelector, (byte)c.LrbnBannerControl, (byte)c.MsnMode,
             (byte)c.ClockCommandInFSetting
         ];
 

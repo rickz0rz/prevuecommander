@@ -13,7 +13,9 @@ If you had cable TV in the 1980s or 1990s, you possibly remember [this channel](
 ## Requirements
 
 - The [.NET 10 SDK](https://dotnet.microsoft.com/download).
-- An emulated Prevue system with its serial port on a TCP port. For example, use [Esquire](https://prevueguide.neocities.org/guides/Esquire), which opens the serial port on TCP port 5400. An Amiga emulator with a TCP serial port also works.
+- A Prevue system:
+  - An emulated system with its serial port on a TCP port. For example, use [Esquire](https://prevueguide.neocities.org/guides/Esquire), which opens the serial port on TCP port 5400. An Amiga emulator with a TCP serial port also works.
+  - Or an Amiga that runs ESQ, connected to a serial port of this computer. See [Connect to an Amiga](#connect-to-an-amiga).
 - Guide data: an XMLTV file (for example from [zap2xml](https://github.com/jef/zap2xml)), or a [Channels DVR](https://getchannels.com/dvr-server/) server.
 
 ## Run it
@@ -33,13 +35,47 @@ A playbook has a `configuration` section and a list of `commands`. Prevue Comman
 |---|---|---|
 | `hostname` | `127.0.0.1` | The host of the serial bridge. |
 | `port` | `5400` | The TCP port of the serial bridge. |
+| `serialPort` | | A serial port of this computer for the data line, for example `/dev/tty.usbserial-1410`, `/dev/ttyUSB0` or `COM3`. When it is set, Prevue Commander writes to this port and does not use `hostname` and `port`. |
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `baudRate` | `2400` | The speed of the line. Prevue Commander sends a maximum of `baudRate / 10` bytes each second. Use `0` only when the emulator paces the line. ESQ has no flow control, and it loses data when its buffer is full. |
 | `commandDelay` | `100` | The pause in milliseconds after each command. |
 | `controlPort` | `0` | The TCP port of the control line bridge. Esquire opens it with `--prevue-ctrl-port`. `0` means that the playbook does not use the control line. |
+| `controlSerialPort` | | A serial port of this computer for the control line. When it is set, Prevue Commander writes to this port and does not use `controlPort`. |
 | `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes until the line sends them, so `0` also works with Esquire. |
 
 Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line.
+
+## Connect to an Amiga
+
+Prevue Commander can write to the serial ports of this computer, in place of a TCP bridge. Use a USB to RS-232 adapter with RS-232 voltages. Do not use a TTL (3.3 V or 5 V) adapter.
+
+Each port sends 8 data bits, no parity and 1 stop bit, without handshake. The port sends at `baudRate` or `controlBaudRate`, so these settings cannot be `0` with a serial port.
+
+The serial port of the Amiga is a DB25 connector. Connect these pins:
+
+| Line | Computer | Amiga DB25 pin |
+|---|---|---|
+| Data line | TXD of the first port | 3 (RXD) |
+| Control line | TXD of the second port | 5 (CTS) |
+| Both | GND of each port | 7 (GND) |
+
+ESQ reads the data line with the receiver of the serial port. The original satellite data feed used 2400 baud. ESQ reads the control line bit by bit on the CTS pin, at 110 baud. Thus the control line needs a second serial port of this computer, and its TXD goes to the CTS pin of the Amiga.
+
+ESQ does not send data back, so the RXD pins of this computer stay open.
+
+For example:
+
+```yaml
+configuration:
+  serialPort: /dev/tty.usbserial-A10
+  baudRate: 2400
+  controlSerialPort: /dev/tty.usbserial-B20
+  controlBaudRate: 110
+```
+
+On Linux, your user must be a member of the group of the port, for example `dialout`. On macOS, use the `/dev/tty.*` or `/dev/cu.*` name of the adapter.
+
+The wiring is from the ESQ code and the Amiga documentation. It was not tested on a real Amiga. Tests with pseudo terminals and Esquire showed that the serial port output is correct.
 
 ## Commands
 
@@ -59,7 +95,7 @@ Each command has a YAML tag, for example `!!localAds`. A command without setting
 | Command | Settings | Description |
 |---|---|---|
 | `!!configuration` | `configuration`: `timeZone` (`'6'`), `scrollSpeed` (`'3'`), `daylightSavingTime` (`true`), `clockOffsetMinutes` (`0`) | The status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
-| `!!newLookConfiguration` | `configuration`: the fields of [`NewLookConfiguration`](Prevue.Commands/Model/NewLookConfiguration.cs) | The configuration record ('f'). ESQ saves it to `config.dat`. The defaults are the values of the original data files. |
+| `!!newLookConfiguration` | `configuration`: the fields of [`NewLookConfiguration`](Prevue.Commands/Model/NewLookConfiguration.cs) | The configuration record ('f'). ESQ saves it to `config.dat`. The defaults are the values of the original data files. `lrbnBannerControl: 'Y'` lets the control line move the grid. |
 | `!!clock` | `date`, `useCurrentDate` | Sets the clock to the local time, or to `date`, for example `2020-11-01T16:00`. ESQ accepts the clock only when `clockCommandInFSetting` of the 'f' configuration is `'2'` (the default). |
 | `!!configureDst` | `year` | Sends the daylight saving time window of the year, from the time zone of this computer. |
 
@@ -163,19 +199,21 @@ These are the types of the control line, from the code of ESQ. A packet has a bo
 | 20* | one character | Keeps a promo type for the next type 1 or 12. If the type is in `PromoId.Dat`, ESQ shows the logo in place of the promo. |
 | 22* | `9<tokens>` or `8` | `9` starts a local avail filter, and `8` stops it. With the diagnostic VIN setting, `0` to `3` control the CTRL output. |
 
-The sub-commands of type 1:
+The sub-commands of type 1. The results come from tests with Esquire.
 
 | Body | What ESQ does |
 |---|---|
-| `1<channels>[\x12<channels>]` | Shows a promo. `!!promo` sends this sub-command. |
-| `8<channels>[\x12<channels>]` | The same search as `1`, with a different index for the status screen. The effect on the screen is not known. |
+| `1<channels>[\x12<channels>]` | Shows a promo in a box (`!!promo`). If the program plays now, the box shows "Now showing" and the next time. |
+| `8<channels>[\x12<channels>]` | Shows the text of the promo without the box background. |
 | `3` | Removes the promo or the logo (`!!clearTopHalf`). |
 | `D` | Shows the loaded logo (`!!showLogo`). |
-| `4<channels>` or `6<channels>` | Finds a channel by its call letters. If ESQ finds no channel, it shows the logo. |
-| `5<hex><hex><digit><digit>[<channels>]` | Moves the banner. This needs the LRBN setting `Y`. The two digits set the speed: seconds, and then tenths of a second. |
-| `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. |
-| `F<op><text>` or `X<op><text>` | Sends a command to the text display. `C` shows a "now showing" line, `J` shows a status line, and `T` shows a highlight frame. |
-| `W0` or `W3` | Shows a weather status. Another character shows the logo. |
+| `4<channels>` or `6<channels>` | Finds a channel by its call letters. If ESQ finds the channel, it clears the top half. If not, it shows the logo. |
+| `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. |
+| `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. In the test, it removed the promo and showed nothing. |
+| `F<op><text>` or `X<op><text>` | Sends a command to the text display: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
+| `W0` | Shows the current weather. Without weather data, it shows "No Current Weather Data Available". |
+| `W3` | Shows the weather forecast. Without weather data, it shows "No Forecast Weather Data Available". |
+| `W` and another character | Shows the logo. |
 
 ## Build and test
 

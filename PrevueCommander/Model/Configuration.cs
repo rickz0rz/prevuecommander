@@ -18,6 +18,12 @@ public record Configuration
     /// <summary>The TCP port of the serial bridge.</summary>
     public int Port { get; init; } = 5400;
 
+    /// <summary>
+    /// A serial port of this computer for the data line, for example "/dev/tty.usbserial-1410" or "COM3". When it is
+    /// set, Prevue Commander writes to this port at <see cref="BaudRate"/>, and it does not use the TCP bridge.
+    /// </summary>
+    public string? SerialPort { get; init; }
+
     public Output Output { get; init; } = Output.Minimal;
 
     /// <summary>
@@ -34,6 +40,12 @@ public record Configuration
     /// <c>--prevue-ctrl-port</c>. 0 means no control line.
     /// </summary>
     public int ControlPort { get; init; }
+
+    /// <summary>
+    /// A serial port of this computer for the control line. When it is set, Prevue Commander writes to this port at
+    /// <see cref="ControlBaudRate"/>, and it does not use <see cref="ControlPort"/>.
+    /// </summary>
+    public string? ControlSerialPort { get; init; }
 
     /// <summary>
     /// The speed of the control line. ESQ reads it at 110 baud. 0 sends at full speed, for a bridge that keeps the

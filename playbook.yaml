@@ -3,12 +3,15 @@ configuration:
   hostname: 127.0.0.1
   # The TCP port of the serial bridge of the emulator. Esquire uses 5400.
   port: 5400
+  # For an Amiga on a serial port of this computer, set the port in place of the TCP bridge.
+  # serialPort: /dev/tty.usbserial-A10
   # Minimal or Verbose (shows the bytes of each command).
   output: Minimal
   # The speed of the line. 0 sends at full speed, for an emulator that paces the line.
   baudRate: 2400
   # The TCP port of the control line, for promos and logos. Esquire opens it with --prevue-ctrl-port. 0 means none.
   controlPort: 0
+  # controlSerialPort: /dev/tty.usbserial-B20
 commands:
 # Select all units.
 - !!address

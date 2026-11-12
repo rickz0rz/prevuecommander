@@ -60,7 +60,7 @@ catch (OperationCanceledException)
     return 130;
 }
 catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException or IOException
-                              or HttpRequestException)
+                              or HttpRequestException or UnauthorizedAccessException)
 {
     Console.Error.WriteLine($"Error: {e.Message}");
     return 4;

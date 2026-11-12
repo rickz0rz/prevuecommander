@@ -46,8 +46,12 @@ public class CommandTests
     public void NewLookConfiguration_UsesTheFieldsOfThePlaybook()
     {
         var record = NewLookConfigurationCommand.Record(new NewLookConfiguration
-            { DisplayMode = 'S', MilitaryTime = 'Y', MinutesToDisplayPPVPostStart = 120 });
+            {
+                DisplayMode = 'S', MilitaryTime = 'Y', MinutesToDisplayPPVPostStart = 120, LrbnModeSelector = 'B',
+                LrbnBannerControl = 'Y', MsnMode = 'M'
+            });
         Assert.Equal((byte)'S', record[8]);
+        Assert.Equal("BYM"u8.ToArray(), record[48..51]);
         Assert.Equal((byte)'Y', record[41]);
         Assert.Equal("120"u8.ToArray(), record[34..37]);
     }
