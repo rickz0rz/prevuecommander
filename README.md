@@ -154,7 +154,7 @@ An ad can have these tokens:
 
 ESQ first writes a received file to `RAM:`, in the same directories as the target. Then it copies the file to the target. If a directory does not exist in `RAM:` or on the target volume, the file does not arrive. Thus, for a target in a directory, `!!fileTransfer` first sends `MakeDir` commands for the directories in `RAM:` and on the target volume.
 
-`ReloadGraphicAds` reloads only `gfx/g_ads.data`. `ReloadLogoList` also reads `LOGO.LST` again and starts at its first line. In a test with Esquire, ESQ stopped with a memory error after `ReloadLogoList`. Test it before you use it. ESQ always reads `LOGO.LST` when it starts.
+`ReloadGraphicAds` reloads only `gfx/g_ads.data`. `ReloadLogoList` also reads `LOGO.LST` again and starts at its first line. Before it reads the list, ESQ scans the directory `DH2:logos` if `cleanUpUnusedLogos` is `'Y'` (the default). Without that directory, ESQ stops. Tests in Esquire and FS-UAE gave the same result. Thus send `cleanUpUnusedLogos: 'N'` in `!!newLookConfiguration` before you use `ReloadLogoList`. ESQ always reads `LOGO.LST` when it starts.
 
 ESQ has no command for a title text. To change the banner, send a new banner file with `!!fileTransfer`, and then send `!!utility` with `ReloadBanner`.
 
@@ -165,7 +165,7 @@ These commands convert PNG files to the IFF pictures of ESQ, and send them with 
 | Command | Settings | Description |
 |---|---|---|
 | `!!graphicAd` | `source`, `name`, `resolution` (`Low`), `fit` (`Contain`), `background` (`#000044`), `keyBackground` (`true`), `saveTo`, `address` (`*`) | Sends a picture for the top half of the screen to `DF0:Logos/Ads/<name>`. The default name is the first 8 letters and digits of the file name, in upper case. |
-| `!!logoList` | `lines`, `address` (`*`) | Sends a new `LOGO.LST` with these lines. |
+| `!!logoList` | `lines`, `reload` (`false`), `address` (`*`) | Sends a new `LOGO.LST` with these lines. With `reload`, ESQ reads the new list at once. |
 | `!!banner` | `source`, `fit` (`Contain`), `background` (`#000033`), `height` (`160`), `reload` (`true`), `saveTo`, `address` (`*`) | Sends the banner between the rows of the grid to `DF0:Banner/ADBANNER.UV`, and a `BANNER.INI` with its name. With `reload`, ESQ shows the new banner at once. |
 
 The settings of the pictures:
@@ -178,9 +178,12 @@ The settings of the pictures:
 
 The pixels of the Amiga are not square, so Prevue Commander gives the image the shape that it has on a TV. For a full ad, use an image with a ratio of 2.46 to 1, for example 1080 by 440 pixels. For a full banner, use a ratio of 3.4 to 1, for example 1088 by 320 pixels. The banner uses only 4 colors of its own, so use few colors.
 
-ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,`. Prevue Commander cannot read the `LOGO.LST` of the drive, so `!!logoList` must give all the lines to keep. ESQ reads `LOGO.LST` when it starts. For example:
+ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,`. Prevue Commander cannot read the `LOGO.LST` of the drive, so `!!logoList` must give all the lines to keep. With `reload: true`, `!!logoList` tells ESQ to read the new list at once. This needs `cleanUpUnusedLogos: 'N'`, see `ReloadLogoList` above. For example:
 
 ```yaml
+- !!newLookConfiguration
+  configuration:
+    cleanUpUnusedLogos: 'N'
 - !!graphicAd
   source: ads/pizza.png
 - !!logoList
@@ -188,12 +191,13 @@ ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,
   - Logos/Ads/PIZZA,
   - Logos/tvgsport.uv,
   - Logos/Enews.uv,
+  reload: true
 - !!banner
   source: ads/banner.png
 - !!boxOff {}
 ```
 
-Then restart ESQ. On a real Amiga, `!!reset` restarts it. The tests used a new start of Esquire. The ad shows in turn with the other logos, and `!!showLogo` shows the next logo at once.
+The ad shows in turn with the other logos, and `!!showLogo` shows the next logo at once. Without `reload`, the new list applies after a restart of ESQ, for example with `!!reset`.
 
 ### Control line
 
@@ -275,6 +279,21 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
 Set `port: 5401` in the playbook, and run Prevue Commander when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error.
 
 To test the control line, add `--prevue-ctrl-port 5402` and set `controlPort: 5402` in the playbook. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
+
+## Test with FS-UAE
+
+[FS-UAE](https://fs-uae.net/) emulates all the Amiga hardware, so it shows the real behavior of ESQ. Its serial port can be a TCP port. For example, this line of the FS-UAE configuration opens the serial port of the Amiga on TCP port 1234:
+
+```
+serial_port = tcp://127.0.0.1:1234
+```
+
+1. Make a copy of the hard drive directory of Prevue. The commands change files on the drive, for example `config.dat` and `LOGO.LST`.
+2. Set `hard_drive_1` in the FS-UAE configuration to the copy.
+3. Start FS-UAE, and wait until the grid shows.
+4. Set `port: 1234` and `baudRate: 2400` in the playbook, and run Prevue Commander.
+
+FS-UAE writes the files of the drive to the host directory, so you can examine them after a file transfer. The control line was not tested with FS-UAE.
 
 ## Project layout
 

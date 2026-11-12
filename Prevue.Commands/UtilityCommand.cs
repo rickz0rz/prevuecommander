@@ -12,7 +12,8 @@ public enum UtilityAction
     /// <summary>
     /// Scan the logo directory if the configuration allows it, and then reload gfx/g_ads.data and LOGO.LST
     /// (<c>ED1_WaitForFlagAndClearBit1</c>, mode 0). ESQ frees the loaded logos and starts at the first line of the
-    /// new list. In a test with Esquire, ESQ stopped with a bad FreeMem after this action. Test it before you use it.
+    /// new list. With the logo scan on (configuration byte 42 'Y'), ESQ scans DH2:logos, and it stops when that
+    /// directory does not exist. Tests in Esquire and FS-UAE gave the same crash. Send byte 42 'N' first.
     /// </summary>
     ReloadLogoList,
 

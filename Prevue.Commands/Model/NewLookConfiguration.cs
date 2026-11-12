@@ -94,7 +94,10 @@ public record NewLookConfiguration
     /// <summary>41: 'Y' shows the clock in 24-hour format.</summary>
     public char MilitaryTime { get; init; } = 'N';
 
-    /// <summary>42: 'Y' scans the logo directory.</summary>
+    /// <summary>
+    /// 42: 'Y' scans the directory DH2:logos before ESQ reads LOGO.LST again (<c>_CONFIG_ParseiniLogoScanEnabledFlag</c>).
+    /// Without that directory, the reload of LOGO.LST stops ESQ. Use 'N' with <see cref="UtilityAction.ReloadLogoList"/>.
+    /// </summary>
     public char CleanUpUnusedLogos { get; init; } = 'Y';
 
     /// <summary>43: 'C' tells ESQ to use byte 44 for the banner.</summary>
