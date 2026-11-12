@@ -53,4 +53,24 @@ public class PlaybookTests
         var commands = await new ClockPlaybookCommand().TransformAsync(Context, CancellationToken.None);
         Assert.Equal(Context.Now, Assert.IsType<ClockCommand>(Assert.Single(commands)).DateTime);
     }
+
+    [Fact]
+    public async Task FileTransfer_InADirectory_MakesTheRamDirectoryFirst()
+    {
+        var source = Path.GetTempFileName();
+        try
+        {
+            var command = new FileTransferPlaybookCommand { Source = source, Target = "DF0:Logos/AD.IFF" };
+            var commands = await command.TransformAsync(Context, CancellationToken.None);
+            Assert.Equal(
+                ["BoxOffCommand", "AddressCommand", "UtilityCommand", "BoxOffCommand", "AddressCommand",
+                    "FileTransferCommand"],
+                commands.Select(c => c.GetType().Name));
+            Assert.Equal("32MakeDir RAM:Logos", ((UtilityCommand)commands[2]).Text);
+        }
+        finally
+        {
+            File.Delete(source);
+        }
+    }
 }

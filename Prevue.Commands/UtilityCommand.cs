@@ -3,11 +3,18 @@ namespace Prevue.Commands;
 /// <summary>The actions of the 'x' command that are known.</summary>
 public enum UtilityAction
 {
-    /// <summary>Reload gfx/g_ads.data and LOGO.LST.</summary>
-    ReloadAdsAndLogos,
+    /// <summary>
+    /// Reload the graphic ads of gfx/g_ads.data. ESQ does not read LOGO.LST again
+    /// (<c>ED1_WaitForFlagAndClearBit0</c> calls <c>ESQIFF_ReloadExternalAssetCatalogBuffers</c> with mode 1).
+    /// </summary>
+    ReloadGraphicAds,
 
-    /// <summary>Scan the logo directory (if the configuration allows it), then reload gfx/g_ads.data.</summary>
-    ScanLogos,
+    /// <summary>
+    /// Scan the logo directory if the configuration allows it, and then reload gfx/g_ads.data and LOGO.LST
+    /// (<c>ED1_WaitForFlagAndClearBit1</c>, mode 0). ESQ frees the loaded logos and starts at the first line of the
+    /// new list. In a test with Esquire, ESQ stopped with a bad FreeMem after this action. Test it before you use it.
+    /// </summary>
+    ReloadLogoList,
 
     /// <summary>Rebuild the brush list from the built-in table.</summary>
     RebuildBrushList,
@@ -41,8 +48,8 @@ public enum UtilityAction
 }
 
 /// <summary>
-/// The 'x' command: a text that starts with an ASCII digit family (<c>PARSEINI_HandleFontCommand</c>). Family "33"
-/// reloads files and family "34" shows screens.
+/// The 'x' command: a text that starts with an ASCII digit family (<c>PARSEINI_HandleFontCommand</c>). Family "32"
+/// runs an AmigaDOS command, family "33" reloads files and family "34" shows screens.
 /// </summary>
 public class UtilityCommand : BaseCommand
 {
@@ -61,18 +68,32 @@ public class UtilityCommand : BaseCommand
         Text = text;
     }
 
+    /// <summary>
+    /// Runs an AmigaDOS command line with dos <c>Execute</c>, for example "MakeDir RAM:Logos". ESQ waits until the
+    /// command ends.
+    /// </summary>
+    public static UtilityCommand Shell(string commandLine)
+    {
+        if (commandLine.Length == 0 || commandLine.Any(c => c is < ' ' or > '~'))
+            throw new ArgumentException("An AmigaDOS command line must have printable ASCII characters only.",
+                nameof(commandLine));
+        return new UtilityCommand(ShellFamily + commandLine);
+    }
+
+    private const string ShellFamily = "32";
+
     public UtilityAction? Action { get; }
 
     public string Text { get; }
 
-    public override string ToString() => $"{nameof(UtilityCommand)}: {Action} (\"{Text}\")";
+    public override string ToString() => $"{nameof(UtilityCommand)}: {Action?.ToString() ?? "Shell"} (\"{Text}\")";
 
     protected override byte[] GetPayload() => Ascii(Text);
 
     private static string Code(UtilityAction action) => action switch
     {
-        UtilityAction.ReloadAdsAndLogos => "334",
-        UtilityAction.ScanLogos => "335",
+        UtilityAction.ReloadGraphicAds => "334",
+        UtilityAction.ReloadLogoList => "335",
         UtilityAction.RebuildBrushList => "336",
         UtilityAction.ReloadBrushes => "33a",
         UtilityAction.ReloadGradient => "33b",

@@ -105,6 +105,22 @@ public class CommandTests
     }
 
     [Fact]
+    public void Shell_SendsFamily32()
+    {
+        Assert.Equal("32MakeDir RAM:Logos"u8.ToArray(), UtilityCommand.Shell("MakeDir RAM:Logos").Render()[3..^2]);
+        Assert.Throws<ArgumentException>(() => UtilityCommand.Shell("bad\nline"));
+        Assert.Throws<ArgumentException>(() => UtilityCommand.Shell(new string('x', 79)));
+    }
+
+    [Fact]
+    public void FileTransfer_NeedsTheDirectoriesInRam()
+    {
+        Assert.Empty(new FileTransferCommand("DF0:AD.IFF", [1]).RamDirectories());
+        Assert.Equal(["RAM:Logos", "RAM:Logos/Ads"],
+            new FileTransferCommand("DF0:Logos/Ads/AD.IFF", [1]).RamDirectories());
+    }
+
+    [Fact]
     public void FileTransfer_SendsHeaderBlocksAndEnd()
     {
         var content = Enumerable.Range(0, 300).Select(i => (byte)i).ToArray();
