@@ -47,15 +47,63 @@ public sealed class PromoTitlesCommand(string? right, string? left) : ControlCom
     protected override string Body => (right ?? string.Empty) + (left == null ? string.Empty : Separator + left);
 }
 
-/// <summary>
-/// Type 1 with <c>1</c>: shows the promo. ESQ tries the boxes in the order of <see cref="PromoOrderCommand"/>, and
-/// shows the first box whose title it finds. If it finds no title, it shows the loaded logo.
-/// </summary>
-public sealed class ShowPromoCommand(string? rightChannels, string? leftChannels) : ControlCommand(1)
+/// <summary>How ESQ shows a promo.</summary>
+public enum PromoStyle
 {
+    /// <summary>Type 1 with <c>1</c>: the text of the promo on the background of its box.</summary>
+    Box,
+
+    /// <summary>
+    /// Type 1 with <c>8</c>: the same search, but ESQ draws only the text, without the background of the box. The text
+    /// goes over what the top half shows: the genlock video, or the colors of the last logo.
+    /// </summary>
+    Text
+}
+
+/// <summary>
+/// Type 1 with <c>1</c> or <c>8</c>: shows the promo. ESQ tries the boxes in the order of
+/// <see cref="PromoOrderCommand"/>, and shows the first box whose title it finds. If it finds no title, it shows the
+/// loaded logo.
+/// </summary>
+public sealed class ShowPromoCommand(string? rightChannels, string? leftChannels, PromoStyle style = PromoStyle.Box)
+    : ControlCommand(1)
+{
+    public PromoStyle Style { get; } = style;
+
     // ESQ needs a pattern before the separator, also for a promo with only a left box.
     protected override string Body =>
-        "1" + (rightChannels ?? "*") + (leftChannels == null ? string.Empty : Separator + leftChannels);
+        (Style == PromoStyle.Box ? "1" : "8") + (rightChannels ?? "*") +
+        (leftChannels == null ? string.Empty : Separator + leftChannels);
+}
+
+/// <summary>
+/// Type 1 with <c>5</c>: moves the top of the grid up or down. The configuration byte 49 (LrbnBannerControl) must be
+/// 'Y'. Without it, ESQ shows the loaded logo. A clear of the top half moves the grid back.
+/// </summary>
+/// <remarks>
+/// The body is <c>5</c>, the position as two hex digits, the time as seconds and tenths of a second, and an optional
+/// pattern of call letters. In a test with Esquire, position $A0 was lower than $80.
+/// </remarks>
+public sealed class MoveGridCommand : ControlCommand
+{
+    public MoveGridCommand(byte position, TimeSpan duration, string? channels = null) : base(1)
+    {
+        var tenths = (int)Math.Round(duration.TotalSeconds * 10);
+        if (tenths is < 0 or > 99)
+            throw new ArgumentOutOfRangeException(nameof(duration), "The time of a grid move is from 0 to 9.9 seconds.");
+        if (channels != null && (channels.Length == 0 || channels.Any(c => c is <= ' ' or > '~')))
+            throw new ArgumentException("The channel pattern must be printable ASCII text without spaces.",
+                nameof(channels));
+        Position = position;
+        Tenths = tenths;
+        Channels = channels;
+    }
+
+    public byte Position { get; }
+    public int Tenths { get; }
+    public string? Channels { get; }
+
+    protected override string Body => $"5{Position:X2}{Tenths / 10}{Tenths % 10}{Channels}";
 }
 
 /// <summary>Type 1 with <c>3</c>: removes the promo or the logo. The top half shows the genlock video.</summary>
@@ -76,7 +124,8 @@ public static class Promo
     /// Makes the packets of a promo, in the order of the Esquire launcher: the brushes (only if a box has a brush),
     /// the order (only for two boxes), the titles, and the show command.
     /// </summary>
-    public static List<ControlCommand> Commands(PromoBox? right, PromoBox? left, bool rightFirst = true)
+    public static List<ControlCommand> Commands(PromoBox? right, PromoBox? left, bool rightFirst = true,
+        PromoStyle style = PromoStyle.Box)
     {
         if (right == null && left == null)
             throw new ArgumentException("A promo needs a right box, a left box, or both.");
@@ -89,7 +138,7 @@ public static class Promo
         if (right != null && left != null)
             commands.Add(new PromoOrderCommand(rightFirst));
         commands.Add(new PromoTitlesCommand(right?.Title, left?.Title));
-        commands.Add(new ShowPromoCommand(right?.Channels, left?.Channels));
+        commands.Add(new ShowPromoCommand(right?.Channels, left?.Channels, style));
         return commands;
     }
 
