@@ -7,6 +7,10 @@ namespace PrevueCommander.Model.PlaybookCommands;
 /// an address command while a unit is selected. So this command sends a box off command and an address command
 /// before the file.
 /// </summary>
+/// <remarks>
+/// For a target in a directory, the command first makes the directory in RAM: with the AmigaDOS command MakeDir, in a
+/// session of its own. ESQ writes the temporary file there. MakeDir fails without harm if the directory exists.
+/// </remarks>
 public record FileTransferPlaybookCommand : IPlaybookCommand
 {
     /// <summary>The local file. A relative path starts at the directory of the playbook.</summary>
@@ -22,6 +26,18 @@ public record FileTransferPlaybookCommand : IPlaybookCommand
         CancellationToken cancellationToken)
     {
         var content = await File.ReadAllBytesAsync(context.ResolvePath(Source), cancellationToken);
-        return [new BoxOffCommand(), new AddressCommand(Address), new FileTransferCommand(Target, content)];
+        var transfer = new FileTransferCommand(Target, content);
+
+        var commands = new List<BaseCommand>();
+        var directories = transfer.RamDirectories().ToList();
+        if (directories.Count > 0)
+        {
+            commands.Add(new BoxOffCommand());
+            commands.Add(new AddressCommand(Address));
+            commands.AddRange(directories.Select(d => UtilityCommand.Shell($"MakeDir {d}")));
+        }
+
+        commands.AddRange([new BoxOffCommand(), new AddressCommand(Address), transfer]);
+        return commands;
     }
 }

@@ -15,6 +15,10 @@ namespace Prevue.Commands;
 /// with "RAM:", so the path must start with a volume name of 4 characters, for example "DF0:". At the end, ESQ copies
 /// the file to the target path.
 /// </para>
+/// <para>
+/// ESQ cannot open the temporary file if its directory does not exist in RAM:, and then it ignores the transfer. For a
+/// target in a directory, make the directories in RAM: first (see <see cref="RamDirectories"/>).
+/// </para>
 /// </remarks>
 public class FileTransferCommand : BaseCommand
 {
@@ -38,6 +42,17 @@ public class FileTransferCommand : BaseCommand
     }
 
     public string TargetPath { get; }
+
+    /// <summary>
+    /// The directories that the temporary file needs in RAM:, from the top directory down. For example,
+    /// "DF0:Logos/Ads/AD.IFF" needs "RAM:Logos" and "RAM:Logos/Ads". A file at the top of a volume needs none.
+    /// </summary>
+    public IEnumerable<string> RamDirectories()
+    {
+        var parts = TargetPath[4..].Split('/');
+        for (var i = 1; i < parts.Length; i++)
+            yield return "RAM:" + string.Join('/', parts[..i]);
+    }
 
     public override string ToString() => $"{nameof(FileTransferCommand)}: {TargetPath} ({_content.Length} bytes)";
 
