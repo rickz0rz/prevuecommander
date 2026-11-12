@@ -4,6 +4,8 @@
 
 Prevue Commander sends data to an emulated Prevue Guide system. It sends the channel lineup, the listings, local text ads, configuration, the clock, the daylight saving time window and files. It sends them on the serial data line of the Prevue program, as the satellite data feed did.
 
+Prevue Commander can also send commands on the 110 baud control line. These commands show promos of programs and logos in the top half of the screen.
+
 ## What is Prevue Guide?
 
 If you had cable TV in the 1980s or 1990s, you possibly remember [this channel](https://www.youtube.com/watch?v=ceukujHQvwM) in your lineup. An Amiga at the cable company ran it. The program of the Amiga is ESQ ("Esquire"), and it [was recovered](https://prevueguide.com/wiki/Prevue_(ESQ)).
@@ -34,6 +36,10 @@ A playbook has a `configuration` section and a list of `commands`. Prevue Comman
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `baudRate` | `2400` | The speed of the line. Prevue Commander sends a maximum of `baudRate / 10` bytes each second. Use `0` only when the emulator paces the line. ESQ has no flow control, and it loses data when its buffer is full. |
 | `commandDelay` | `100` | The pause in milliseconds after each command. |
+| `controlPort` | `0` | The TCP port of the control line bridge. Esquire opens it with `--prevue-ctrl-port`. `0` means that the playbook does not use the control line. |
+| `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes until the line sends them, so `0` also works with Esquire. |
+
+Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line.
 
 ## Commands
 
@@ -109,6 +115,26 @@ An ad can have these tokens:
 | `!!fileTransfer` | `source`, `target`, `address` (`*`) | Sends a local file to the drive of ESQ. The target must start with a volume of 4 characters, for example `DF0:Logos/MYAD.IFF`. ESQ accepts one file for each address command, so this command first sends a box off command and an address command. |
 | `!!utility` | `action` | Tells ESQ to reload files or to show a screen. The actions are `ReloadAdsAndLogos`, `ScanLogos`, `RebuildBrushList`, `ReloadBrushes`, `ReloadGradient`, `ReloadBanner`, `ReloadDefaults`, `ReloadQTable`, `ReloadSourceConfiguration`, `ToggleMenu`, `ShowDiagnostics` and `ShowVersion`. |
 
+### Control line
+
+The control line commands go to `controlPort`. ESQ reads them only when its display is not busy. Put a `!!pause` between two promos.
+
+| Command | Settings | Description |
+|---|---|---|
+| `!!promo` | `right`, `left`: a box with `title`, `channels` (`*`) and `brush`. `first` (`Right`) | Shows a promo in the top half of the screen. |
+| `!!clearTopHalf` | | Removes the promo or the logo. The top half shows the genlock video. |
+| `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
+| `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. In a double-quoted YAML text, `\x12` is the separator of the two boxes. |
+| `!!pause` | `seconds` (`1`) | Waits before the next command. It does not send data. |
+
+A promo has a box on the right, a box on the left, or both boxes. ESQ finds the program in its listings, so send the listings first. A box has these settings:
+
+- `title` is the title to find. A part of the title is sufficient, and upper case and lower case are the same. Put the title in quotes to find only the exact title.
+- `channels` is a pattern for the call letters, for example `KTIV*`.
+- `brush` is the ID of the background in `BRUSH.INI` on the drive, for example `AT` (orange "around town") or `DT` (blue TV Guide). Without it, the box keeps its background.
+
+The box shows the call letters, the title, the next time of the program and the channel number. ESQ shows only one box. It tries the `first` box, and then the other box. If ESQ does not find a title, it shows the loaded logo.
+
 ESQ has no command for a title text. To change the banner, send a new banner file with `!!fileTransfer`, and then send `!!utility` with `ReloadBanner`.
 
 ## Build and test
@@ -132,12 +158,14 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
 
 Set `port: 5401` in the playbook, and run Prevue Commander when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error.
 
+To test the control line, add `--prevue-ctrl-port 5402` and set `controlPort: 5402` in the playbook. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
+
 ## Project layout
 
 | Project | Description |
 |---|---|
 | `Prevue.Core` | Broadcast days, slots, group codes and text conversion. |
-| `Prevue.Commands` | The commands of the serial data feed, and the listings builder. Each class tells the format that ESQ reads. |
+| `Prevue.Commands` | The commands of the data line and of the control line (`Control`), and the listings builder. Each class tells the format that ESQ reads. |
 | `PrevueCommander.XmlTv` | The XMLTV reader. |
 | `PrevueCommander.ChannelsDVR` | The Channels DVR client. |
 | `PrevueCommander` | The program and the playbook commands. |

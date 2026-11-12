@@ -34,18 +34,11 @@ try
     foreach (var playbookCommand in playbook.Commands)
         commands.AddRange(await playbookCommand.TransformAsync(context, cancellation.Token));
 
-    var configuration = playbook.Configuration;
-    using var client = new TcpClient();
-    Console.WriteLine($"Connecting to {configuration.Hostname}:{configuration.Port}.");
-    await client.ConnectAsync(configuration.Hostname, configuration.Port, cancellation.Token);
-
-    await using var stream = client.GetStream();
-    var writer = new SerialWriter(stream, configuration.BaudRate,
-        TimeSpan.FromMilliseconds(configuration.CommandDelay), configuration.Output == Output.Verbose, Console.Out);
+    await using var lines = new SerialLines(playbook.Configuration, Console.Out);
+    lines.Check(commands);
     foreach (var command in commands)
-        await writer.SendAsync(command, cancellation.Token);
+        await lines.SendAsync(command, cancellation.Token);
 
-    client.Client.Shutdown(SocketShutdown.Send);
     Console.WriteLine($"Sent {commands.Count} commands.");
     return 0;
 }

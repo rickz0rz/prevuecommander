@@ -25,6 +25,9 @@ public abstract class BaseCommand
     /// <summary>The bytes between the command code and the NUL terminator.</summary>
     protected abstract byte[] GetPayload();
 
+    /// <summary>The serial line of ESQ that reads the command.</summary>
+    public virtual SerialLine Line => SerialLine.Data;
+
     /// <summary>The bytes of the command, ready to send.</summary>
     public virtual byte[] Render() => Frame([.. _commandCode, .. GetPayload(), 0x00]);
 

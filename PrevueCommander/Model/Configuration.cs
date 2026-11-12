@@ -9,7 +9,7 @@ public enum Output
     Verbose
 }
 
-/// <summary>The connection to the serial line of ESQ.</summary>
+/// <summary>The connections to the serial lines of ESQ.</summary>
 public record Configuration
 {
     /// <summary>The host name or IP address of the serial bridge of the emulator.</summary>
@@ -28,4 +28,16 @@ public record Configuration
 
     /// <summary>The time in milliseconds between two commands.</summary>
     public int CommandDelay { get; init; } = 100;
+
+    /// <summary>
+    /// The TCP port of the control line bridge, for the promo and logo commands. Esquire opens it with
+    /// <c>--prevue-ctrl-port</c>. 0 means no control line.
+    /// </summary>
+    public int ControlPort { get; init; }
+
+    /// <summary>
+    /// The speed of the control line. ESQ reads it at 110 baud. 0 sends at full speed, for a bridge that keeps the
+    /// bytes until the line sends them, as Esquire does.
+    /// </summary>
+    public int ControlBaudRate { get; init; } = 110;
 }
