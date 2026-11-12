@@ -8,8 +8,9 @@ namespace PrevueCommander.Model.PlaybookCommands;
 /// before the file.
 /// </summary>
 /// <remarks>
-/// For a target in a directory, the command first makes the directory in RAM: with the AmigaDOS command MakeDir, in a
-/// session of its own. ESQ writes the temporary file there. MakeDir fails without harm if the directory exists.
+/// For a target in a directory, the command first makes the directories in RAM: and on the target volume with the
+/// AmigaDOS command MakeDir, in a session of its own. ESQ writes the temporary file in RAM:, and then copies it to the
+/// target. MakeDir fails without harm if a directory exists.
 /// </remarks>
 public record FileTransferPlaybookCommand : IPlaybookCommand
 {
@@ -26,18 +27,24 @@ public record FileTransferPlaybookCommand : IPlaybookCommand
         CancellationToken cancellationToken)
     {
         var content = await File.ReadAllBytesAsync(context.ResolvePath(Source), cancellationToken);
-        var transfer = new FileTransferCommand(Target, content);
+        return Commands(Target, content, Address);
+    }
+
+    /// <summary>The commands that send <paramref name="content"/> to <paramref name="target"/> on the drive.</summary>
+    public static IReadOnlyList<BaseCommand> Commands(string target, byte[] content, string address = "*")
+    {
+        var transfer = new FileTransferCommand(target, content);
 
         var commands = new List<BaseCommand>();
-        var directories = transfer.RamDirectories().ToList();
+        var directories = transfer.Directories().ToList();
         if (directories.Count > 0)
         {
             commands.Add(new BoxOffCommand());
-            commands.Add(new AddressCommand(Address));
+            commands.Add(new AddressCommand(address));
             commands.AddRange(directories.Select(d => UtilityCommand.Shell($"MakeDir {d}")));
         }
 
-        commands.AddRange([new BoxOffCommand(), new AddressCommand(Address), transfer]);
+        commands.AddRange([new BoxOffCommand(), new AddressCommand(address), transfer]);
         return commands;
     }
 }

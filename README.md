@@ -152,11 +152,48 @@ An ad can have these tokens:
 | `!!utility` | `action` | Tells ESQ to reload files or to show a screen. The actions are `ReloadGraphicAds`, `ReloadLogoList`, `RebuildBrushList`, `ReloadBrushes`, `ReloadGradient`, `ReloadBanner`, `ReloadDefaults`, `ReloadQTable`, `ReloadSourceConfiguration`, `ToggleMenu`, `ShowDiagnostics` and `ShowVersion`. |
 | `!!shell` | `commandLine` | Runs an AmigaDOS command line on the Amiga, for example `Delete DF0:OLD.IFF`. The command line has a maximum of 78 characters. ESQ shows no output. |
 
-ESQ first writes a received file to `RAM:`, in the same directories as the target. Then it copies the file to the target. If the directory does not exist in `RAM:`, ESQ ignores the file. Thus, for a target in a directory, `!!fileTransfer` first sends `MakeDir` commands for the directories in `RAM:`.
+ESQ first writes a received file to `RAM:`, in the same directories as the target. Then it copies the file to the target. If a directory does not exist in `RAM:` or on the target volume, the file does not arrive. Thus, for a target in a directory, `!!fileTransfer` first sends `MakeDir` commands for the directories in `RAM:` and on the target volume.
 
 `ReloadGraphicAds` reloads only `gfx/g_ads.data`. `ReloadLogoList` also reads `LOGO.LST` again and starts at its first line. In a test with Esquire, ESQ stopped with a memory error after `ReloadLogoList`. Test it before you use it. ESQ always reads `LOGO.LST` when it starts.
 
 ESQ has no command for a title text. To change the banner, send a new banner file with `!!fileTransfer`, and then send `!!utility` with `ReloadBanner`.
+
+### Pictures
+
+These commands convert PNG files to the IFF pictures of ESQ, and send them with file transfers. Any size of PNG file is correct.
+
+| Command | Settings | Description |
+|---|---|---|
+| `!!graphicAd` | `source`, `name`, `resolution` (`Low`), `fit` (`Contain`), `background` (`#000044`), `keyBackground` (`true`), `saveTo`, `address` (`*`) | Sends a picture for the top half of the screen to `DF0:Logos/Ads/<name>`. The default name is the first 8 letters and digits of the file name, in upper case. |
+| `!!logoList` | `lines`, `address` (`*`) | Sends a new `LOGO.LST` with these lines. |
+| `!!banner` | `source`, `fit` (`Contain`), `background` (`#000033`), `height` (`160`), `reload` (`true`), `saveTo`, `address` (`*`) | Sends the banner between the rows of the grid to `DF0:Banner/ADBANNER.UV`, and a `BANNER.INI` with its name. With `reload`, ESQ shows the new banner at once. |
+
+The settings of the pictures:
+
+- `resolution`: `Low` is 320 by 240 pixels with 32 colors, for photos and color gradients. `High` is 640 by 240 pixels with 16 colors, for small text and thin lines. ESQ shows the top 220 rows.
+- `fit`: `Contain` shows all the image, and the background fills the rest. `Cover` fills all the picture and cuts the edges of the image. `Stretch` fills all the picture and changes the shape of the image.
+- `background`: the color around the image and behind its transparent pixels.
+- `keyBackground`: `true` makes the background the genlock key (color 0). The genlock video then shows through it.
+- `saveTo`: a local directory that gets a copy of the IFF file.
+
+The pixels of the Amiga are not square, so Prevue Commander gives the image the shape that it has on a TV. For a full ad, use an image with a ratio of 2.46 to 1, for example 1080 by 440 pixels. For a full banner, use a ratio of 3.4 to 1, for example 1088 by 320 pixels. The banner uses only 4 colors of its own, so use few colors.
+
+ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,`. Prevue Commander cannot read the `LOGO.LST` of the drive, so `!!logoList` must give all the lines to keep. ESQ reads `LOGO.LST` when it starts. For example:
+
+```yaml
+- !!graphicAd
+  source: ads/pizza.png
+- !!logoList
+  lines:
+  - Logos/Ads/PIZZA,
+  - Logos/tvgsport.uv,
+  - Logos/Enews.uv,
+- !!banner
+  source: ads/banner.png
+- !!boxOff {}
+```
+
+Then restart ESQ. On a real Amiga, `!!reset` restarts it. The tests used a new start of Esquire. The ad shows in turn with the other logos, and `!!showLogo` shows the next logo at once.
 
 ### Control line
 
@@ -243,6 +280,7 @@ To test the control line, add `--prevue-ctrl-port 5402` and set `controlPort: 54
 | Project | Description |
 |---|---|
 | `Prevue.Core` | Broadcast days, slots, group codes and text conversion. |
+| `Prevue.Graphics` | The PNG reader, the color reduction and the IFF writer for the pictures of ESQ. |
 | `Prevue.Commands` | The commands of the data line and of the control line (`Control`), and the listings builder. Each class tells the format that ESQ reads. |
 | `PrevueCommander.XmlTv` | The XMLTV reader. |
 | `PrevueCommander.ChannelsDVR` | The Channels DVR client. |

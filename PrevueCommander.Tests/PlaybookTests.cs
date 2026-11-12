@@ -63,8 +63,8 @@ public class PlaybookTests
             var command = new FileTransferPlaybookCommand { Source = source, Target = "DF0:Logos/AD.IFF" };
             var commands = await command.TransformAsync(Context, CancellationToken.None);
             Assert.Equal(
-                ["BoxOffCommand", "AddressCommand", "UtilityCommand", "BoxOffCommand", "AddressCommand",
-                    "FileTransferCommand"],
+                ["BoxOffCommand", "AddressCommand", "UtilityCommand", "UtilityCommand", "BoxOffCommand",
+                    "AddressCommand", "FileTransferCommand"],
                 commands.Select(c => c.GetType().Name));
             Assert.Equal("32MakeDir RAM:Logos", ((UtilityCommand)commands[2]).Text);
         }

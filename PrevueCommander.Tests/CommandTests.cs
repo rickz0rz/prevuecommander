@@ -119,9 +119,9 @@ public class CommandTests
     [Fact]
     public void FileTransfer_NeedsTheDirectoriesInRam()
     {
-        Assert.Empty(new FileTransferCommand("DF0:AD.IFF", [1]).RamDirectories());
-        Assert.Equal(["RAM:Logos", "RAM:Logos/Ads"],
-            new FileTransferCommand("DF0:Logos/Ads/AD.IFF", [1]).RamDirectories());
+        Assert.Empty(new FileTransferCommand("DF0:AD.IFF", [1]).Directories());
+        Assert.Equal(["RAM:Logos", "RAM:Logos/Ads", "DF0:Logos", "DF0:Logos/Ads"],
+            new FileTransferCommand("DF0:Logos/Ads/AD.IFF", [1]).Directories());
     }
 
     [Fact]

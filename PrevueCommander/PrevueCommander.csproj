@@ -6,6 +6,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Prevue.Commands\Prevue.Commands.csproj"/>
+        <ProjectReference Include="..\Prevue.Graphics\Prevue.Graphics.csproj"/>
         <ProjectReference Include="..\PrevueCommander.ChannelsDVR\PrevueCommander.ChannelsDVR.csproj"/>
         <ProjectReference Include="..\PrevueCommander.XmlTv\PrevueCommander.XmlTv.csproj"/>
     </ItemGroup>

@@ -16,8 +16,9 @@ namespace Prevue.Commands;
 /// the file to the target path.
 /// </para>
 /// <para>
-/// ESQ cannot open the temporary file if its directory does not exist in RAM:, and then it ignores the transfer. For a
-/// target in a directory, make the directories in RAM: first (see <see cref="RamDirectories"/>).
+/// ESQ cannot open the temporary file if its directory does not exist in RAM:, and then it ignores the transfer. The
+/// copy to the target also fails if the target directory does not exist. For a target in a directory, make these
+/// directories first (see <see cref="Directories"/>).
 /// </para>
 /// </remarks>
 public class FileTransferCommand : BaseCommand
@@ -44,14 +45,18 @@ public class FileTransferCommand : BaseCommand
     public string TargetPath { get; }
 
     /// <summary>
-    /// The directories that the temporary file needs in RAM:, from the top directory down. For example,
-    /// "DF0:Logos/Ads/AD.IFF" needs "RAM:Logos" and "RAM:Logos/Ads". A file at the top of a volume needs none.
+    /// The directories that the transfer needs, from the top directory down: first in RAM: for the temporary file,
+    /// then on the target volume. For example, "DF0:Logos/Ads/AD.IFF" needs "RAM:Logos", "RAM:Logos/Ads", "DF0:Logos"
+    /// and "DF0:Logos/Ads". A file at the top of a volume needs none.
     /// </summary>
-    public IEnumerable<string> RamDirectories()
+    public IEnumerable<string> Directories()
     {
         var parts = TargetPath[4..].Split('/');
-        for (var i = 1; i < parts.Length; i++)
-            yield return "RAM:" + string.Join('/', parts[..i]);
+        foreach (var volume in new[] { "RAM:", TargetPath[..4] })
+        {
+            for (var i = 1; i < parts.Length; i++)
+                yield return volume + string.Join('/', parts[..i]);
+        }
     }
 
     public override string ToString() => $"{nameof(FileTransferCommand)}: {TargetPath} ({_content.Length} bytes)";
