@@ -1,74 +1,28 @@
-using Prevue.Commands;
-using Prevue.Core;
+using Prevue.Commands.Listings;
 using PrevueCommander.Model.PlaybookCommands.CommandObjects;
 using PrevueCommander.XmlTv;
-using PrevueCommander.XmlTv.Model;
-using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record XmlTvGuideDataImportPlaybookCommand : IBasePlaybookCommand
+/// <summary>Imports the guide of one or more XMLTV files.</summary>
+public record XmlTvGuideDataImportPlaybookCommand : GuideDataImportPlaybookCommand
 {
-    [YamlMember] public List<XmlTvFile>? XmlTvFiles { get; init; }
+    public List<XmlTvFile> XmlTvFiles { get; init; } = [];
 
-    [YamlMember] public bool SendChannelLineUp { get; init; }
-
-    [YamlMember] public SortMode ChannelNumberOrder { get; init; }
-
-    public async Task<List<BaseCommand>> Transform()
+    protected override async Task<List<GuideChannel>> LoadChannelsAsync(PlaybookContext context,
+        CancellationToken cancellationToken)
     {
-        var channels = new List<Channel>();
-        var programCommands = new List<ChannelProgramCommand>();
-        var now = DateTime.Now;
-
-        foreach (var xmlTvFile in XmlTvFiles ?? Enumerable.Empty<XmlTvFile>())
+        var channels = new List<GuideChannel>();
+        foreach (var file in XmlTvFiles)
         {
-            if (string.IsNullOrWhiteSpace(xmlTvFile.Path) || !File.Exists(xmlTvFile.Path))
-                throw new Exception($"File {xmlTvFile.Path} not valid.");
+            var path = context.ResolvePath(file.Path);
+            if (!File.Exists(path))
+                throw new FileNotFoundException($"The XMLTV file {path} does not exist.", path);
 
-            var xmlTvObject = await XmlTvCore.ParseXmlFile(xmlTvFile.Path);
-            var targetChannels = SortChannels(xmlTvObject.Channel ?? new List<Channel>(), ChannelNumberOrder)
-                .Take(xmlTvFile.MaximumNumberOfChannels)
-                .ToList();
-            channels.AddRange(targetChannels);
-
-            var knownSources = targetChannels.Select(tc => tc.SourceName).ToList();
-
-            foreach (var programme in xmlTvObject.Programme ?? new List<Programme>())
-            {
-                var programCommand = XmlTvCore.GenerateProgramCommand(now, knownSources, programme);
-                if (programCommand != null) programCommands.Add(programCommand);
-            }
+            var tv = await XmlTvGuide.ParseFileAsync(path);
+            channels.AddRange(Limit(XmlTvGuide.Convert(tv), file.MaximumNumberOfChannels));
         }
 
-        var commands = new List<BaseCommand>();
-
-        if (SendChannelLineUp)
-        {
-            var channelsToSend = SortChannels(channels, ChannelNumberOrder)
-                .Select(c => new Prevue.Commands.Model.Channel
-                {
-                    CallSign = c.CallSign,
-                    ChannelNumber = c.ChannelNumber,
-                    SourceName = c.SourceName
-                });
-
-            commands.Add(new ChannelLineUpCommand(now, channelsToSend));
-        }
-
-        commands.AddRange(programCommands);
-
-        return commands;
-    }
-
-    private IEnumerable<Channel> SortChannels(IEnumerable<Channel> channels, SortMode sortMode)
-    {
-        return sortMode switch
-        {
-            SortMode.None => channels,
-            SortMode.Ascending => channels.OrderBy(c => int.Parse(c.ChannelNumber)),
-            SortMode.Descending => channels.OrderByDescending(c => int.Parse(c.ChannelNumber)),
-            _ => channels
-        };
+        return channels;
     }
 }

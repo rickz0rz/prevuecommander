@@ -2,10 +2,13 @@ using Prevue.Commands;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public class ResetPlaybookCommand : IBasePlaybookCommand
+/// <summary>
+/// Reboots the Amiga. ESQ accepts the reset only directly after an address command, so this command sends both.
+/// </summary>
+public record ResetPlaybookCommand : SimplePlaybookCommand
 {
-    public Task<List<BaseCommand>> Transform()
-    {
-        return Task.FromResult(new List<BaseCommand> { new ResetCommand() });
-    }
+    public string Target { get; init; } = "*";
+
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) =>
+        [new AddressCommand(Target), new ResetCommand()];
 }

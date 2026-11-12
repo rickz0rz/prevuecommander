@@ -1,14 +1,11 @@
 using Prevue.Commands;
-using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record AddressPlaybookCommand : IBasePlaybookCommand
+/// <summary>Selects the units that accept the next commands. "*" selects all units.</summary>
+public record AddressPlaybookCommand : SimplePlaybookCommand
 {
-    [YamlMember] public string? Target { get; init; }
+    public string Target { get; init; } = "*";
 
-    public Task<List<BaseCommand>> Transform()
-    {
-        return Task.FromResult(new List<BaseCommand> { new AddressCommand(Target ?? "*") });
-    }
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) => [new AddressCommand(Target)];
 }

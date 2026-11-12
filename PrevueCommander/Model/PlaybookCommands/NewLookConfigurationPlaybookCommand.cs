@@ -1,15 +1,13 @@
 using Prevue.Commands;
-using PrevueCommander.Model.PlaybookCommands.CommandObjects;
-using YamlDotNet.Serialization;
+using Prevue.Commands.Model;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record NewLookConfigurationPlaybookCommand : IBasePlaybookCommand
+/// <summary>Sends the configuration record ('f'). ESQ saves it to config.dat.</summary>
+public record NewLookConfigurationPlaybookCommand : SimplePlaybookCommand
 {
-    [YamlMember] public NewLookConfiguration Configuration { get; init; }
+    public NewLookConfiguration Configuration { get; init; } = new();
 
-    public Task<List<BaseCommand>> Transform()
-    {
-        return Task.FromResult(new List<BaseCommand> { new NewLookConfigurationCommand() });
-    }
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) =>
+        [new NewLookConfigurationCommand(Configuration)];
 }

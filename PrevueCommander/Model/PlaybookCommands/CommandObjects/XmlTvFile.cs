@@ -1,10 +1,10 @@
-using YamlDotNet.Serialization;
-
 namespace PrevueCommander.Model.PlaybookCommands.CommandObjects;
 
 public record XmlTvFile
 {
-    [YamlMember] public string? Path { get; init; }
+    /// <summary>The XMLTV file. A relative path starts at the directory of the playbook.</summary>
+    public string Path { get; init; } = string.Empty;
 
-    [YamlMember] public int MaximumNumberOfChannels { get; init; }
+    /// <summary>The maximum number of channels from this file. 0 means 200, the maximum of ESQ.</summary>
+    public int MaximumNumberOfChannels { get; init; }
 }

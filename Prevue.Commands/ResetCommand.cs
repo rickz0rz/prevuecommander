@@ -1,18 +1,10 @@
 namespace Prevue.Commands;
 
-public class ResetCommand : BaseCommand
+/// <summary>
+/// The 'R' command: ESQ shows "Reset command received" and reboots the Amiga about 10 seconds later. ESQ accepts it
+/// only directly after a matching 'A' command.
+/// </summary>
+public class ResetCommand() : BaseCommand('R')
 {
-    public ResetCommand() : base('R')
-    {
-    }
-
-    public override string ToString()
-    {
-        return nameof(ResetCommand);
-    }
-
-    protected override byte[] GetMessageBytes()
-    {
-        return Array.Empty<byte>();
-    }
+    protected override byte[] GetPayload() => [];
 }

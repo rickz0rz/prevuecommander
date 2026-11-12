@@ -1,23 +1,22 @@
+using System.Globalization;
 using Prevue.Commands;
-using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record ClockPlaybookCommand : IBasePlaybookCommand
+/// <summary>Sets the clock of ESQ to the local time, or to <see cref="Date"/>.</summary>
+public record ClockPlaybookCommand : SimplePlaybookCommand
 {
-    [YamlMember] public bool UseCurrentDate { get; init; }
+    /// <summary>True to send the current time even if <see cref="Date"/> is set.</summary>
+    public bool UseCurrentDate { get; init; }
 
-    [YamlMember] public string? Date { get; set; }
+    /// <summary>A local date and time, for example "2020-11-01T16:00".</summary>
+    public string? Date { get; init; }
 
-    public Task<List<BaseCommand>> Transform()
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context)
     {
-        var clockCommand = new ClockCommand(UseCurrentDate || !string.IsNullOrWhiteSpace(Date)
-            ? DateTime.Now.AddHours(1)
-            : DateTime.Parse(Date));
-
-        return Task.FromResult(new List<BaseCommand>
-        {
-            clockCommand
-        });
+        var time = UseCurrentDate || string.IsNullOrWhiteSpace(Date)
+            ? context.Now
+            : DateTime.Parse(Date, CultureInfo.InvariantCulture);
+        return [new ClockCommand(time)];
     }
 }

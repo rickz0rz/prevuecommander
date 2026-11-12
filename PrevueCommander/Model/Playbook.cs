@@ -1,11 +1,11 @@
 using PrevueCommander.Model.PlaybookCommands;
-using YamlDotNet.Serialization;
 
 namespace PrevueCommander.Model;
 
+/// <summary>The connection settings and the list of commands to send.</summary>
 public record Playbook
 {
-    [YamlMember] public Configuration? Configuration { get; init; } = null!;
+    public Configuration Configuration { get; init; } = new();
 
-    [YamlMember] public List<IBasePlaybookCommand> Commands { get; init; } = null!;
+    public List<IPlaybookCommand> Commands { get; init; } = [];
 }

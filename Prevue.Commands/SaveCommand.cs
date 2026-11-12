@@ -1,18 +1,10 @@
 namespace Prevue.Commands;
 
-public class SaveCommand : BaseCommand
+/// <summary>
+/// The '%' command: ESQ saves the listings, the local ads, the daylight saving time window and the other received
+/// data to its drive at the next box off command. Without it, the data stays only in memory.
+/// </summary>
+public class SaveCommand() : BaseCommand('%')
 {
-    public SaveCommand() : base('%')
-    {
-    }
-
-    public override string ToString()
-    {
-        return nameof(SaveCommand);
-    }
-
-    protected override byte[] GetMessageBytes()
-    {
-        return Array.Empty<byte>();
-    }
+    protected override byte[] GetPayload() => [];
 }

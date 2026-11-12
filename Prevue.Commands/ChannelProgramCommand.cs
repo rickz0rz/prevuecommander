@@ -1,61 +1,56 @@
-using System.Text;
 using Prevue.Core;
 
 namespace Prevue.Commands;
 
+/// <summary>
+/// The 'P' command: the text of the program that starts in a slot of a broadcast day, on the channel with the source
+/// name.
+/// </summary>
+/// <remarks>
+/// ESQ changes some text to symbols of its font: "(CC)" or a trailing "|" to the closed caption symbol, and ratings
+/// in parentheses, for example "(PG-13)" or "(TV-14)", to rating symbols. For a movie, the grid shows the text up to
+/// the second quotation mark on the first line.
+/// </remarks>
 public class ChannelProgramCommand : BaseCommand
 {
-    private readonly string _description;
-    private readonly bool _isMovie;
-    private readonly string _sourceName;
-    private readonly DateTime _startDateTime;
-    private readonly byte _timeSlot;
+    /// <summary>The longest text that the grid can show.</summary>
+    public const int MaximumTextLength = 120;
 
-    public ChannelProgramCommand(DateTime startDateTime, string sourceName,
-        bool isMovie, string description) : base('P')
+    private const byte SourceEnd = 0x12;
+
+    public ChannelProgramCommand(DateOnly day, int slot, string sourceName, bool isMovie, string text) : base('P')
     {
-        _timeSlot = CalculateTimeSlot(startDateTime);
-        _startDateTime = startDateTime.AddHours(-1);
-        _sourceName = sourceName;
-        _isMovie = isMovie;
-        _description = description;
+        if (slot is < 1 or > BroadcastDay.SlotsPerDay)
+            throw new ArgumentOutOfRangeException(nameof(slot), slot, "A slot is 1 to 48.");
+
+        Day = day;
+        Slot = slot;
+        SourceName = ChannelLineUpCommand.ValidSourceName(sourceName);
+        IsMovie = isMovie;
+        Text = PrevueText.ToPrintableAscii(text, MaximumTextLength);
     }
 
-    public override string ToString()
-    {
-        return $"{nameof(ChannelProgramCommand)}: ({_sourceName} @ {_startDateTime}) {_description}";
-    }
+    public DateOnly Day { get; }
 
-    private byte CalculateTimeSlot(DateTime dateTime)
-    {
-        const int uvsgHourOffset = 10; // Their day starts at 5AM, 5 * 2 = 10
-        var ts = dateTime.Hour * 2 + 1 - uvsgHourOffset;
+    public int Slot { get; }
 
-        if (dateTime.Minute >= 15 && dateTime.Minute < 45)
-            ts++;
-        else if (dateTime.Minute >= 45) ts += 2;
+    public string SourceName { get; }
 
-        if (ts > 48)
-            ts -= 48;
-        else if (ts <= 0) ts += 48;
+    public bool IsMovie { get; }
 
-        return (byte)ts;
-    }
+    public string Text { get; }
 
-    protected override byte[] GetMessageBytes()
-    {
-        var messageBytes = new List<byte>
-        {
-            _timeSlot,
-            Helpers.GetJulianDate(_startDateTime)
-        };
+    public override string ToString() =>
+        $"{nameof(ChannelProgramCommand)}: {SourceName} {BroadcastDay.StartOf(Day).AddMinutes((Slot - 1) * 30):yyyy-MM-dd HH:mm} {Text}";
 
-        messageBytes.AddRange(Encoding.ASCII.GetBytes(_sourceName));
-        messageBytes.Add(0x12); // End of source
-
-        messageBytes.Add((byte)(!_isMovie ? 0x1 : 0x3));
-        messageBytes.AddRange(Helpers.ConvertStringToBytes(_description, Helpers.GuideFontTokenMapper));
-
-        return messageBytes.ToArray();
-    }
+    protected override byte[] GetPayload() =>
+    [
+        (byte)Slot,
+        BroadcastDay.GroupCode(Day),
+        .. Ascii(SourceName),
+        SourceEnd,
+        // Bit 0 is always set. Bit 1 marks a movie.
+        (byte)(IsMovie ? 0x03 : 0x01),
+        .. Ascii(Text)
+    ];
 }

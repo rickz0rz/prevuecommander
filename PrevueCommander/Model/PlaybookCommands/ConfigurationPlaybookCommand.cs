@@ -1,11 +1,13 @@
 using Prevue.Commands;
+using Prevue.Commands.Model;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
-public record ConfigurationPlaybookCommand : IBasePlaybookCommand
+/// <summary>Sends the status packet ('F'). ESQ needs it before a channel lineup or a reset of the local ads.</summary>
+public record ConfigurationPlaybookCommand : SimplePlaybookCommand
 {
-    public Task<List<BaseCommand>> Transform()
-    {
-        return Task.FromResult(new List<BaseCommand> { new ConfigurationCommand() });
-    }
+    public StatusConfiguration Configuration { get; init; } = new();
+
+    protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) =>
+        [new ConfigurationCommand(Configuration)];
 }

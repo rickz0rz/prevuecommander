@@ -2,33 +2,69 @@ using Prevue.Core;
 
 namespace Prevue.Commands;
 
+/// <summary>
+/// The 'L' command: a local text ad. ESQ shows the ads between the listings when the local text ad source of the 'f'
+/// configuration is 'R' or 'S'.
+/// </summary>
+/// <remarks>
+/// The text can have these tokens (see <see cref="MapToken"/>):
+/// <list type="bullet">
+/// <item>%COLOR% and then two color tokens: the background and the foreground of the text that follows.</item>
+/// <item>%LEFT%, %CENTER% and %RIGHT%: the alignment of a line. A token that is not at the start of a line starts a
+/// new line.</item>
+/// </list>
+/// An ad has a maximum of 6 lines of 40 characters. ESQ does not wrap words.
+/// </remarks>
 public class LocalAdCommand : BaseCommand
 {
-    private readonly byte[] _ad;
-    private readonly int _index;
+    /// <summary>ESQ keeps a maximum of 45 ads, with the numbers 1 to 45.</summary>
+    public const int MaximumAds = 45;
 
-    public LocalAdCommand(int index, string ad) : base('L')
+    /// <summary>ESQ counts a line error for a record that is longer than 304 bytes.</summary>
+    private const int MaximumRecordLength = 0x130;
+
+    private readonly byte[] _text;
+
+    public LocalAdCommand(int number, string text) : base('L')
     {
-        _index = index;
-        _ad = Helpers.ConvertStringToBytes(ad, Helpers.AdFontTokenMapper);
+        if (number is < 1 or > MaximumAds)
+            throw new ArgumentOutOfRangeException(nameof(number), number, $"An ad number is 1 to {MaximumAds}.");
+
+        _text = PrevueText.Encode(text, MapToken);
+        if (_text.Length + 1 > MaximumRecordLength)
+            throw new ArgumentException(
+                $"Ad {number} has {_text.Length} bytes. The maximum is {MaximumRecordLength - 1}.", nameof(text));
+
+        Number = number;
+        Text = text;
     }
 
-    public override string ToString()
-    {
-        return nameof(LocalAdCommand);
-    }
+    public int Number { get; }
 
-    protected override byte[] GetMessageBytes()
-    {
-        var messageBytes = new List<byte> { (byte)_index };
-        messageBytes.AddRange(_ad);
-        return messageBytes.ToArray();
-    }
+    public string Text { get; }
 
-    public static List<LocalAdCommand> GenerateAdCommands(string[] ads)
+    public override string ToString() => $"{nameof(LocalAdCommand)}: #{Number} \"{Text}\"";
+
+    protected override byte[] GetPayload() => [(byte)Number, .. _text];
+
+    /// <summary>
+    /// The bytes of an ad token. The colors are pen numbers of the palette of ESQ. The names are those of the default
+    /// palette.
+    /// </summary>
+    public static byte[]? MapToken(string token) => token switch
     {
-        var commands = new List<LocalAdCommand>();
-        for (var i = 0; i < ads.Length; i++) commands.Add(new LocalAdCommand(i + 1, ads[i]));
-        return commands;
-    }
+        "COLOR" => [0x03],
+        "TRANSPARENT" => [(byte)'0'],
+        "WHITE" => [(byte)'1'],
+        "BLACK" => [(byte)'2'],
+        "YELLOW" => [(byte)'3'],
+        "RED" => [(byte)'4'],
+        "CYAN" => [(byte)'5'],
+        "GRAY" or "GREY" => [(byte)'6'],
+        "BLUE" => [(byte)'7'],
+        "CENTER" => [0x18],
+        "LEFT" => [0x19],
+        "RIGHT" => [0x1A],
+        _ => null
+    };
 }
