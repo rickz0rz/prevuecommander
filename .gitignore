@@ -38,6 +38,7 @@ msbuild.wrn
 
 # Scripts
 *.sh
+!build-*.sh
 
 # Published programs
 publish_*/

@@ -15,6 +15,10 @@ You write the commands in a YAML file, the playbook. Prevue Commander reads the 
 
 If you had cable TV in the 1980s or 1990s, you may remember [this channel](https://www.youtube.com/watch?v=ceukujHQvwM) in your lineup. An Amiga at the cable company ran it. The program of the Amiga is ESQ ("Esquire"), and it [was recovered](https://prevueguide.com/wiki/Prevue_(ESQ)).
 
+### ESQ versions
+
+Prevue Commander was developed and tested with ESQ 9.0.14. Other versions of ESQ can support different features. For example, ESQ 7.3.13 does not support colored text in local ads. If a command does not work as this README tells, look at the version of ESQ.
+
 ## Requirements
 
 - The [.NET 10 SDK](https://dotnet.microsoft.com/download).
@@ -100,14 +104,7 @@ The wiring is from the ESQ code and the Amiga documentation. It was not tested o
 
 A Raspberry Pi can run Prevue Commander next to the Amiga. The UARTs of the Pi can send the two lines. This setup was not tested. The information comes from the Raspberry Pi documentation.
 
-To build Prevue Commander for a Pi with a 64-bit Raspberry Pi OS, run this command on another computer:
-
-```sh
-dotnet publish PrevueCommander/PrevueCommander.csproj -c Release -r linux-arm64 --self-contained true \
-    -p:PublishSingleFile=true -o publish_linux-arm64
-```
-
-Copy `publish_linux-arm64/PrevueCommander` to the Pi.
+To build Prevue Commander for a Pi with a 64-bit Raspberry Pi OS, run `./build-linux-arm64.sh` on a computer with the .NET 10 SDK. Then copy `publish_linux-arm64/PrevueCommander` to the Pi. The Pi does not need .NET.
 
 > [!WARNING]
 > The GPIO pins of the Pi use 3.3 V logic. The serial port of the Amiga uses RS-232 levels, and the signal is inverted. Do not connect a GPIO pin directly to the Amiga. Use a MAX3232 level shifter board between the Pi and the Amiga.
@@ -285,7 +282,7 @@ An ad can have these tokens:
 
 | Token | Description |
 |---|---|
-| `%COLOR%` and two colors | The background color and then the text color of the text that follows, for example `%COLOR%%BLACK%%CYAN%`. |
+| `%COLOR%` and two colors | The background color and then the text color of the text that follows, for example `%COLOR%%BLACK%%CYAN%`. ESQ 7.3.13 does not support colored text. |
 | `%TRANSPARENT%`, `%WHITE%`, `%BLACK%`, `%YELLOW%`, `%RED%`, `%CYAN%`, `%GRAY%`, `%BLUE%` | The colors 0 to 7 of the default palette. |
 | `%LEFT%`, `%CENTER%`, `%RIGHT%` | The alignment of a line. A token that is not at the start of a line starts a new line. |
 | `%%` | A `%` character. |
@@ -415,7 +412,7 @@ dotnet build
 dotnet test
 ```
 
-`build-osx.sh` makes `PrevueCommander-osx`, a universal macOS program for Apple silicon and Intel. `build-win.sh` makes a Windows x64 program in `publish_win-x64`. These programs do not need .NET on the computer. Run them with the playbook as the argument, for example `./PrevueCommander-osx playbook.yaml`.
+`build-osx.sh` makes `PrevueCommander-osx`, a universal macOS program for Apple silicon and Intel. `build-win.sh` makes a Windows x64 program in `publish_win-x64`. `build-linux-arm64.sh` makes a Linux arm64 program in `publish_linux-arm64`, for example for a Raspberry Pi. These programs do not need .NET on the computer. Run them with the playbook as the argument, for example `./PrevueCommander-osx playbook.yaml`.
 
 Do not trim the output: YamlDotNet and the XMLTV reader need the metadata that trimming removes.
 
