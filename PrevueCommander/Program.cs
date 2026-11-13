@@ -27,9 +27,11 @@ Console.CancelKeyPress += (_, e) =>
 try
 {
     var playbook = PlaybookLoader.Parse(await File.ReadAllTextAsync(playbookPath, cancellation.Token));
-    var now = string.IsNullOrWhiteSpace(playbook.Configuration.Now)
-        ? DateTime.Now
-        : DateTime.Parse(playbook.Configuration.Now, System.Globalization.CultureInfo.InvariantCulture);
+    var now = DateTime.Now;
+    if (!string.IsNullOrWhiteSpace(playbook.Configuration.Now) && !DateTime.TryParse(playbook.Configuration.Now,
+            System.Globalization.CultureInfo.InvariantCulture, out now))
+        throw new FormatException(
+            $"The setting now is not a date and time: {playbook.Configuration.Now}. Use a date such as 1993-02-23T18:00.");
     var context = new PlaybookContext(now, Path.GetDirectoryName(playbookPath)!, Console.Out);
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
