@@ -2,54 +2,72 @@
 
 ## What is this?
 
-Prevue Commander sends data to an emulated Prevue Guide system. It sends the channel lineup, the listings, local text ads, configuration, the clock, the daylight saving time window and files. It sends them on the serial data line of the Prevue program, as the satellite data feed did.
+Prevue Commander sends data to a Prevue Guide system. The system can be an emulator, such as Esquire or FS-UAE, or a real Amiga on a serial port of this computer.
 
-Prevue Commander can also send commands on the 110 baud control line. These commands show promos of programs and logos in the top half of the screen.
+ESQ, the Prevue Guide program, reads two serial lines:
+
+- The **data line** gets the data that the satellite data feed sent. Prevue Commander sends the channel lineup, the listings, local text ads, the configuration, the clock, the daylight saving time window, pictures and other files on this line.
+- The **control line** is a 110 baud line. The commands on this line show promos of programs and logos in the top half of the screen, and move the grid.
+
+You write the commands in a YAML file, the playbook. Prevue Commander reads the playbook and sends its commands in order.
 
 ## What is Prevue Guide?
 
-If you had cable TV in the 1980s or 1990s, you possibly remember [this channel](https://www.youtube.com/watch?v=ceukujHQvwM) in your lineup. An Amiga at the cable company ran it. The program of the Amiga is ESQ ("Esquire"), and it [was recovered](https://prevueguide.com/wiki/Prevue_(ESQ)).
+If you had cable TV in the 1980s or 1990s, you may remember [this channel](https://www.youtube.com/watch?v=ceukujHQvwM) in your lineup. An Amiga at the cable company ran it. The program of the Amiga is ESQ ("Esquire"), and it [was recovered](https://prevueguide.com/wiki/Prevue_(ESQ)).
 
 ## Requirements
 
 - The [.NET 10 SDK](https://dotnet.microsoft.com/download).
-- A Prevue system:
-  - An emulated system with its serial port on a TCP port. For example, use [Esquire](https://prevueguide.neocities.org/guides/Esquire), which opens the serial port on TCP port 5400. An Amiga emulator with a TCP serial port also works.
-  - Or an Amiga that runs ESQ, connected to a serial port of this computer. See [Connect to an Amiga](#connect-to-an-amiga).
-- Guide data: an XMLTV file (for example from [zap2xml](https://github.com/jef/zap2xml)), or a [Channels DVR](https://getchannels.com/dvr-server/) server.
+- A Prevue system, one of these:
+  - An emulator that gives the serial port of ESQ on a TCP port. [Esquire](https://prevueguide.neocities.org/guides/Esquire) opens the data line on TCP port 5400. [FS-UAE](#test-with-fs-uae) can also open the serial port of the Amiga on a TCP port.
+  - An Amiga that runs ESQ, connected to a serial port of this computer. See [Connect to an Amiga](#connect-to-an-amiga).
+- Guide data, if you send listings: an XMLTV file (for example from [zap2xml](https://github.com/jef/zap2xml)), or a [Channels DVR](https://getchannels.com/dvr-server/) server.
 
 ## Run it
 
-1. Start the emulated Prevue system, and wait until the grid shows.
+1. Start the Prevue system, and wait until the grid shows.
 2. Run `dotnet run --project PrevueCommander -- playbook.yaml`.
 
-If the playbook does not exist, Prevue Commander writes an example playbook to that path and stops. Edit the playbook, and run the command again.
+If you do not give a playbook, Prevue Commander uses `playbook.yaml` in the current directory. If the playbook does not exist, Prevue Commander writes an example playbook to that path and stops. Edit the playbook, and run the command again.
 
-A playbook has a `configuration` section and a list of `commands`. Prevue Commander makes all the commands first. If a command fails, for example because the guide data cannot be read, it sends nothing. Then it connects and sends the commands in the order of the list.
+A playbook has a `configuration` section and a list of `commands`. [`playbook.yaml`](playbook.yaml) is the example playbook.
 
-[`playbook.yaml`](playbook.yaml) is the example playbook.
+Prevue Commander makes all the commands before it connects. If a command fails, for example because it cannot read the guide data, Prevue Commander sends nothing. If all the commands are correct, it connects and sends them in the order of the list.
+
+When Prevue Commander stops, it gives one of these exit codes:
+
+| Code | Meaning |
+|---|---|
+| `0` | Prevue Commander sent all the commands. |
+| `1` | The playbook did not exist. Prevue Commander wrote an example playbook. |
+| `2` | The playbook is not valid YAML, or it has an unknown command or setting. |
+| `3` | Prevue Commander cannot connect to the TCP bridge. |
+| `4` | A command or a connection has an error, for example a file that does not exist or a serial port that cannot open. |
+| `130` | You stopped Prevue Commander with Ctrl+C. |
 
 ## Configuration
 
+Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port that an emulator opens for a serial line of the Amiga.
+
 | Setting | Default | Description |
 |---|---|---|
-| `hostname` | `127.0.0.1` | The host of the serial bridge. |
-| `port` | `5400` | The TCP port of the serial bridge. |
-| `serialPort` | | A serial port of this computer for the data line, for example `/dev/tty.usbserial-1410`, `/dev/ttyUSB0` or `COM3`. When it is set, Prevue Commander writes to this port and does not use `hostname` and `port`. |
-| `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
-| `baudRate` | `2400` | The speed of the line. Prevue Commander sends a maximum of `baudRate / 10` bytes each second. Use `0` only when the emulator paces the line. ESQ has no flow control, and it loses data when its buffer is full. |
+| `hostname` | `127.0.0.1` | The host of the TCP bridges. |
+| `port` | `5400` | The TCP port of the data line. |
+| `serialPort` | | A serial port of this computer for the data line, for example `/dev/tty.usbserial-1410`, `/dev/ttyUSB0` or `COM3`. When it is set, Prevue Commander writes to this port and does not use `port`. |
+| `baudRate` | `2400` | The speed of the data line. Prevue Commander sends a maximum of `baudRate / 10` bytes each second. ESQ has no flow control, and it loses data when its buffer is full. `0` sends at full speed. Use `0` only with a TCP bridge that keeps the bytes and sends them at the speed of the line. |
 | `commandDelay` | `100` | The pause in milliseconds after each command. |
-| `controlPort` | `0` | The TCP port of the control line bridge. Esquire opens it with `--prevue-ctrl-port`. `0` means that the playbook does not use the control line. |
+| `controlPort` | `0` | The TCP port of the control line. Esquire opens it with `--prevue-ctrl-port`. `0` means no control line. |
 | `controlSerialPort` | | A serial port of this computer for the control line. When it is set, Prevue Commander writes to this port and does not use `controlPort`. |
-| `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes until the line sends them, so `0` also works with Esquire. |
+| `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes and sends them at the speed of the line, so `0` also works with Esquire. |
+| `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 
-Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line.
+Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line. If a playbook has control line commands, but `controlPort` and `controlSerialPort` are not set, Prevue Commander stops before it sends a command.
 
 ## Connect to an Amiga
 
 Prevue Commander can write to the serial ports of this computer, in place of a TCP bridge. Use a USB to RS-232 adapter with RS-232 voltages. Do not use a TTL (3.3 V or 5 V) adapter.
 
-Each port sends 8 data bits, no parity and 1 stop bit, without handshake. The port sends at `baudRate` or `controlBaudRate`, so these settings cannot be `0` with a serial port.
+Each port sends 8 data bits, no parity and 1 stop bit, without handshake. The data line port sends at `baudRate`, and the control line port sends at `controlBaudRate`. Thus these settings cannot be `0` with a serial port.
 
 The serial port of the Amiga is a DB25 connector. Connect these pins:
 
@@ -59,7 +77,7 @@ The serial port of the Amiga is a DB25 connector. Connect these pins:
 | Control line | TXD of the second port | 5 (CTS) |
 | Both | GND of each port | 7 (GND) |
 
-ESQ reads the data line with the receiver of the serial port. The original satellite data feed used 2400 baud. ESQ reads the control line bit by bit on the CTS pin, at 110 baud. Thus the control line needs a second serial port of this computer, and its TXD goes to the CTS pin of the Amiga.
+ESQ reads the data line with the receiver of the serial port. The original satellite data feed used 2400 baud. ESQ reads the control line bit by bit on the CTS pin, at 110 baud. Thus the control line needs a second serial port of this computer. Connect its TXD to the CTS pin of the Amiga. If you do not use the control line, you need only one port.
 
 ESQ does not send data back, so the RXD pins of this computer stay open.
 
@@ -79,7 +97,17 @@ The wiring is from the ESQ code and the Amiga documentation. It was not tested o
 
 ## Commands
 
-Each command has a YAML tag, for example `!!localAds`. A command without settings is `!!save {}`.
+Each command has a YAML tag, for example `!!localAds`. Write a command without settings with `{}`, for example `!!save {}`. A setting in parentheses in the tables below shows its default value.
+
+A session on the data line has this order:
+
+1. `!!address` selects the units.
+2. `!!configuration` sends the status packet. ESQ needs it before a channel lineup or local ads.
+3. The other data line commands, for example the listings and the local ads.
+4. `!!save`, if ESQ must keep the data after a restart.
+5. `!!boxOff` ends the session.
+
+The control line commands do not need a session. Send them after the listings, because a promo finds its program in the listings.
 
 ### Session
 
@@ -96,8 +124,8 @@ Each command has a YAML tag, for example `!!localAds`. A command without setting
 |---|---|---|
 | `!!configuration` | `configuration`: `timeZone` (`'6'`), `scrollSpeed` (`'3'`), `daylightSavingTime` (`true`), `clockOffsetMinutes` (`0`) | The status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
 | `!!newLookConfiguration` | `configuration`: the fields of [`NewLookConfiguration`](Prevue.Commands/Model/NewLookConfiguration.cs) | The configuration record ('f'). ESQ saves it to `config.dat`. The defaults are the values of the original data files. `lrbnBannerControl: 'Y'` lets the control line move the grid. |
-| `!!clock` | `date`, `useCurrentDate` | Sets the clock to the local time, or to `date`, for example `2020-11-01T16:00`. ESQ accepts the clock only when `clockCommandInFSetting` of the 'f' configuration is `'2'` (the default). |
-| `!!configureDst` | `year` | Sends the daylight saving time window of the year, from the time zone of this computer. |
+| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of the 'f' configuration is `'2'` (the default). |
+| `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. |
 
 ESQ adds (time zone - 6) hours to the clock and to the times of the grid. With the time zone `'6'`, ESQ shows the times as they are sent. Prevue Commander sends local times, so keep `'6'` unless you want another time on the screen.
 
@@ -105,15 +133,17 @@ ESQ adds (time zone - 6) hours to the clock and to the times of the grid. With t
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!xmlTvGuideDataImport` | `xmlTvFiles`: a list of `path` and `maximumNumberOfChannels` | Imports XMLTV files. A relative path starts at the directory of the playbook. |
-| `!!channelsDVRGuideDataImport` | `channelsDVRServers`: a list of `serverAddress`, `maximumNumberOfChannels`, `filterOnlyHDChannels` (`false`) and `filterMusicChoiceChannels` (`true`) | Imports the guide of Channels DVR servers. |
+| `!!xmlTvGuideDataImport` | `xmlTvFiles`: a list of `path` and `maximumNumberOfChannels` (`0`) | Imports XMLTV files. A relative path starts at the directory of the playbook. |
+| `!!channelsDVRGuideDataImport` | `channelsDVRServers`: a list of `serverAddress`, `maximumNumberOfChannels` (`0`), `filterOnlyHDChannels` (`false`) and `filterMusicChoiceChannels` (`true`) | Imports the guide of Channels DVR servers, for example `http://192.168.0.10:8089`. `filterOnlyHDChannels: true` imports only the HD channels. `filterMusicChoiceChannels: true` leaves out the channels with a call sign that starts with `MC`. |
+
+`maximumNumberOfChannels` is the maximum number of channels from one file or server. `0` means 200, the maximum of ESQ.
 
 The two imports also have these settings:
 
 | Setting | Default | Description |
 |---|---|---|
 | `sendChannelLineUp` | `true` | Sends the channel lineup. If the lineup changed, ESQ deletes the programs of the day, so all the programs follow it. |
-| `channelNumberOrder` | `None` | `None`, `Ascending` or `Descending`. |
+| `channelNumberOrder` | `None` | The order of the channels in the grid: `None` (the order of the guide data), `Ascending` or `Descending`. |
 | `premiumChannels` | | Channel numbers or call signs. ESQ shows their programs on a red background. |
 | `excludedChannels` | | Channel numbers or call signs to leave out. |
 | `channelLogos` | | Sends a logo for each channel that has a logo image. See [Channel logos](#channel-logos). |
@@ -122,23 +152,28 @@ ESQ keeps the listings of two broadcast days. A broadcast day starts at 5:00 AM 
 
 The import follows these rules:
 
-- ESQ keeps a maximum of 200 channels. An import sends the first 200 channels and shows a warning.
-- Each channel gets a source name of 1 to 6 letters or digits from its call sign. ESQ shows a maximum of 6 characters of the call sign.
+- ESQ keeps a maximum of 200 channels. If the files and servers give more channels, the import sends the first 200 channels and shows a warning.
+- Each channel gets a source name of 1 to 6 letters or digits from its call sign, in upper case. If two channels get the same name, the second name ends with a number, for example `WJBKD2`. ESQ finds the programs and the channel logos of a channel by its source name.
+- The grid shows the call sign. ESQ shows a maximum of 6 characters of it.
 - A program goes into the slot in which it starts. If it does not start at :00 or :30, the text starts with the time, for example `( 8:15) News`.
 - The text has the format of the listings tool of Esquire. A movie is `"Title" (year) summary (rating)`. A sports event is `Title: event title`. Programs with closed captions end with `|`, which ESQ shows as the closed caption symbol.
 - Characters outside ASCII become the nearest ASCII characters, or are removed. The text has a maximum of 120 characters.
 
 ### Channel logos
 
-With `channelLogos`, an import also sends channel logos. Channels DVR gives a logo image for each channel. An XMLTV file gives it in the `<icon src="...">` element of a channel. Prevue Commander downloads each PNG image and makes a picture of 640 by 240 pixels: the image is on a light card at the left, on the navy of Prevue. ESQ writes the call letters and the channel number on the right side, for example "WJBKDT on Channel 2.4".
+With `channelLogos`, an import also sends channel logos. Channels DVR gives a logo image for most channels. An XMLTV file can give it in the `<icon src="...">` element of a channel. A channel without a logo image gets no channel logo.
 
-The logos go to `DF0:Logos/Channels`. The name of each file is the source name of its channel, for example `WJBKD4`. ESQ shows a channel logo only when its file name is the source name of a channel of the lineup. Then the import sends a new `LOGO.LST` with the lines of `keepLines` and a line for each channel logo. A channel logo line has no comma.
+Prevue Commander downloads each PNG image and makes a picture of 640 by 240 pixels. The image is on a light card at the left, on the navy background of Prevue. ESQ writes the call letters and the channel number on the right side, for example "WJBKDT on Channel 2.4".
+
+The logos go to `DF0:Logos/Channels`. The name of each file is the source name of its channel, for example `WJBKD4`. ESQ shows a channel logo only when its file name is the source name of a channel in the lineup. A test showed this: the logo `WJBKD4` showed on the channel with the call sign `WJBKDT4`.
+
+After the logos, the import sends a new `LOGO.LST`. It has the lines of `keepLines` and a line for each channel logo. A channel logo line has no comma.
 
 | Setting | Default | Description |
 |---|---|---|
-| `keepLines` | | The other lines of `LOGO.LST`, for example `Logos/tvgsport.uv,`. |
-| `reload` | `false` | Tells ESQ to read the new `LOGO.LST` at once. This needs `cleanUpUnusedLogos: 'N'`, see `ReloadLogoList`. Without it, the logos show after a restart of ESQ. |
-| `cacheDirectory` | | A directory for the downloaded images, so that the next run does not download them again. |
+| `keepLines` | | The other lines of `LOGO.LST` to keep, for example `Logos/tvgsport.uv,`. Prevue Commander cannot read the `LOGO.LST` of the drive, so give all the lines to keep. |
+| `reload` | `false` | Tells ESQ to read the new `LOGO.LST` at once. This needs `cleanUpUnusedLogos: 'N'` (see [Files and utilities](#files-and-utilities)). Without `reload`, the logos show after a restart of ESQ. |
+| `cacheDirectory` | | A directory for the downloaded images, so that the next run does not download them again. A relative path starts at the directory of the playbook. |
 | `saveTo` | | A local directory that gets a copy of each IFF file. |
 
 A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seconds, so the logos of 50 channels take about 30 minutes. Use `maximumNumberOfChannels` or `excludedChannels` to send fewer logos.
@@ -161,7 +196,7 @@ A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seco
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. |
+| `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. Send `!!configuration` before it. |
 
 ESQ shows the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines of 40 characters. ESQ does not wrap words.
 
@@ -184,13 +219,18 @@ An ad can have these tokens:
 
 ESQ first writes a received file to `RAM:`, in the same directories as the target. Then it copies the file to the target. If a directory does not exist in `RAM:` or on the target volume, the file does not arrive. Thus, for a target in a directory, `!!fileTransfer` first sends `MakeDir` commands for the directories in `RAM:` and on the target volume.
 
-`ReloadGraphicAds` reloads only `gfx/g_ads.data`. `ReloadLogoList` also reads `LOGO.LST` again and starts at its first line. Before it reads the list, ESQ scans the directory `DH2:logos` if `cleanUpUnusedLogos` is `'Y'` (the default). Without that directory, ESQ stops. Tests in Esquire and FS-UAE gave the same result. Thus send `cleanUpUnusedLogos: 'N'` in `!!newLookConfiguration` before you use `ReloadLogoList`. ESQ always reads `LOGO.LST` when it starts.
+`ReloadGraphicAds` reloads only `gfx/g_ads.data`. `ReloadLogoList` also reads `LOGO.LST` again and starts at its first line.
+
+> [!IMPORTANT]
+> If `cleanUpUnusedLogos` is `'Y'` (the default), `ReloadLogoList` stops ESQ. Before ESQ reads the list, it scans the directory `DH2:logos`. Without that directory, ESQ stops. Tests in Esquire and FS-UAE gave the same result. Send `cleanUpUnusedLogos: 'N'` in `!!newLookConfiguration` before you use `ReloadLogoList`.
+
+ESQ always reads `LOGO.LST` when it starts, so a restart with `!!reset` also loads a new list. A restart takes about 50 seconds in FS-UAE.
 
 ESQ has no command for a title text. To change the banner, send a new banner file with `!!fileTransfer`, and then send `!!utility` with `ReloadBanner`.
 
 ### Pictures
 
-These commands convert PNG files to the IFF pictures of ESQ, and send them with file transfers. Any size of PNG file is correct.
+`!!graphicAd` and `!!banner` convert PNG files to the IFF pictures of ESQ, and send them with file transfers. The PNG file can have any size. `!!logoList` sends the list of logos that ESQ shows in turn in the top half of the screen.
 
 | Command | Settings | Description |
 |---|---|---|
@@ -208,7 +248,7 @@ The settings of the pictures:
 
 The pixels of the Amiga are not square, so Prevue Commander gives the image the shape that it has on a TV. For a full ad, use an image with a ratio of 2.46 to 1, for example 1080 by 440 pixels. For a full banner, use a ratio of 3.4 to 1, for example 1088 by 320 pixels. The banner uses only 4 colors of its own, so use few colors.
 
-ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,`. Prevue Commander cannot read the `LOGO.LST` of the drive, so `!!logoList` must give all the lines to keep. With `reload: true`, `!!logoList` tells ESQ to read the new list at once. This needs `cleanUpUnusedLogos: 'N'`, see `ReloadLogoList` above. For example:
+ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,`. Prevue Commander cannot read the `LOGO.LST` of the drive, so `!!logoList` must give all the lines to keep. With `reload: true`, `!!logoList` tells ESQ to read the new list at once. This needs `cleanUpUnusedLogos: 'N'` (see [Files and utilities](#files-and-utilities)). For example:
 
 ```yaml
 - !!newLookConfiguration
@@ -231,13 +271,13 @@ The ad shows in turn with the other logos, and `!!showLogo` shows the next logo 
 
 ### Control line
 
-The control line commands go to `controlPort`. ESQ reads them only when its display is not busy. Put a `!!pause` between two promos.
+The control line commands go to `controlPort` or `controlSerialPort`. ESQ reads them only when its display is not busy. Put a `!!pause` between two promos, so that each promo stays on the screen.
 
 | Command | Settings | Description |
 |---|---|---|
 | `!!promo` | `right`, `left`: a box with `title`, `channels` (`*`) and `brush`. `first` (`Right`). `style` (`Box`) | Shows a promo in the top half of the screen. With `style: Text`, ESQ draws only the text, over what the top half shows at that time. |
-| `!!moveGrid` | `position` (`A0`), `seconds` (`1`), `channels` | Moves the top of the grid up or down. `position` is two hex digits: a larger value is lower on the screen. `seconds` is the time of the move, from 0 to 9.9. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. `!!clearTopHalf` moves the grid back. |
-| `!!clearTopHalf` | | Removes the promo or the logo. The top half shows the genlock video. |
+| `!!moveGrid` | `position` (`A0`), `seconds` (`1`), `channels` | Moves the top of the grid up or down. `position` is two hex digits: a larger value is lower on the screen. `seconds` is the time of the move, from 0 to 9.9. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the loaded logo. `!!clearTopHalf` moves the grid back. |
+| `!!clearTopHalf` | | Removes the promo or the logo, and moves the grid back. The top half shows the genlock video. |
 | `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
 | `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. In a double-quoted YAML text, `\x12` is the separator of the two boxes. |
 | `!!pause` | `seconds` (`1`) | Waits before the next command. It does not send data. |
@@ -245,14 +285,14 @@ The control line commands go to `controlPort`. ESQ reads them only when its disp
 A promo has a box on the right, a box on the left, or both boxes. ESQ finds the program in its listings, so send the listings first. A box has these settings:
 
 - `title` is the title to find. A part of the title is sufficient, and upper case and lower case are the same. Put the title in quotes to find only the exact title.
-- `channels` is a pattern for the call letters, for example `KTIV*`.
+- `channels` is a pattern for the channels to search, for example `KTIV*`. The ESQ code calls it a pattern for the call letters. The tests used only `*`. ESQ matches channel logos by source name, so the pattern possibly also matches source names.
 - `brush` is the ID of the background in `BRUSH.INI` on the drive, for example `AT` (orange "around town") or `DT` (blue TV Guide). Without it, the box keeps its background.
 
 The box shows the call letters, the title, the next time of the program and the channel number. ESQ shows only one box. It tries the `first` box, and then the other box. If ESQ does not find a title, it shows the loaded logo.
 
 #### Packet types
 
-These are the types of the control line, from the code of ESQ. A packet has a body of a maximum of 196 characters. A machine with a RAVESC selection code ignores the types with an asterisk (*). ESQ ignores the types 6, 8, 9, 10, 14, 18, 19 and 21.
+These are the types of the control line, from the code of ESQ. Use `!!controlPacket` to send a type that has no command. A packet has a body of a maximum of 196 characters. A machine with a RAVESC selection code ignores the types with an asterisk (*). ESQ ignores the types 6, 8, 9, 10, 14, 18, 19 and 21.
 
 | Type | Body | What ESQ does |
 |---|---|---|
@@ -294,11 +334,13 @@ dotnet build
 dotnet test
 ```
 
-`build-osx.sh` makes a universal macOS program. `build-win.sh` makes a Windows x64 program. Do not trim the output: YamlDotNet and the XMLTV reader need the metadata that trimming removes.
+`build-osx.sh` makes `PrevueCommander-osx`, a universal macOS program for Apple silicon and Intel. `build-win.sh` makes a Windows x64 program in `publish_win-x64`. These programs do not need .NET on the computer. Run them with the playbook as the argument, for example `./PrevueCommander-osx playbook.yaml`.
+
+Do not trim the output: YamlDotNet and the XMLTV reader need the metadata that trimming removes.
 
 ## Test with Esquire
 
-Esquire can show what ESQ does with each command. Run a second Esquire on a copy of its drive, with its own serial port, so that you do not change a running Esquire:
+Esquire can show what ESQ does with each command. Run a second Esquire on a copy of its drive, with its own serial port, so that you do not change a running Esquire. Run this command in the Esquire directory:
 
 ```sh
 Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-drive --serial-port 5401 \
@@ -306,7 +348,7 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
     --screenshot-every 15
 ```
 
-Set `port: 5401` in the playbook, and run Prevue Commander when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error.
+`/tmp/prevue-drive` is the copy of the drive. Set `port: 5401` in the playbook, and run Prevue Commander when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
 
 To test the control line, add `--prevue-ctrl-port 5402` and set `controlPort: 5402` in the playbook. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
 
@@ -323,7 +365,9 @@ serial_port = tcp://127.0.0.1:1234
 3. Start FS-UAE, and wait until the grid shows.
 4. Set `port: 1234` and `baudRate: 2400` in the playbook, and run Prevue Commander.
 
-FS-UAE writes the files of the drive to the host directory, so you can examine them after a file transfer. The control line was not tested with FS-UAE.
+FS-UAE writes the files of the drive to the host directory, so you can examine them after a file transfer.
+
+The control line was not tested with FS-UAE. ESQ reads the control line on the CTS pin, and the TCP serial port of FS-UAE possibly does not control that pin. Use Esquire to test the control line.
 
 ## Project layout
 
