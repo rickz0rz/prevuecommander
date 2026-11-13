@@ -1,3 +1,4 @@
+using Prevue.Core;
 using Prevue.Commands;
 using Prevue.Commands.Control;
 using PrevueCommander.Model;
@@ -39,10 +40,12 @@ public class ControlLineTests
     }
 
     [Fact]
-    public void Promo_ConvertsTheTitleToAscii()
+    public void Promo_ConvertsTheTitleAsTheListings()
     {
-        var commands = Promo.Commands(new PromoBox("  Grey’s Anatomy – Café "), null);
-        Assert.Equal("Grey's Anatomy - Cafe", Body(commands[0]));
+        var box = new PromoBox("  Grey’s Anatomy – Café ");
+        Assert.Equal("Grey's Anatomy - Café", Body(Promo.Commands(box, null)[0]));
+        Assert.Equal("Grey's Anatomy - Cafe",
+            Body(Promo.Commands(box, null, characters: CharacterSet.Ascii)[0]));
     }
 
     [Fact]

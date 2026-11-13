@@ -48,7 +48,7 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
                                   $"{ChannelLineUpCommand.MaximumChannels} are sent.");
         }
 
-        var commands = ListingsBuilder.Build(selected, context.Now, SendChannelLineUp);
+        var commands = ListingsBuilder.Build(selected, context.Now, SendChannelLineUp, context.Characters);
         if (ChannelLogos != null)
             commands.AddRange(await ChannelLogoBuilder.BuildAsync(selected, ChannelLogos, context, cancellationToken));
         return commands;

@@ -13,6 +13,6 @@ public record LocalAdsPlaybookCommand : SimplePlaybookCommand
             throw new InvalidOperationException(
                 $"The playbook has {Ads.Count} local ads. ESQ keeps a maximum of {LocalAdCommand.MaximumAds}.");
 
-        return [new ResetLocalAdsCommand(), .. Ads.Select((ad, i) => new LocalAdCommand(i + 1, ad))];
+        return [new ResetLocalAdsCommand(), .. Ads.Select((ad, i) => new LocalAdCommand(i + 1, ad, context.Characters))];
     }
 }

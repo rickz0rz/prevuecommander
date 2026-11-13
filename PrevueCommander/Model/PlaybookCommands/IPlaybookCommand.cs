@@ -1,4 +1,5 @@
 using Prevue.Commands;
+using Prevue.Core;
 
 namespace PrevueCommander.Model.PlaybookCommands;
 
@@ -8,6 +9,9 @@ namespace PrevueCommander.Model.PlaybookCommands;
 /// <param name="Log">The output for messages.</param>
 public sealed record PlaybookContext(DateTime Now, string BaseDirectory, TextWriter Log)
 {
+    /// <summary>The characters that the text of the listings, the local ads and the promos can have.</summary>
+    public CharacterSet Characters { get; init; } = CharacterSet.Latin1;
+
     public string ResolvePath(string path) => Path.GetFullPath(path, BaseDirectory);
 }
 

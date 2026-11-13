@@ -18,8 +18,9 @@ public static class ListingsBuilder
     /// goes into slot 1. If a program does not start at :00 or :30, its text starts with the time, for example
     /// "( 8:15) News", as in the Prevue data feed. If two programs start in one slot, the grid shows the first.
     /// </remarks>
+    /// <param name="characters">The characters that the program text can have.</param>
     public static List<BaseCommand> Build(IEnumerable<GuideChannel> guideChannels, DateTime now,
-        bool sendChannelLineUp = true)
+        bool sendChannelLineUp = true, CharacterSet characters = CharacterSet.Latin1)
     {
         var channels = guideChannels.Take(ChannelLineUpCommand.MaximumChannels).ToList();
         var sourceNames = SourceNames(channels.Select(c => c.CallSign));
@@ -35,14 +36,14 @@ public static class ListingsBuilder
                 commands.Add(new ChannelLineUpCommand(day, lineUp));
 
             for (var i = 0; i < channels.Count; i++)
-                commands.AddRange(ProgramCommands(day, sourceNames[i], channels[i].Programs));
+                commands.AddRange(ProgramCommands(day, sourceNames[i], channels[i].Programs, characters));
         }
 
         return commands;
     }
 
     private static IEnumerable<ChannelProgramCommand> ProgramCommands(DateOnly day, string sourceName,
-        IEnumerable<GuideProgram> programs)
+        IEnumerable<GuideProgram> programs, CharacterSet characters)
     {
         var dayStart = BroadcastDay.StartOf(day);
         var dayEnd = BroadcastDay.StartOf(day.AddDays(1));
@@ -59,7 +60,7 @@ public static class ListingsBuilder
             var text = program.Start > dayStart && program.Start.Minute % 30 != 0
                 ? $"({program.Start.ToString("%h", CultureInfo.InvariantCulture),2}:{program.Start:mm}) {program.Text}"
                 : program.Text;
-            yield return new ChannelProgramCommand(day, slot, sourceName, program.IsMovie, text);
+            yield return new ChannelProgramCommand(day, slot, sourceName, program.IsMovie, text, characters);
         }
     }
 

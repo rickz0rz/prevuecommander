@@ -124,14 +124,18 @@ public static class Promo
     /// Makes the packets of a promo, in the order of the Esquire launcher: the brushes (only if a box has a brush),
     /// the order (only for two boxes), the titles, and the show command.
     /// </summary>
+    /// <param name="characters">
+    /// The characters of the titles. Use the same value as for the listings, so that a title with an accent finds its
+    /// program.
+    /// </param>
     public static List<ControlCommand> Commands(PromoBox? right, PromoBox? left, bool rightFirst = true,
-        PromoStyle style = PromoStyle.Box)
+        PromoStyle style = PromoStyle.Box, CharacterSet characters = CharacterSet.Latin1)
     {
         if (right == null && left == null)
             throw new ArgumentException("A promo needs a right box, a left box, or both.");
 
-        right = Clean(right);
-        left = Clean(left);
+        right = Clean(right, characters);
+        left = Clean(left, characters);
         var commands = new List<ControlCommand>();
         if (right?.Brush != null || left?.Brush != null)
             commands.Add(new PromoBrushesCommand(right?.Brush, left?.Brush));
@@ -143,14 +147,14 @@ public static class Promo
     }
 
     /// <summary>
-    /// Converts the title and the pattern to printable ASCII, as the listings builder converts the program text. Then a
-    /// title with typographic quotes or accents finds the program.
+    /// Converts the title and the pattern as the listings builder converts the program text. Then a title with
+    /// typographic quotes or accents finds the program.
     /// </summary>
-    private static PromoBox? Clean(PromoBox? box)
+    private static PromoBox? Clean(PromoBox? box, CharacterSet characters)
     {
         if (box == null)
             return null;
-        var title = PrevueText.ToPrintableAscii(box.Title, ControlCommand.MaximumBodyLength);
+        var title = PrevueText.ToPrintable(box.Title, characters, ControlCommand.MaximumBodyLength);
         var channels = PrevueText.ToPrintableAscii(box.Channels, ControlCommand.MaximumBodyLength);
         if (title.Length == 0 || channels.Length == 0)
             throw new ArgumentException("Each box of a promo needs a title and a channel pattern.");

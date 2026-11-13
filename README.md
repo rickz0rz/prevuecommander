@@ -19,6 +19,8 @@ If you had cable TV in the 1980s or 1990s, you may remember [this channel](https
 
 Prevue Commander was developed and tested with ESQ 9.0.14. Other versions of ESQ can support different features. For example, ESQ 7.3.13 does not support colored text in local ads. If a command does not work as this README tells, look at the version of ESQ.
 
+The fonts of ESQ 9.0.14 have the Latin-1 characters, for example `é`, `ñ` and `©`. Prevue Commander sends these characters by default. For an older version of ESQ, set `characterSet: Ascii`. The fonts of older versions possibly do not have these characters.
+
 ## Requirements
 
 - The [.NET 10 SDK](https://dotnet.microsoft.com/download).
@@ -65,6 +67,7 @@ Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port t
 | `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes and sends them at the speed of the line, so `0` also works with Esquire. |
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `now` | | A local date and time that the playbook uses in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of the broadcast day of this time and of the next day. `!!clock` without `date` sends this time, and `!!configureDst` without `year` uses its year. A Channels DVR server has only current listings, so use an XMLTV file for a date in the past. |
+| `characterSet` | `Latin1` | The characters of the listings, the local ads and the promo titles. `Latin1` sends letters with accents and other Latin-1 characters, for example `Fiancé`. `Ascii` removes the accents, for example `Fiance`, for older versions of ESQ. See [ESQ versions](#esq-versions). |
 
 Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line. If a playbook has control line commands, but `controlPort` and `controlSerialPort` are not set, Prevue Commander stops before it sends a command.
 
@@ -235,7 +238,9 @@ The import follows these rules:
 - The grid shows the call sign. ESQ shows a maximum of 6 characters of it.
 - A program goes into the slot in which it starts. If it does not start at :00 or :30, the text starts with the time, for example `( 8:15) News`.
 - The text has the format of the listings tool of Esquire. A movie is `"Title" (year) summary (rating)`. A sports event is `Title: event title`. Programs with closed captions end with `|`, which ESQ shows as the closed caption symbol.
-- Characters outside ASCII become the nearest ASCII characters, or are removed. The text has a maximum of 120 characters.
+- With `characterSet: Latin1` (the default), Latin-1 characters stay, for example `é`. A letter with an accent outside Latin-1 loses its accent. Typographic quotation marks and dashes become ASCII. Other characters are removed.
+- With `characterSet: Ascii`, all letters lose their accents.
+- The text has a maximum of 120 characters.
 
 ### Channel logos
 
@@ -362,11 +367,11 @@ The control line commands go to `controlPort` or `controlSerialPort`. ESQ reads 
 
 A promo has a box on the right, a box on the left, or both boxes. ESQ finds the program in its listings, so send the listings first. A box has these settings:
 
-- `title` is the title to find. A part of the title is sufficient, and upper case and lower case are the same. Put the title in quotes to find only the exact title.
+- `title` is the title to find. A part of the title is sufficient, and upper case and lower case are the same. Put the title in quotes to find only the exact title. Prevue Commander converts the title with `characterSet`, as it converts the listings. Thus `Fiancé` finds the program in both modes.
 - `channels` is a pattern for the channels to search, for example `KTIV*`. The ESQ code calls it a pattern for the call letters. The tests used only `*`. ESQ matches channel logos by source name, so the pattern possibly also matches source names.
 - `brush` is the ID of the background in `BRUSH.INI` on the drive, for example `AT` (orange "around town") or `DT` (blue TV Guide). Without it, the box keeps its background.
 
-The box shows the call letters, the title, the next time of the program and the channel number. ESQ shows only one box. It tries the `first` box, and then the other box. If ESQ does not find a title, it shows the loaded logo.
+The box shows the call letters, the title, the next time of the program and the channel number. The box shows the title as the promo gives it, not as the listings give it. For example, `title: family or fiancé` shows "family or fiancé". ESQ shows only one box. It tries the `first` box, and then the other box. If ESQ does not find a title, it shows the loaded logo.
 
 #### Packet types
 
