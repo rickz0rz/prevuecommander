@@ -23,7 +23,7 @@ The fonts of ESQ 9.0.14 have the Latin-1 characters, for example `é`, `ñ` and 
 
 ## Requirements
 
-- The [.NET 10 SDK](https://dotnet.microsoft.com/download).
+- The [.NET 11 SDK](https://dotnet.microsoft.com/download).
 - A Prevue system, one of these:
   - An emulator that gives the serial port of ESQ on a TCP port. [Esquire](https://prevueguide.neocities.org/guides/Esquire) opens the data line on TCP port 5400. [FS-UAE](#test-with-fs-uae) can also open the serial port of the Amiga on a TCP port.
   - An Amiga that runs ESQ, connected to a serial port of this computer or to the UARTs of a Raspberry Pi. See [Connect to an Amiga](#connect-to-an-amiga).
@@ -107,7 +107,7 @@ The wiring is from the ESQ code and the Amiga documentation. It was not tested o
 
 A Raspberry Pi can run Prevue Commander next to the Amiga. The UARTs of the Pi can send the two lines. This setup was not tested. The information comes from the Raspberry Pi documentation.
 
-To build Prevue Commander for a Pi with a 64-bit Raspberry Pi OS, run `./build-linux-arm64.sh` on a computer with the .NET 10 SDK. Then copy `publish_linux-arm64/PrevueCommander` to the Pi. The Pi does not need .NET.
+To build Prevue Commander for a Pi with a 64-bit Raspberry Pi OS, run `./build-linux-arm64.sh` on a computer with the .NET 11 SDK. Then copy `publish_linux-arm64/PrevueCommander` to the Pi. The Pi does not need .NET.
 
 > [!WARNING]
 > The GPIO pins of the Pi use 3.3 V logic. The serial port of the Amiga uses RS-232 levels, and the signal is inverted. Do not connect a GPIO pin directly to the Amiga. Use a MAX3232 level shifter board between the Pi and the Amiga.
