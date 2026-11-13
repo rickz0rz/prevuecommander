@@ -27,7 +27,10 @@ Console.CancelKeyPress += (_, e) =>
 try
 {
     var playbook = PlaybookLoader.Parse(await File.ReadAllTextAsync(playbookPath, cancellation.Token));
-    var context = new PlaybookContext(DateTime.Now, Path.GetDirectoryName(playbookPath)!, Console.Out);
+    var now = string.IsNullOrWhiteSpace(playbook.Configuration.Now)
+        ? DateTime.Now
+        : DateTime.Parse(playbook.Configuration.Now, System.Globalization.CultureInfo.InvariantCulture);
+    var context = new PlaybookContext(now, Path.GetDirectoryName(playbookPath)!, Console.Out);
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
     var commands = new List<BaseCommand>();
