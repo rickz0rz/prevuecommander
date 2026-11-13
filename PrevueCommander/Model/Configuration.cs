@@ -47,16 +47,18 @@ public record Configuration
     /// </summary>
     public string? ControlSerialPort { get; init; }
 
-    /// <summary>
-    /// A local date and time to use in place of the clock of this computer, for example "1993-02-23T18:00". The
-    /// imports send the listings of its broadcast day and the next day, and <c>!!clock</c> without a date sends it.
-    /// Null uses the clock of this computer.
-    /// </summary>
-    public string? Now { get; init; }
 
     /// <summary>
     /// The speed of the control line. ESQ reads it at 110 baud. 0 sends at full speed, for a bridge that keeps the
     /// bytes until the line sends them, as Esquire does.
     /// </summary>
     public int ControlBaudRate { get; init; } = 110;
+
+    /// <summary>
+    /// A local date and time that the playbook uses in place of the clock of this computer, for example
+    /// "1993-02-23T18:00". The imports send the listings of the broadcast day of this time and of the next day.
+    /// <c>!!clock</c> without a date sends this time, and <c>!!configureDst</c> without a year uses its year. Null uses
+    /// the clock of this computer.
+    /// </summary>
+    public string? Now { get; init; }
 }

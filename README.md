@@ -60,7 +60,7 @@ Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port t
 | `controlSerialPort` | | A serial port of this computer for the control line. When it is set, Prevue Commander writes to this port and does not use `controlPort`. |
 | `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes and sends them at the speed of the line, so `0` also works with Esquire. |
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
-| `now` | | A local date and time to use in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of its broadcast day and the next day, and `!!clock` without a date sends it. |
+| `now` | | A local date and time that the playbook uses in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of the broadcast day of this time and of the next day. `!!clock` without `date` sends this time, and `!!configureDst` without `year` uses its year. A Channels DVR server has only current listings, so use an XMLTV file for a date in the past. |
 
 Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line. If a playbook has control line commands, but `controlPort` and `controlSerialPort` are not set, Prevue Commander stops before it sends a command.
 
