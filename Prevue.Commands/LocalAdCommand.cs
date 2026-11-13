@@ -25,12 +25,13 @@ public class LocalAdCommand : BaseCommand
 
     private readonly byte[] _text;
 
-    public LocalAdCommand(int number, string text) : base('L')
+    /// <param name="characters">The characters that the text can have. ESQ 9.0.14 shows Latin-1 characters.</param>
+    public LocalAdCommand(int number, string text, CharacterSet characters = CharacterSet.Latin1) : base('L')
     {
         if (number is < 1 or > MaximumAds)
             throw new ArgumentOutOfRangeException(nameof(number), number, $"An ad number is 1 to {MaximumAds}.");
 
-        _text = PrevueText.Encode(text, MapToken);
+        _text = PrevueText.Encode(text, MapToken, characters);
         if (_text.Length + 1 > MaximumRecordLength)
             throw new ArgumentException(
                 $"Ad {number} has {_text.Length} bytes. The maximum is {MaximumRecordLength - 1}.", nameof(text));

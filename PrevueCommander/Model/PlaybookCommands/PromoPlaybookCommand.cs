@@ -35,5 +35,5 @@ public record PromoPlaybookCommand : SimplePlaybookCommand
     public PromoStyle Style { get; init; } = PromoStyle.Box;
 
     protected override IReadOnlyList<BaseCommand> Transform(PlaybookContext context) =>
-        Promo.Commands(Right?.ToBox(), Left?.ToBox(), First == PromoSide.Right, Style);
+        Promo.Commands(Right?.ToBox(), Left?.ToBox(), First == PromoSide.Right, Style, context.Characters);
 }

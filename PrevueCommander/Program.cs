@@ -32,7 +32,10 @@ try
             System.Globalization.CultureInfo.InvariantCulture, out now))
         throw new FormatException(
             $"The setting now is not a date and time: {playbook.Configuration.Now}. Use a date such as 1993-02-23T18:00.");
-    var context = new PlaybookContext(now, Path.GetDirectoryName(playbookPath)!, Console.Out);
+    var context = new PlaybookContext(now, Path.GetDirectoryName(playbookPath)!, Console.Out)
+    {
+        Characters = playbook.Configuration.CharacterSet
+    };
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
     var commands = new List<BaseCommand>();

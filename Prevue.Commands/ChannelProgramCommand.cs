@@ -18,7 +18,9 @@ public class ChannelProgramCommand : BaseCommand
 
     private const byte SourceEnd = 0x12;
 
-    public ChannelProgramCommand(DateOnly day, int slot, string sourceName, bool isMovie, string text) : base('P')
+    /// <param name="characters">The characters that the text can have. ESQ 9.0.14 shows Latin-1 characters.</param>
+    public ChannelProgramCommand(DateOnly day, int slot, string sourceName, bool isMovie, string text,
+        CharacterSet characters = CharacterSet.Latin1) : base('P')
     {
         if (slot is < 1 or > BroadcastDay.SlotsPerDay)
             throw new ArgumentOutOfRangeException(nameof(slot), slot, "A slot is 1 to 48.");
@@ -27,7 +29,7 @@ public class ChannelProgramCommand : BaseCommand
         Slot = slot;
         SourceName = ChannelLineUpCommand.ValidSourceName(sourceName);
         IsMovie = isMovie;
-        Text = PrevueText.ToPrintableAscii(text, MaximumTextLength);
+        Text = PrevueText.ToPrintable(text, characters, MaximumTextLength);
     }
 
     public DateOnly Day { get; }
@@ -51,6 +53,6 @@ public class ChannelProgramCommand : BaseCommand
         SourceEnd,
         // Bit 0 is always set. Bit 1 marks a movie.
         (byte)(IsMovie ? 0x03 : 0x01),
-        .. Ascii(Text)
+        .. PrevueText.GetBytes(Text)
     ];
 }

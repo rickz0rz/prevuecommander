@@ -1,6 +1,7 @@
 using System.Text;
 using Prevue.Commands;
 using Prevue.Commands.Model;
+using Prevue.Core;
 using Xunit;
 
 namespace PrevueCommander.Tests;
@@ -92,6 +93,16 @@ public class CommandTests
         var command = new ChannelProgramCommand(new DateOnly(2026, 11, 12), 33, "WDIV", true, "\"Movie\" (1999)");
         byte[] expected = [33, 60, .. "WDIV"u8, 0x12, 0x03, .. "\"Movie\" (1999)"u8];
         Assert.Equal(expected, command.Render()[3..^2]);
+    }
+
+    [Fact]
+    public void ChannelProgram_SendsLatin1Characters_OrAsciiForOlderVersions()
+    {
+        var day = new DateOnly(2026, 11, 12);
+        Assert.Equal([.. "90 Day Fianc"u8, 0xE9], new ChannelProgramCommand(day, 1, "TLC", false, "90 Day Fiancé")
+            .Render()[^15..^2]);
+        Assert.Equal("90 Day Fiance"u8.ToArray(),
+            new ChannelProgramCommand(day, 1, "TLC", false, "90 Day Fiancé", CharacterSet.Ascii).Render()[^15..^2]);
     }
 
     [Fact]
