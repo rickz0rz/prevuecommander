@@ -417,6 +417,8 @@ dotnet build
 dotnet test
 ```
 
+GitHub Actions runs these commands for each pull request and each push to `main`. The workflow is in `.github/workflows/build.yml`.
+
 `build-osx.sh` makes `PrevueCommander-osx`, a universal macOS program for Apple silicon and Intel. `build-win.sh` makes a Windows x64 program in `publish_win-x64`. `build-linux-arm64.sh` makes a Linux arm64 program in `publish_linux-arm64`, for example for a Raspberry Pi. These programs do not need .NET on the computer. Run them with the playbook as the argument, for example `./PrevueCommander-osx playbook.yaml`.
 
 Do not trim the output: YamlDotNet and the XMLTV reader need the metadata that trimming removes.
