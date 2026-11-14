@@ -44,11 +44,13 @@ public sealed record HoldRequest(double? Minutes = null, int IntervalSeconds = T
 public sealed record LocalAdsRequest(List<string>? Ads = null, bool DryRun = false);
 
 /// <summary>The body of <c>POST /prevue/data/weather</c>.</summary>
+/// <param name="Forecast">The 3-day forecast. With a forecast, <paramref name="Show"/> shows the forecast (W3).</param>
 /// <param name="Show">True shows the weather after the session.</param>
 /// <param name="PauseSeconds">The pause between the session and the show command.</param>
 public sealed record WeatherRequest(
     WeatherStatusPlaybookCommand? Status = null,
     WeatherTextPlaybookCommand? Text = null,
+    WeatherForecastPlaybookCommand? Forecast = null,
     bool Show = true,
     double PauseSeconds = 5);
 

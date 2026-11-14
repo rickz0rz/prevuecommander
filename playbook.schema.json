@@ -691,6 +691,11 @@
           },
           {
             "type": "object",
+            "properties": {
+              "forecast": {
+                "type": "boolean"
+              }
+            },
             "additionalProperties": false,
             "title": "!!showWeather"
           },
@@ -716,6 +721,52 @@
             },
             "additionalProperties": false,
             "title": "!!utility"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "minutes": {
+                "type": "integer"
+              },
+              "label": {
+                "type": "string"
+              },
+              "days": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "date": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "icon": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "high": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    },
+                    "low": {
+                      "type": [
+                        "integer",
+                        "null"
+                      ]
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!weatherForecast"
           },
           {
             "type": "object",

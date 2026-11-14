@@ -167,9 +167,7 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
                 ("POST", "/prevue/ctrl/logo") => Queue("Show the logo", [new ShowLogoCommand()]),
                 ("POST", "/prevue/ctrl/ad") => Queue("Ad break", [new RawControlCommand(12, string.Empty)]),
                 ("POST", "/prevue/ctrl/weather") => Queue("Show the weather",
-                    [Read<ShowWeatherRequest>(body, new ShowWeatherRequest()).Forecast
-                        ? new RawControlCommand(1, "W3")
-                        : new ShowWeatherCommand()]),
+                    [new ShowWeatherCommand(Read<ShowWeatherRequest>(body, new ShowWeatherRequest()).Forecast)]),
                 ("POST", "/prevue/ctrl/packets") => Queue("Packets",
                     (Read<List<PacketRequest>>(body) ?? []).Select(BaseCommand (p) => new RawControlCommand(p.Type, p.Body ?? string.Empty)).ToList()),
                 ("POST", "/prevue/ctrl/hold") => StartHold(Read<HoldRequest>(body, new HoldRequest())),
@@ -221,20 +219,23 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
 
     private async Task<(int, object)> WeatherAsync(WeatherRequest request, CancellationToken cancellationToken)
     {
-        if (request.Status == null && request.Text == null)
-            throw new ArgumentException("The weather needs \"status\", \"text\" or both.");
+        if (request.Status == null && request.Text == null && request.Forecast == null)
+            throw new ArgumentException("The weather needs \"status\", \"text\", \"forecast\" or more of them.");
 
         var data = new List<BaseCommand>();
         if (request.Status != null)
             data.AddRange(await TransformAsync(request.Status, cancellationToken));
         if (request.Text != null)
             data.AddRange(await TransformAsync(request.Text, cancellationToken));
+        if (request.Forecast != null)
+            data.AddRange(await TransformAsync(request.Forecast, cancellationToken));
 
         var commands = parts.Session.Wrap(data);
         if (request.Show)
         {
             commands.Add(new PauseCommand(TimeSpan.FromSeconds(Math.Max(0, request.PauseSeconds))));
-            commands.Add(new ShowWeatherCommand());
+            // With a forecast, show the forecast (W3). Otherwise show the current weather (W0).
+            commands.Add(new ShowWeatherCommand(request.Forecast != null));
         }
 
         return Queue("Weather", commands);

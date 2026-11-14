@@ -233,6 +233,10 @@ public static class FeedDecoder
                 name = "'W' weather text";
                 WeatherText(payload, fields);
                 break;
+            case 'w':
+                name = "'w' weather forecast";
+                WeatherForecast(payload, fields);
+                break;
             case '%':
                 name = "'%' save";
                 break;
@@ -301,6 +305,26 @@ public static class FeedDecoder
             start = end + 1;
         }
 
+        if (start < payload.Length)
+            fields.Add(("dropped", Text(payload[start..])));
+    }
+
+    private static void WeatherForecast(ReadOnlySpan<byte> payload, List<(string, string)> fields)
+    {
+        var separator = IndexOf(payload, 0x12, 0);
+        if (separator < 0 || separator + 1 >= payload.Length)
+        {
+            fields.Add(("payload", Text(payload)));
+            return;
+        }
+
+        fields.Add(("label pattern", Text(payload[..separator])));
+        fields.Add(("minutes", payload[separator + 1].ToString(CultureInfo.InvariantCulture)));
+        // Each day is '+', the day of the year, the icon, the high and the low: 11 bytes.
+        var start = separator + 2;
+        var day = 0;
+        for (; start + 11 <= payload.Length && payload[start] == '+'; start += 11)
+            fields.Add(($"day {++day}", Text(payload[(start + 1)..(start + 11)])));
         if (start < payload.Length)
             fields.Add(("dropped", Text(payload[start..])));
     }
