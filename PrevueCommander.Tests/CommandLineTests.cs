@@ -40,6 +40,8 @@ public class CommandLineTests
     [InlineData("--port", "-1")]
     [InlineData("--help=yes")]
     [InlineData("one.yaml", "two.yaml")]
+    [InlineData("--control-output", "control.bin")]
+    [InlineData("--validate", "--output", "feed.bin")]
     public void BadArguments_AreAnError(params string[] args) =>
         Assert.Throws<CommandLineException>(() => CommandLine.Parse(args));
 
@@ -70,5 +72,13 @@ public class CommandLineTests
     {
         var configuration = CommandLine.Parse(["--serial-port", "/dev/ttyUSB0"]).Apply(new Configuration());
         Assert.Equal("/dev/ttyUSB0", configuration.SerialPort);
+    }
+
+    [Fact]
+    public void Output_IsRead()
+    {
+        var options = CommandLine.Parse(["--output", "feed.bin", "--control-output", "control.bin"]);
+        Assert.Equal("feed.bin", options.OutputPath);
+        Assert.Equal("control.bin", options.ControlOutputPath);
     }
 }

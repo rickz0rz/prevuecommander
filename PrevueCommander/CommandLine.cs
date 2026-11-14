@@ -35,6 +35,12 @@ public sealed record CommandLineOptions
 
     public bool Verbose { get; init; }
 
+    /// <summary>A file for the bytes of the data line, in place of the connection. Null sends the commands.</summary>
+    public string? OutputPath { get; init; }
+
+    /// <summary>A file for the bytes of the control line, with <see cref="OutputPath"/>.</summary>
+    public string? ControlOutputPath { get; init; }
+
     /// <summary>The configuration of the playbook, with the settings of the command line in place of its settings.</summary>
     public Configuration Apply(Configuration configuration) => configuration with
     {
@@ -71,6 +77,8 @@ public static class CommandLine
           --now <date>                  The time of the run (now), for example 1993-02-23T18:00.
           --verbose                     Show the bytes of each command (output: Verbose).
           --validate                    Make all the commands, and stop. Do not connect.
+          --output <file>               Write the bytes of the data line to the file. Do not connect.
+          --control-output <file>       With --output, write the bytes of the control line to the file.
           -h, --help                    Show this help.
 
         An option replaces the setting of the playbook in parentheses.
@@ -158,6 +166,12 @@ public static class CommandLine
                 case "--control-baud-rate":
                     options = options with { ControlBaudRate = Number() };
                     break;
+                case "--output":
+                    options = options with { OutputPath = Value() };
+                    break;
+                case "--control-output":
+                    options = options with { ControlOutputPath = Value() };
+                    break;
                 case "--now":
                     options = options with { Now = Value() };
                     break;
@@ -165,6 +179,11 @@ public static class CommandLine
                     throw new CommandLineException($"The option {arg} is not known. Use --help to show the options.");
             }
         }
+
+        if (options.ControlOutputPath != null && options.OutputPath == null)
+            throw new CommandLineException("The option --control-output needs --output.");
+        if (options.Validate && options.OutputPath != null)
+            throw new CommandLineException("Use --validate or --output, not both.");
 
         return playbook == null ? options : options with { PlaybookPath = playbook };
     }

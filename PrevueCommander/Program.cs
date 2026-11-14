@@ -60,6 +60,20 @@ try
     foreach (var playbookCommand in playbook.Commands)
         commands.AddRange(await playbookCommand.TransformAsync(context, cancellation.Token));
 
+    if (options.OutputPath != null)
+    {
+        var outputPath = Path.GetFullPath(options.OutputPath);
+        var controlOutputPath = options.ControlOutputPath == null ? null : Path.GetFullPath(options.ControlOutputPath);
+        var (data, control, leftOut) = await FeedFiles.WriteAsync(commands, outputPath, controlOutputPath,
+            configuration.Output == Output.Verbose, Console.Out, cancellation.Token);
+        Console.WriteLine($"Wrote {data} data line commands to {outputPath}.");
+        if (controlOutputPath != null)
+            Console.WriteLine($"Wrote {control} control line commands to {controlOutputPath}.");
+        if (leftOut > 0)
+            Console.WriteLine($"Left out {leftOut} control line commands. Use --control-output to write them.");
+        return 0;
+    }
+
     await using var lines = new SerialLines(configuration, Console.Out);
     lines.Check(commands);
     if (options.Validate)
