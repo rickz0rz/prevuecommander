@@ -63,6 +63,7 @@
       <div class="stat"><b>Queued jobs</b><span id="s-queues">-</span></div>
       <div class="stat"><b>Top half hold</b><span id="s-hold">-</span></div>
       <div class="stat"><b>Guide</b><span id="s-watch">-</span></div>
+      <div class="stat"><b>Weather</b><span id="s-weather">-</span></div>
       <div class="stat"><b>Automatic promos</b><span id="s-promo">-</span></div>
     </div>
   </section>
@@ -110,6 +111,21 @@
     <div class="buttons">
       <button id="ads-preview-button" class="secondary">Preview</button>
       <button id="ads-send">Send ads</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>weather.gov</h2>
+    <p class="help">Gets the current weather and the 3-day forecast of a US ZIP code from weather.gov, and sends them. The label and the status text of the weather form are not used.</p>
+    <div class="row">
+      <div><label for="g-zip">ZIP code</label><input id="g-zip" inputmode="numeric" maxlength="10" placeholder="48201"></div>
+      <div><label for="g-units">Units</label><select id="g-units"><option value="F">F, mph</option><option value="C">C, km/h</option></select></div>
+    </div>
+    <div class="buttons">
+      <button id="g-current">Send, show current</button>
+      <button id="g-forecast">Send, show forecast</button>
+      <button id="g-send" class="secondary">Send only</button>
+      <button id="g-refresh" class="secondary">Read the playbook weather again</button>
     </div>
   </section>
 
@@ -204,6 +220,8 @@
       options.body = typeof body === 'string' ? body : JSON.stringify(body);
       options.headers['Content-Type'] = contentType || 'application/json';
     }
+    // An empty body sends "Content-Length: 0". The server ignores a POST without a Content-Length.
+    else if (method !== 'GET') options.body = '';
     let response, answer;
     try {
       response = await fetch(path, options);
@@ -245,6 +263,10 @@
         + (s.watch.lastError ? ' <span class="bad">' + text(s.watch.lastError) + '</span>' : '');
     $('s-promo').textContent = s.autoPromo.enabled ? 'Last: ' + (s.autoPromo.lastTitle || '-') + ' at ' + time(s.autoPromo.lastTime) : 'Off';
     $('refresh').disabled = !s.watch.canRefresh;
+    $('s-weather').innerHTML = !s.weather.canRefresh ? 'No !!weatherGov'
+      : (s.weather.enabled ? 'Each ' + s.weather.minutes + ' min. ' : '') + 'Last read ' + time(s.weather.lastRead)
+        + (s.weather.lastError ? ' <span class="bad">' + text(s.weather.lastError) + '</span>' : '');
+    $('g-refresh').disabled = !s.weather.canRefresh;
     const rows = s.jobs.map(j => '<tr><td>' + j.id + '</td><td>' + text(j.name) + (j.error ? '<br><span class="bad">' + text(j.error) + '</span>' : '')
       + '</td><td>' + j.queue + '</td><td class="' + ({ done: 'ok', failed: 'bad', sending: 'warn' }[j.state] || '') + '">' + j.state
       + '</td><td>' + j.bytesSent.toLocaleString() + ' / ' + j.bytes.toLocaleString() + '</td><td>' + time(j.created) + '</td><td>'
@@ -299,6 +321,14 @@
       forecast: { minutes: Number($('f-minutes').value) || 60, days }
     }).catch(() => {});
   };
+
+  const weatherGov = show => call('POST', '/prevue/data/weather-gov',
+    { zip: $('g-zip').value.trim(), units: $('g-units').value, show }).catch(() => {});
+  $('g-current').onclick = () => weatherGov('current');
+  $('g-forecast').onclick = () => weatherGov('forecast');
+  $('g-send').onclick = () => weatherGov('none');
+  $('g-refresh').onclick = () => call('POST', '/prevue/weather/refresh')
+    .then(a => show(a.error ? 'The weather cannot be read: ' + a.error : 'The weather was sent.', !!a.error)).catch(() => {});
 
   $('clock-send').onclick = () => call('POST', '/prevue/data/clock', { date: $('clock-date').value || null }).catch(() => {});
   $('refresh').onclick = () => call('POST', '/prevue/guide/refresh').then(a => show(a.error ? 'The guide cannot be read: ' + a.error : a.changes + ' listings commands sent.', !!a.error)).catch(() => {});

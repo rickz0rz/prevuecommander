@@ -58,6 +58,9 @@
         "watchMinutes": {
           "type": "integer"
         },
+        "weatherMinutes": {
+          "type": "integer"
+        },
         "servePort": {
           "type": "integer"
         },
@@ -767,6 +770,64 @@
             },
             "additionalProperties": false,
             "title": "!!weatherForecast"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "zip": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "latitude": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "longitude": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "label": {
+                "type": "string"
+              },
+              "status": {
+                "type": "string"
+              },
+              "current": {
+                "type": "boolean"
+              },
+              "forecast": {
+                "type": "boolean"
+              },
+              "minutes": {
+                "type": "integer"
+              },
+              "units": {
+                "type": "string"
+              },
+              "currentLines": {
+                "type": [
+                  "array",
+                  "null"
+                ],
+                "items": {
+                  "type": "string"
+                }
+              },
+              "contact": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!weatherGov"
           },
           {
             "type": "object",

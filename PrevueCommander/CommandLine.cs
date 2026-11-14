@@ -37,6 +37,8 @@ public sealed record CommandLineOptions
 
     public int? WatchMinutes { get; init; }
 
+    public int? WeatherMinutes { get; init; }
+
     public int? ServePort { get; init; }
 
     public string? ServeHost { get; init; }
@@ -73,6 +75,7 @@ public sealed record CommandLineOptions
         Now = Now ?? configuration.Now,
         Output = Verbose ? Output.Verbose : configuration.Output,
         WatchMinutes = WatchMinutes ?? configuration.WatchMinutes,
+        WeatherMinutes = WeatherMinutes ?? configuration.WeatherMinutes,
         ServePort = ServePort ?? configuration.ServePort,
         ServeHost = ServeHost ?? configuration.ServeHost
     };
@@ -101,6 +104,8 @@ public static class CommandLine
           --verbose                     Show the bytes of each command (output: Verbose).
           --watch <minutes>             After the commands, read the guide again at this interval, and send only
                                         the changes (watchMinutes). 0 stops after the commands.
+          --weather <minutes>           After the commands, read the weather of !!weatherGov again at this
+                                        interval, and send it (weatherMinutes). 0 stops after the commands.
           --serve <port>                After the commands, start the web server on this port (servePort). It has
                                         the control page and the HTTP API.
           --serve-host <address>        The address of the web server (serveHost). 0.0.0.0 accepts all the
@@ -218,6 +223,9 @@ public static class CommandLine
                     break;
                 case "--watch":
                     options = options with { WatchMinutes = Number() };
+                    break;
+                case "--weather":
+                    options = options with { WeatherMinutes = Number() };
                     break;
                 case "--serve":
                     options = options with { ServePort = Number() };

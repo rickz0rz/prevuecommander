@@ -322,6 +322,21 @@ public class ServerTests
             await clear.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         Assert.Equal(HttpStatusCode.NotFound, missing.StatusCode);
 
+        // A POST without Content-Length, as "curl -X POST" sends it, gets 411 and queues nothing.
+        using (var raw = new TcpClient())
+        {
+            await raw.ConnectAsync(IPAddress.Loopback, port, TestContext.Current.CancellationToken);
+            var stream = raw.GetStream();
+            await stream.WriteAsync("POST /prevue/ctrl/clear HTTP/1.1\r\nHost: localhost\r\n\r\n"u8.ToArray(),
+                TestContext.Current.CancellationToken);
+            using var reader = new StreamReader(stream);
+            Assert.Contains("411", await reader.ReadLineAsync(TestContext.Current.CancellationToken));
+        }
+
+        // Give a wrong handler the time to queue a job.
+        await Task.Delay(200, TestContext.Current.CancellationToken);
+        Assert.Single(server.Jobs.Jobs());
+
         await stop.CancelAsync();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
     }

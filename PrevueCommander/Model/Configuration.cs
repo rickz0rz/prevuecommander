@@ -78,6 +78,13 @@ public record Configuration
     public int WatchMinutes { get; init; }
 
     /// <summary>
+    /// The minutes between two reads of the weather of the !!weatherGov commands. After the commands, Prevue Commander
+    /// stays connected, reads the weather again at this interval, and sends it. 0 stops after the commands. Use 30 or
+    /// more: weather.gov updates the forecast a few times each day.
+    /// </summary>
+    public int WeatherMinutes { get; init; }
+
+    /// <summary>
     /// The TCP port of the web server. After the commands, Prevue Commander stays connected and accepts commands from
     /// the control page and the HTTP API on this port. 0 starts no server.
     /// </summary>

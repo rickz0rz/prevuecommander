@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+        <!-- The ZIP code table: the ZIP code, the latitude and the longitude of each ZCTA. From the 2024 Gazetteer
+             file of the U.S. Census Bureau (2024_Gaz_zcta_national.txt). -->
+        <EmbeddedResource Include="zcta.csv.gz" LogicalName="PrevueCommander.WeatherGov.zcta.csv.gz"/>
+    </ItemGroup>
+
+</Project>
