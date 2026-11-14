@@ -8,4 +8,7 @@ public record Playbook
     public Configuration Configuration { get; init; } = new();
 
     public List<IPlaybookCommand> Commands { get; init; } = [];
+
+    /// <summary>The automatic promos after the commands, or null for none.</summary>
+    public AutoPromoSettings? AutoPromo { get; init; }
 }

@@ -29,6 +29,9 @@ public sealed class GuideWatcher(
     private ConfigurationCommand _status = new();
     private bool _save;
 
+    /// <summary>Gets all the listings of each read of the guide, for example for the automatic promos.</summary>
+    public Action<IReadOnlyList<BaseCommand>>? ListingsRead { get; init; }
+
     /// <summary>
     /// Remembers the commands of the first run: the listings that ESQ has, and the session commands to use again.
     /// </summary>
@@ -69,6 +72,7 @@ public sealed class GuideWatcher(
             return 0;
         }
 
+        ListingsRead?.Invoke(listings);
         var changes = _state.Changes(listings);
         if (changes.Count == 0)
         {

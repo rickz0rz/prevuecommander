@@ -109,6 +109,11 @@ try
     if (watch && imports.Count == 0)
         throw new InvalidOperationException(
             "The watch mode reads the guide of the imports again, but the playbook has no guide data import.");
+    playbook.AutoPromo?.Check();
+    var autoPromo = playbook.AutoPromo != null && !options.Validate && options.OutputPath == null;
+    if (autoPromo && configuration.ControlPort <= 0 && string.IsNullOrEmpty(configuration.ControlSerialPort))
+        throw new InvalidOperationException(
+            "The automatic promos need the control line. Set controlPort or controlSerialPort in the configuration.");
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
     var commands = new List<BaseCommand>();
@@ -151,16 +156,50 @@ try
     }
 
     Console.WriteLine($"Sent {commands.Count} commands.");
-    if (!watch)
+    if (!watch && !autoPromo)
         return 0;
 
-    // With the setting now, the time of an update is that time plus the time since the start.
+    // With the setting now, the time after the commands is that time plus the time since the start.
     var started = System.Diagnostics.Stopwatch.StartNew();
-    var watcher = new GuideWatcher(imports, ContextAt,
-        () => string.IsNullOrWhiteSpace(configuration.Now) ? DateTime.Now : now + started.Elapsed,
-        lines.SendAsync, Console.Out);
-    watcher.Start(commands);
-    await watcher.RunAsync(TimeSpan.FromMinutes(configuration.WatchMinutes), cancellation.Token);
+    DateTime Clock() => string.IsNullOrWhiteSpace(configuration.Now) ? DateTime.Now : now + started.Elapsed;
+
+    var promoter = autoPromo
+        ? new AutoPromoter(playbook.AutoPromo!, Clock, lines.SendAsync, Console.Out, configuration.CharacterSet)
+        : null;
+    promoter?.SetListings(commands);
+
+    // The watch mode and the automatic promos run until Ctrl+C. If one of them stops with an error, both stop.
+    using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
+    var loops = new List<Task>();
+    if (watch)
+    {
+        var watcher = new GuideWatcher(imports, ContextAt, Clock, lines.SendAsync, Console.Out)
+        {
+            ListingsRead = listings => promoter?.SetListings(listings)
+        };
+        watcher.Start(commands);
+        loops.Add(watcher.RunAsync(TimeSpan.FromMinutes(configuration.WatchMinutes), stop.Token));
+    }
+
+    if (promoter != null)
+        loops.Add(promoter.RunAsync(stop.Token));
+
+    var first = await Task.WhenAny(loops);
+    await stop.CancelAsync();
+    try
+    {
+        await Task.WhenAll(loops);
+    }
+    catch (OperationCanceledException)
+    {
+        // The other loop stopped because of the cancellation.
+    }
+    catch
+    {
+        // The error of the first loop is the error to show.
+    }
+
+    await first;
     return 0;
 }
 catch (YamlException e)

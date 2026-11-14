@@ -11,6 +11,9 @@ public sealed class SerialLines(Configuration configuration, TextWriter log) : I
 {
     private readonly Dictionary<SerialLine, (LineConnection Connection, SerialWriter Writer)> _connections = [];
 
+    // The watch mode and the automatic promos send at the same time, on two lines. Only one task opens a connection.
+    private readonly SemaphoreSlim _open = new(1, 1);
+
     /// <summary>
     /// Makes sure that the configuration has a port for each line that <paramref name="commands"/> use.
     /// </summary>
@@ -37,6 +40,19 @@ public sealed class SerialLines(Configuration configuration, TextWriter log) : I
     }
 
     private async Task<SerialWriter> WriterAsync(SerialLine line, CancellationToken cancellationToken)
+    {
+        await _open.WaitAsync(cancellationToken);
+        try
+        {
+            return await OpenAsync(line, cancellationToken);
+        }
+        finally
+        {
+            _open.Release();
+        }
+    }
+
+    private async Task<SerialWriter> OpenAsync(SerialLine line, CancellationToken cancellationToken)
     {
         if (_connections.TryGetValue(line, out var open))
             return open.Writer;
