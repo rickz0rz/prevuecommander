@@ -833,6 +833,75 @@
           }
         ]
       }
+    },
+    "autoPromo": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "intervalSeconds": {
+          "type": "integer"
+        },
+        "withinHours": {
+          "type": "number"
+        },
+        "includeNow": {
+          "type": "boolean"
+        },
+        "movies": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "premium": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "channels": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "titles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "order": {
+          "enum": [
+            "Soonest",
+            "Random"
+          ]
+        },
+        "repeat": {
+          "type": "integer"
+        },
+        "brush": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "side": {
+          "enum": [
+            "Right",
+            "Left"
+          ]
+        },
+        "style": {
+          "enum": [
+            "Box",
+            "Text"
+          ]
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false
