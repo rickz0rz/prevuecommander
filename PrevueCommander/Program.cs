@@ -127,6 +127,9 @@ try
     foreach (var playbookCommand in playbook.Commands)
         commands.AddRange(await playbookCommand.TransformAsync(context, cancellation.Token));
 
+    if (ClockPlaybookCommand.DstWarning(commands) is { } dstWarning)
+        Console.WriteLine(dstWarning);
+
     if (options.OutputPath != null)
     {
         var outputPath = Path.GetFullPath(options.OutputPath);

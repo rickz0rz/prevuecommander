@@ -294,7 +294,7 @@ The requests that Esquire also has use the same paths and bodies, so a script wo
 | `DELETE /prevue/ctrl/hold` | | Stops the hold. The logo rotation starts again. |
 | `POST /prevue/data/local-ads` | `{"ads": ["%CENTER%Joe's Pizza"], "dryRun": false}` | Replaces the local ads of ESQ, as `!!localAds`. The answer has the preview and the warnings of each ad. With `"dryRun": true`, the server only gives the preview and sends nothing. |
 | `POST /prevue/data/weather` | `{"status": {...}, "text": {...}, "forecast": {...}, "show": true, "pauseSeconds": 5}` | Sends the weather status, the weather text and the 3-day forecast, with the settings of `!!weatherStatus`, `!!weatherText` and `!!weatherForecast`. Each part is optional, but one part is necessary. With `show`, the server then waits `pauseSeconds` and shows the weather. With a forecast, it shows the forecast (`W3`). Without a forecast, it shows the current weather (`W0`). |
-| `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. |
+| `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. The server first sends the DST window of the year of the clock, as `!!configureDst`. |
 | `POST /prevue/data/weather-gov` | `{"zip": "48201", "show": "forecast", "pauseSeconds": 5}` | Gets the weather of weather.gov and sends it, as `!!weatherGov`. The body can have all the settings of `!!weatherGov`. `show` is `none` (the default), `current` or `forecast`. With `current` or `forecast`, the server then waits `pauseSeconds` and shows the weather. |
 | `POST /prevue/weather/refresh` | | Reads the weather of the `!!weatherGov` commands of the playbook again, and sends it. The playbook must have a `!!weatherGov` command. |
 | `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](#watch-mode) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
@@ -465,7 +465,7 @@ The control line commands do not need a session. Send them after the listings, b
 |---|---|---|
 | `!!configuration` | `configuration`: see the table below | Sends the status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
 | `!!newLookConfiguration` | `configuration`: see the table below | Sends the configuration record ('f'). ESQ saves it to `config.dat`. |
-| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of `!!newLookConfiguration` is `'2'` (the default). |
+| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of `!!newLookConfiguration` is `'2'` (the default). See [The clock and daylight saving time](#the-clock-and-daylight-saving-time). |
 | `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. |
 
 The settings of `!!configuration`:
@@ -517,6 +517,21 @@ For example:
 ```
 
 A setting that is not in the playbook keeps its default. ESQ saves the configuration record to `config.dat` on its drive.
+
+#### The clock and daylight saving time
+
+`!!clock` sends the local time and a daylight saving time flag. The flag tells ESQ that the time includes daylight saving time. ESQ compares the flag with its own DST window from `!!configureDst`. When they do not agree, ESQ moves the clock by one hour. Tests with Esquire showed these results:
+
+| Clock that was sent | DST window of ESQ | ESQ shows |
+|---|---|---|
+| Winter, no flag | Any | The correct time. |
+| Summer, with the flag | The window of the year | The correct time. |
+| Summer, with the flag | No window of the year | One hour early. |
+| Summer, no flag | The window of the year | One hour late. |
+
+Prevue Commander sets the flag from the time zone of this computer, so send `!!configureDst` in the same playbook. The order of `!!clock` and `!!configureDst` is not important. If a playbook sends a summer clock without `!!configureDst`, Prevue Commander shows a warning. ESQ keeps the window in `dst.dat`, so a warning is not an error when the drive already has the window.
+
+ESQ also ignores the clock when `clockCommandInFSetting` of `!!newLookConfiguration` is not `'2'`. It then counts a line error (`DATACErrs`). If the playbook does not send `!!newLookConfiguration`, ESQ uses the setting of its drive.
 
 ### Listings
 
