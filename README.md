@@ -21,6 +21,32 @@ Prevue Commander was developed and tested with ESQ 9.0.14. Other versions of ESQ
 
 The fonts of ESQ 9.0.14 have the Latin-1 characters, for example `é`, `ñ` and `©`. Prevue Commander sends these characters by default. For an older version of ESQ, set `characterSet: Ascii`. The fonts of older versions possibly do not have these characters.
 
+## Words in this README
+
+| Word | Meaning |
+|---|---|
+| ESQ | The Prevue Guide program that runs on the Amiga. |
+| Data line | The serial line that sends the guide data to ESQ. The satellite feed used 2400 baud. |
+| Control line | A second, slow serial line (110 baud). It tells ESQ what to show in the top half of the screen. |
+| Data line command | One record on the data line. It starts with the bytes `55 AA`, then a letter that names the command, then its data and a checksum. For example, 'A' is the address command and 'L' is a local ad. This README writes the letter in quotes, for example 'F'. The case of the letter is important: 'F' and 'f' are different commands. |
+| Control packet | One record on the control line. It starts with a type number from 1 to 22. See [Packet types](#packet-types). |
+| Unit | One Prevue machine. A cable company could have many units on one satellite feed. Each unit has an address. |
+| Session | A group of data line commands for the selected units: an address command, the commands, and a box off command. See [Commands](#commands). |
+| Status packet | The 'F' command (`!!configuration`). It has the time zone, the scroll speed and the daylight saving time setting. ESQ needs it before the listings. |
+| Configuration record | The 'f' command (`!!newLookConfiguration`). It has the settings of the screen, the local ads and the logos. |
+| Box off | The command that ends a session (`!!boxOff`). ESQ saves the data at the box off if the session has a save command. |
+| Broadcast day | The day of the listings. It starts at 5:00 AM and has 48 half-hour slots. |
+| Lineup | The list of channels in the grid, with their numbers and call letters. |
+| Call letters, call sign | The name of a channel in the grid, for example `KTIVDT`. ESQ shows a maximum of 6 characters. |
+| Source name | A short name of 1 to 6 letters or digits for each channel. ESQ connects the programs and the channel logos to a channel by this name. |
+| Promo | A box in the top half of the screen that shows the next time of one program. |
+| Brush | An IFF picture of ESQ, for example the background of a promo box. The file `BRUSH.INI` on the drive gives each brush a two-letter ID, for example `AT`. |
+| Logo | A picture in the top half of the screen. ESQ shows the logos of the file `LOGO.LST` in turn. A picture of `!!graphicAd` is a logo. |
+| Genlock, genlock key | A genlock mixes the picture of the Amiga with a video signal. Where the picture has color 0 (the genlock key), the video shows through. |
+| Drive, volume | The disk of the Amiga that ESQ uses. AmigaDOS names a volume with a colon. For example, `DF0:` is the drive of ESQ, and `RAM:` is a disk in memory. |
+| Operator menu | The menu that an operator opens with the ESC key. It has the diagnostics screen and the ad editor. ESQ reads the keys of this menu on a pin of the serial port. Prevue Commander and Esquire do not send these keys. `!!utility` with `ToggleMenu` opens the menu. |
+| Baud | The speed of a serial line. A byte takes 10 bits on the line, so 2400 baud sends 240 bytes each second. |
+
 ## Requirements
 
 - The [.NET 11 SDK](https://dotnet.microsoft.com/download).
@@ -163,7 +189,7 @@ At each interval, Prevue Commander follows these rules:
 - If the lineup of a day changed, it sends the lineup and all the programs of that day. ESQ deletes the programs of a day when its lineup changes.
 - If the lineup of a day did not change, it sends only the new and changed programs.
 - At 5:30 AM, ESQ changes to the next day. The new next day gets its lineup and all its programs.
-- It sends the changes in a session: the address and the status packet of the playbook, the changes, `!!save` if the playbook has it, and a box off command. If the guide has no changes, it sends nothing.
+- It sends the changes in a session. The session has the `!!address` and the `!!configuration` of the playbook, the changes, `!!save` if the playbook has it, and `!!boxOff`. If the guide has no changes, it sends nothing.
 - It does not send the channel logos again.
 - If it cannot read the guide, for example because the server does not answer, it shows the error. It tries again at the next interval.
 
@@ -322,7 +348,7 @@ The control line commands do not need a session. Send them after the listings, b
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!address` | `target` (`*`) | Selects the units that accept the next commands. ESQ accepts no other command before it. `*` selects all units. |
+| `!!address` | `target` (`*`) | Selects the units (Prevue machines) that accept the next commands. ESQ accepts no other command before it. `*` selects all units. Each unit has an address, so a cable company could send different data to different units. |
 | `!!save` | | Tells ESQ to save the received data to its drive at the next box off. Without it, the data stays only in memory. |
 | `!!boxOff` | | Ends the session. Send it last. |
 | `!!reset` | `target` (`*`) | Reboots the Amiga after about 10 seconds. ESQ accepts a reset only directly after an address command, so this command sends both. |
@@ -331,12 +357,60 @@ The control line commands do not need a session. Send them after the listings, b
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!configuration` | `configuration`: `timeZone` (`'6'`), `scrollSpeed` (`'3'`), `daylightSavingTime` (`true`), `clockOffsetMinutes` (`0`) | The status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
-| `!!newLookConfiguration` | `configuration`: the fields of [`NewLookConfiguration`](Prevue.Commands/Model/NewLookConfiguration.cs) | The configuration record ('f'). ESQ saves it to `config.dat`. The defaults are the values of the original data files. `lrbnBannerControl: 'Y'` lets the control line move the grid. |
-| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of the 'f' configuration is `'2'` (the default). |
+| `!!configuration` | `configuration`: see the table below | Sends the status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
+| `!!newLookConfiguration` | `configuration`: see the table below | Sends the configuration record ('f'). ESQ saves it to `config.dat`. |
+| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of `!!newLookConfiguration` is `'2'` (the default). |
 | `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. |
 
-ESQ adds (time zone - 6) hours to the clock and to the times of the grid. With the time zone `'6'`, ESQ shows the times as they are sent. Prevue Commander sends local times, so keep `'6'` unless you want another time on the screen.
+The settings of `!!configuration`:
+
+| Setting | Default | Description |
+|---|---|---|
+| `timeZone` | `'6'` | A character from `'1'` to `'9'` or from `'A'` to `'H'`. ESQ adds (time zone - 6) hours to the clock and to the times of the grid. For example, `'7'` shows the times one hour later, and `'5'` one hour earlier. Prevue Commander sends local times, so keep `'6'` unless you want another time on the screen. |
+| `scrollSpeed` | `'3'` | The speed of the grid, from `'1'` to `'8'`. ESQ uses `'4'` for another value. `'3'` is the value of the original data files. |
+| `daylightSavingTime` | `true` | `true` if the area of the units uses daylight saving time. Send the dates of the change with `!!configureDst`. |
+| `clockOffsetMinutes` | `0` | Minutes, from 0 to 59, that ESQ adds to the clock that it shows. |
+
+The other values of the status packet are the values of the original data files. A playbook cannot change them.
+
+The settings of `!!newLookConfiguration`. Each setting is one character, except the numbers. The defaults are the values of the original data files. The names come from the diagnostics screen of ESQ. For many settings, what ESQ does is not known. Keep the default of these settings.
+
+| Setting | Default | What ESQ does |
+|---|---|---|
+| `rollAndHoldTime` | `'2'` | The refresh interval in minutes. |
+| `gridRollAndHold` | `'N'` | `'Y'` stops the grid for a short time after each 3 listings. |
+| `militaryTime` | `'N'` | `'Y'` shows the clock in 24-hour format. |
+| `cleanUpUnusedLogos` | `'Y'` | `'Y'` scans the directory `DH2:logos` before ESQ reads `LOGO.LST` again. Without that directory, ESQ stops. Use `'N'` before `reload: true` or `ReloadLogoList`. See [Files and utilities](#files-and-utilities). |
+| `localTextAdSource` | `'S'` | The source of the local ads: `'N'`, `'L'`, `'R'` or `'S'`. See [Local ads](#local-ads). |
+| `pcDiskSupport` | `'N'` | `'Y'` uses the volume `PC1:` for the graphics. |
+| `lrbnBannerControl` | `'N'` | `'Y'` lets the control line move the grid (`!!moveGrid`). |
+| `lrbnModeSelector` | `'N'` | `'L'`, `'R'`, `'B'` or `'N'`. How the control line moves the grid in one of its modes. The effect on the screen is not known. |
+| `msnMode` | `'N'` | `'M'` changes the promo, logo and text commands of the control line to a clear of the top half. |
+| `clockCommandInFSetting` | `'2'` | `'2'` tells ESQ to accept the clock of `!!clock`. With `'1'`, ESQ keeps its own clock. |
+| `displayLength` | `'C'` | `'C'` tells ESQ to use the next byte of the record for the banner. |
+| `numberOfColorPalettes` | `'8'` | ESQ always uses 8. |
+| `displayMode` | `'G'` | ESQ keeps and saves this setting, but does not use it. |
+| `primeTimeStartingSlot` | `29` | A number from 0 to 99. Not known. |
+| `primeTimeLookAhead` | `6` | A number from 0 to 99. Not known. |
+| `primeTimePromotionTimeSlotStart` | `23` | A number from 0 to 99. Not known. |
+| `primeTimePromotionTimeSlotEnd` | `36` | A number from 0 to 99. Not known. |
+| `lengthOfLookAheadSportsSummary` | `6` | A number from 0 to 99. Not known. |
+| `minutesToDisplayPPVPostStart` | `15` | A number from 0 to 999. Not known. |
+| `summaryCycleFrequency` | `'1'` | `'1'` to `'9'`. Not known. |
+| `primeTimeSummary`, `sportsSummary` | `'0'`, `'1'` | A digit. Not known. |
+| `laserDiscInsertionType` | `'L'` | `'L'`, `'S'` or `'V'`. Not known. |
+| `gridSourceChannelOrder` (`'C'`), `mrReviewInFSetting` (`'0'`), `sbsFrequency` (`'1'`), `advueInsertion` (`'N'`), `pieFormat` (`'A'`), `language` (`'E'`), `sumBySourceRollAndHold` (`'N'`), `movieRecapRollAndHold` (`'N'`), `primeTimeSummaryRollAndHold` (`'N'`), `sportsSummaryRollAndHold` (`'N'`), `videoVueInsertion` (`'N'`), `cycleSummaryInfo` (`'Y'`), `gridSynopsis` (`'Y'`), `lockGridOnSynopsis` (`'Y'`), `weatherHoldAndRoll` (`'Y'`) | (in parentheses) | Not known. |
+
+For example:
+
+```yaml
+- !!newLookConfiguration
+  configuration:
+    militaryTime: 'Y'
+    cleanUpUnusedLogos: 'N'
+```
+
+A setting that is not in the playbook keeps its default. ESQ saves the configuration record to `config.dat` on its drive.
 
 ### Listings
 
@@ -370,7 +444,7 @@ The import follows these rules:
 - With `characterSet: Latin1` (the default), Latin-1 characters stay, for example `é`. A letter with an accent outside Latin-1 loses its accent. Typographic quotation marks and dashes become ASCII. Other characters are removed.
 - With `characterSet: Ascii`, all letters lose their accents.
 - The text has a maximum of 120 characters.
-- With `showStereo: true`, the import sets the stereo bit (bit 7) of the attribute of each channel. It adds `In Stereo` before the closed caption symbol of each program with stereo sound. ESQ shows the stereo symbol in place of that text. If the text is then longer than 120 characters, the text before `In Stereo` becomes shorter. A Channels DVR program has stereo sound if it has the tag `Stereo`. An XMLTV program has stereo sound if it has an `<audio><stereo>` value that is not `mono`.
+- With `showStereo: true`, the import marks each channel of the lineup as a stereo channel. This is bit 7 of the attribute byte of the channel. It adds `In Stereo` before the closed caption symbol of each program with stereo sound. ESQ shows the stereo symbol in place of that text. If the text is then longer than 120 characters, the text before `In Stereo` becomes shorter. A Channels DVR program has stereo sound if it has the tag `Stereo`. An XMLTV program has stereo sound if it has an `<audio><stereo>` value that is not `mono`.
 
 ### Channel logos
 
@@ -411,12 +485,14 @@ A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seco
 |---|---|---|
 | `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. Send `!!configuration` before it. |
 
-`localTextAdSource` of `!!newLookConfiguration` (the 'f' command) sets the source of the local ads:
+A local ad is a text ad of the cable company, for example for a local shop. ESQ shows it in the top half of the screen.
+
+`localTextAdSource` of `!!newLookConfiguration` sets the source of the local ads:
 
 | Value | Local ads | 'L' commands of the data line | Ad editor of the operator menu |
 |---|---|---|---|
 | `'N'` | Off. ESQ shows no local ads. | Ignored | Not available |
-| `'L'` | Local: an operator types the ads on the Amiga. | Ignored | Available |
+| `'L'` | Local: an operator types the ads in the operator menu of the Amiga. | Ignored | Available |
 | `'R'` | From the data line. | Accepted | Not available |
 | `'S'` (default) | From the data line. | Accepted | Not available |
 
@@ -455,19 +531,24 @@ The packet shows a local ad only when all these conditions are true:
 
 - ESQ has local ads. Send `!!localAds` first.
 - `localTextAdSource` is `'R'` or `'S'`. With `'L'`, the ads that an operator typed also show.
-- The graphic ad mode of the operator menu is `N`. This is the default.
-- No local avail filter is active (type 22).
+- The graphic ad mode of the operator menu is `N`. This is the default. With another mode, ESQ shows the graphic ads of the file `gfx/g_ads.data` in place of the local ads. These graphic ads are not the pictures of `!!graphicAd`.
+- No local avail filter is active. A type 22 packet starts this filter. See [Packet types](#packet-types).
 
-Otherwise, type 12 does the same as type 1. The operator key `T` also shows a local ad, but ESQ reads the keys on a different line of the serial port, and Esquire does not send them.
+Otherwise, type 12 does the same as type 1. The key `T` of the operator menu also shows a local ad. But ESQ reads the keys of the operator on a different pin of the serial port. Esquire does not send these keys.
 
 ### Weather
 
-ESQ shows the current weather in the top half of the screen when the control line sends `W0`. The weather has a status ('I') and a text ('W'). Send them in a session on the data line, and then send `!!showWeather` on the control line.
+ESQ shows the current weather in the top half of the screen. The control line command `!!showWeather` starts it. The weather has two parts:
+
+- The status (`!!weatherStatus`, the 'I' command) has the city and a label.
+- The text (`!!weatherText`, the 'W' command) has the lines, for example a forecast.
+
+Send them in a session on the data line. Then send `!!showWeather` on the control line.
 
 | Command | Settings | Description |
 |---|---|---|
 | `!!weatherStatus` | `digit` (`'1'`), `label`, `text` | Sets the weather status. ESQ shows `text` at the top, for example the city. `label` has a maximum of 10 characters. The digit `'0'` clears the weather. ESQ saves the status in `curday.dat`. |
-| `!!weatherText` | `minutes` (`60`), `icon` (`1`), `label` (`*`), `lines`, `color` (`1`) | Sends the weather text, for example a forecast or an alert. ESQ keeps it only if `label` matches the label of the status. `*` and `?` are wildcards, and upper case and lower case are different. ESQ shows the text for `minutes` (1 to 255). `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive, and `1` shows no picture. `lines` has a maximum of 10 lines. `color` shows only on the diagnostics screen. |
+| `!!weatherText` | `minutes` (`60`), `icon` (`1`), `label` (`*`), `lines`, `color` (`1`) | Sends the weather text, for example a forecast or an alert. ESQ keeps it only if `label` matches the label of the status. `*` and `?` are wildcards, and upper case and lower case are different. ESQ shows the text for `minutes` (1 to 255). `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive, and `1` shows no picture. `lines` has a maximum of 10 lines. `color` shows only on the diagnostics screen of the operator menu. |
 
 The status text has a maximum of 39 bytes, with the digit, the label, a separator and the end. Prevue Commander stops before it sends a longer status, because ESQ ignores it. ESQ shows the lines of the weather text in pairs: the first line at the left of the picture, the second line at the right, and so on. Use only printable ASCII characters. This example shows a sun and four lines:
 
@@ -492,13 +573,28 @@ The status text has a maximum of 39 bytes, with the digit, the label, a separato
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!fileTransfer` | `source`, `target`, `address` (`*`) | Sends a local file to the drive of ESQ. The target must start with a volume of 4 characters, for example `DF0:Logos/MYAD.IFF`. ESQ accepts one file for each address command, so this command first sends a box off command and an address command. |
-| `!!utility` | `action` | Tells ESQ to reload files or to show a screen. The actions are `ReloadGraphicAds`, `ReloadLogoList`, `RebuildBrushList`, `ReloadBrushes`, `ReloadGradient`, `ReloadBanner`, `ReloadDefaults`, `ReloadQTable`, `ReloadSourceConfiguration`, `ToggleMenu`, `ShowDiagnostics` and `ShowVersion`. |
+| `!!fileTransfer` | `source`, `target`, `address` (`*`) | Sends a local file to the drive of ESQ. The target is an AmigaDOS path that starts with a volume name of 4 characters, for example `DF0:Logos/MYAD.IFF`. `DF0:` is the drive of ESQ. ESQ accepts one file for each address command, so this command first sends a box off command and an address command. |
+| `!!utility` | `action` | Tells ESQ to read a file of its drive again, or to show a screen. See the table of actions below. |
 | `!!shell` | `commandLine` | Runs an AmigaDOS command line on the Amiga, for example `Delete DF0:OLD.IFF`. The command line has a maximum of 78 characters. ESQ shows no output. |
 
 ESQ first writes a received file to `RAM:`, in the same directories as the target. Then it copies the file to the target. If a directory does not exist in `RAM:` or on the target volume, the file does not arrive. Thus, for a target in a directory, `!!fileTransfer` first sends `MakeDir` commands for the directories in `RAM:` and on the target volume.
 
-`ReloadGraphicAds` reloads only `gfx/g_ads.data`. `ReloadLogoList` also reads `LOGO.LST` again and starts at its first line.
+The actions of `!!utility`. Use a reload action after you send a new file with `!!fileTransfer`.
+
+| Action | What ESQ does |
+|---|---|
+| `ReloadGraphicAds` | Reads the graphic ads of `gfx/g_ads.data` again. It does not read `LOGO.LST` again. |
+| `ReloadLogoList` | Reads `gfx/g_ads.data` and `LOGO.LST` again, and starts at the first line of the list. See the warning below. |
+| `RebuildBrushList` | Makes the list of brushes again from the table in the program. |
+| `ReloadBrushes` | Reads `BRUSH.INI` again: the brushes for the promo boxes. |
+| `ReloadGradient` | Reads `gradient.ini` again. |
+| `ReloadBanner` | Reads `BANNER.INI` and the banner picture again. |
+| `ReloadDefaults` | Reads `default.ini` again. |
+| `ReloadQTable` | Reads `qtable.ini` again. |
+| `ReloadSourceConfiguration` | Reads `SourceCfg.ini` again. |
+| `ToggleMenu` | Opens or closes the operator menu. |
+| `ShowDiagnostics` | Shows the diagnostics screen. |
+| `ShowVersion` | Shows the version screen. |
 
 > [!IMPORTANT]
 > If `cleanUpUnusedLogos` is `'Y'` (the default), `ReloadLogoList` stops ESQ. Before ESQ reads the list, it scans the directory `DH2:logos`. Without that directory, ESQ stops. Tests in Esquire and FS-UAE gave the same result. Send `cleanUpUnusedLogos: 'N'` in `!!newLookConfiguration` before you use `ReloadLogoList`.
@@ -522,7 +618,7 @@ The settings of the pictures:
 - `resolution`: `Low` is 320 by 240 pixels with 32 colors, for photos and color gradients. `High` is 640 by 240 pixels with 16 colors, for small text and thin lines. ESQ shows the top 220 rows.
 - `fit`: `Contain` shows all the image, and the background fills the rest. `Cover` fills all the picture and cuts the edges of the image. `Stretch` fills all the picture and changes the shape of the image.
 - `background`: the color around the image and behind its transparent pixels.
-- `keyBackground`: `true` makes the background the genlock key (color 0). The genlock video then shows through it.
+- `keyBackground`: `true` makes the background the genlock key (color 0). With a genlock, the video then shows through the background.
 - `saveTo`: a local directory that gets a copy of the IFF file.
 
 The pixels of the Amiga are not square, so Prevue Commander gives the image the shape that it has on a TV. For a full ad, use an image with a ratio of 2.46 to 1, for example 1080 by 440 pixels. For a full banner, use a ratio of 3.4 to 1, for example 1088 by 320 pixels. The banner uses only 4 colors of its own, so use few colors.
@@ -551,6 +647,8 @@ The ad shows in turn with the other logos, and `!!showLogo` shows the next logo 
 #### Send your own IFF picture
 
 `!!fileTransfer` sends an IFF picture that you made yourself, for example to `DF0:Logos/Ads/MYAD`. ESQ loads a picture for the top half of the screen only in one of these formats:
+
+An IFF picture keeps its colors in bit planes: 5 planes give 32 colors, and 4 planes give 16 colors. CAMG is the part of the file that names the display mode of the Amiga.
 
 | Format | Width | Planes | Colors | Aspect | CAMG |
 |---|---|---|---|---|---|
@@ -582,7 +680,7 @@ The control line commands go to `controlPort` or `controlSerialPort`. ESQ reads 
 | `!!clearTopHalf` | | Removes the promo or the logo, and moves the grid back. The top half shows the genlock video. |
 | `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
 | `!!showWeather` | | Sends `W0`: shows the current weather. See [Weather](#weather). |
-| `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. In a double-quoted YAML text, `\x12` is the separator of the two boxes. |
+| `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. See [Packet types](#packet-types). In a double-quoted YAML text, `\x12` is the byte that separates the text of the two boxes. |
 | `!!pause` | `seconds` (`1`) | Waits before the next command. It does not send data. |
 
 A promo has a box on the right, a box on the left, or both boxes. ESQ finds the program in its listings, so send the listings first. A box has these settings:
@@ -595,7 +693,9 @@ The box shows the call letters, the title, the next time of the program and the 
 
 #### Packet types
 
-These are the types of the control line, from the code of ESQ. Use `!!controlPacket` to send a type that has no command. A packet has a body of a maximum of 196 characters. A machine with a RAVESC selection code ignores the types with an asterisk (*). ESQ ignores the types 6, 8, 9, 10, 14, 18, 19 and 21.
+These are the types of the control line, from the code of ESQ. Use `!!controlPacket` to send a type that has no command. A packet has a body of a maximum of 196 characters. ESQ ignores the types 6, 8, 9, 10, 14, 18, 19 and 21. A unit with the selection code `RAVESC` in its configuration ignores the types with an asterisk (*). The purpose of that mode is not known.
+
+Some types have results that are not known. The satellite feed sent these types, and a playbook does not usually need them.
 
 | Type | Body | What ESQ does |
 |---|---|---|
@@ -604,15 +704,15 @@ These are the types of the control line, from the code of ESQ. Use `!!controlPac
 | 3* | any | Nothing. ESQ counts the packet only. |
 | 4* | `L` or `R` | Sets the box that ESQ tries first. Another character changes the order. `!!promo` sends this type. |
 | 5* | two characters | Sets the channel codes of the two boxes. ESQ uses them in the title search. |
-| 7* | | Stops the read mode. |
-| 11* | 11 digits | Sets the clock and the battery clock of the Amiga. The CLOCKCMD setting must be `1`. Do not use it for tests: the battery clock keeps the time. |
+| 7* | | Stops the read mode (see type 16). |
+| 11* | 11 digits | Sets the clock and the battery clock of the Amiga. The `CLOCKCMD` setting of the configuration file of ESQ must be `1`. Do not use it for tests: the battery clock keeps the time after a restart. |
 | 12 | any, or `1<channels>` or `3` | Shows the next local ad, if ESQ has local ads. See [Show a local ad](#show-a-local-ad). Without local ads, it is the same as type 1, but only when no local avail filter and no graphic ads are active. |
 | 13 | | ESQ ignores the next byte. |
-| 15 | a number | Sets the level of a copper effect to 63 minus the number. The effect on the screen is not known. |
+| 15 | a number | Sets the level of a copper effect to 63 minus the number. The copper is the display processor of the Amiga, which can change colors on each line of the screen. The effect on the screen is not known. |
 | 16* | | Starts the read mode. ESQ then stops the animation of the grid. |
 | 17* | `<title>` or `<title>\x12<title>` | Sets the titles that a promo finds. `!!promo` sends this type. |
-| 20* | one character | Keeps a promo type for the next type 1 or 12. If the type is in `PromoId.Dat`, ESQ shows the logo in place of the promo. |
-| 22* | `9<tokens>` or `8` | `9` starts a local avail filter, and `8` stops it. With the diagnostic VIN setting, `0` to `3` control the CTRL output. |
+| 20* | one character | Keeps a promo type for the next type 1 or 12. If the type is in the file `PromoId.Dat` of the drive, ESQ shows the logo in place of the promo. |
+| 22* | `9<tokens>` or `8` | `9` starts a local avail filter, and `8` stops it. The filter controls what ESQ shows in the top half for the next type 12 packets. The details of the tokens are not known. With the VIN setting of the diagnostics screen, `0` to `3` control the CTRL output. |
 
 The sub-commands of type 1. The results come from tests with Esquire.
 
@@ -625,7 +725,7 @@ The sub-commands of type 1. The results come from tests with Esquire.
 | `4<channels>` or `6<channels>` | Finds a channel by its call letters. If ESQ finds the channel, it clears the top half. If not, it shows the logo. |
 | `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. `!!moveGrid` sends this sub-command. |
 | `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. In the test, it removed the promo and showed nothing. |
-| `F<op><text>` or `X<op><text>` | Sends a command to the text display: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
+| `F<op><text>` or `X<op><text>` | Sends a command to the text display of the top half. `<op>` is one letter: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
 | `W0` | Shows the current weather of `!!weatherStatus` and `!!weatherText`. Without weather data, it shows "No Current Weather Data Available". `!!showWeather` sends it. |
 | `W3` | Shows the weather forecast. Without weather data, it shows "No Forecast Weather Data Available". |
 | `W` and another character | Shows the logo. |
@@ -653,9 +753,9 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
     --screenshot-every 15
 ```
 
-`/tmp/prevue-drive` is the copy of the drive. Run Prevue Commander with `--port 5401` when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
+`/tmp/prevue-drive` is the copy of the drive. Run Prevue Commander with `--port 5401` when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs`, the counter of ESQ for the data line errors, shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
 
-To test the control line, add `--prevue-ctrl-port 5402` and run Prevue Commander with `--control-port 5402`. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
+To test the control line, add `--prevue-ctrl-port 5402` and run Prevue Commander with `--control-port 5402`. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum. `--watch` shows the changes of a variable of ESQ. The names come from `ESQ.lst`, the listing of the ESQ program in the Esquire directory.
 
 ### Replay a feed file
 
@@ -696,7 +796,7 @@ This is the start of the output for the example playbook:
         clock offset minutes: 0
 ```
 
-The first number is the position of the command in the file, in hexadecimal. A command with a bad checksum shows `BAD CHECKSUM`. Bytes before the first `55 AA` show as `junk`.
+The first number is the position of the command in the file, in hexadecimal. Then come the letter and the name of the command. A command with a bad checksum shows `BAD CHECKSUM`. Each data line command starts with the bytes `55 AA`. Bytes before the first `55 AA` show as `junk`.
 
 ## Test with FS-UAE
 
