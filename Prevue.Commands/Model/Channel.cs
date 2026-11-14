@@ -7,7 +7,12 @@ namespace Prevue.Commands.Model;
 /// <param name="ChannelNumber">The number that the grid shows, for example "4" or "56.2". It can be empty.</param>
 /// <param name="CallSign">The name that the grid shows. ESQ keeps a maximum of 6 characters.</param>
 /// <param name="Premium">True to show the programs of the channel on a red background.</param>
-public sealed record Channel(string SourceName, string? ChannelNumber, string? CallSign, bool Premium = false)
+/// <param name="Stereo">
+/// True to let ESQ show the stereo symbol for the text "In Stereo" in the programs of the channel. Without it, ESQ
+/// deletes that text.
+/// </param>
+public sealed record Channel(string SourceName, string? ChannelNumber, string? CallSign, bool Premium = false,
+    bool Stereo = false)
 {
     public const int MaximumSourceNameLength = 6;
     public const int MaximumChannelNumberLength = 9;

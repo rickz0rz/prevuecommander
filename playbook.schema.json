@@ -158,6 +158,9 @@
                   "type": "string"
                 }
               },
+              "showStereo": {
+                "type": "boolean"
+              },
               "channelLogos": {
                 "type": [
                   "object",
@@ -739,6 +742,9 @@
                 "items": {
                   "type": "string"
                 }
+              },
+              "showStereo": {
+                "type": "boolean"
               },
               "channelLogos": {
                 "type": [

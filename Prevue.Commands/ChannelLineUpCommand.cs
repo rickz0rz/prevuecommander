@@ -44,8 +44,9 @@ public class ChannelLineUpCommand : BaseCommand
         foreach (var channel in Channels)
         {
             bytes.Add(SourceStart);
-            // Bit 0 is always set. Bit 1 makes the row red (a premium channel).
-            bytes.Add((byte)(channel.Premium ? 0x03 : 0x01));
+            // Bit 0 is always set. Bit 1 makes the row red (a premium channel). Bit 7 lets ESQ change "In Stereo" to
+            // the stereo symbol (_ESQSHARED_NormalizeInStereoTag).
+            bytes.Add((byte)(0x01 | (channel.Premium ? 0x02 : 0) | (channel.Stereo ? 0x80 : 0)));
             bytes.AddRange(Ascii(ValidSourceName(channel.SourceName)));
             bytes.Add(ChannelNumberStart);
             bytes.AddRange(Ascii(Limit(channel.ChannelNumber, Channel.MaximumChannelNumberLength)));

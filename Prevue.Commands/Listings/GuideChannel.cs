@@ -14,4 +14,6 @@ public sealed record GuideChannel(string Number, string CallSign, IReadOnlyList<
 /// <param name="End">The local end time.</param>
 /// <param name="Text">The text for the grid, for example from <see cref="ProgramText"/>.</param>
 /// <param name="IsMovie">True for a movie.</param>
-public sealed record GuideProgram(DateTime Start, DateTime End, string Text, bool IsMovie = false);
+/// <param name="IsStereo">True if the program has stereo sound.</param>
+public sealed record GuideProgram(DateTime Start, DateTime End, string Text, bool IsMovie = false,
+    bool IsStereo = false);

@@ -26,6 +26,12 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
     /// <summary>Channel numbers or call signs of the channels to leave out.</summary>
     public List<string> ExcludedChannels { get; init; } = [];
 
+    /// <summary>
+    /// True to show the stereo symbol for the programs with stereo sound. The import marks all the channels as stereo
+    /// channels, and adds "In Stereo" to the text of the programs with stereo sound.
+    /// </summary>
+    public bool ShowStereo { get; init; }
+
     /// <summary>The settings of the channel logos, or null to send no channel logos.</summary>
     public ChannelLogoSettings? ChannelLogos { get; init; }
 
@@ -48,7 +54,7 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
                                   $"{ChannelLineUpCommand.MaximumChannels} are sent.");
         }
 
-        var commands = ListingsBuilder.Build(selected, context.Now, SendChannelLineUp, context.Characters);
+        var commands = ListingsBuilder.Build(selected, context.Now, SendChannelLineUp, context.Characters, ShowStereo);
         if (ChannelLogos != null)
             commands.AddRange(await ChannelLogoBuilder.BuildAsync(selected, ChannelLogos, context, cancellationToken));
         return commands;

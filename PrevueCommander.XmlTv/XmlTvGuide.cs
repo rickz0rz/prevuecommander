@@ -101,7 +101,17 @@ public static class XmlTvGuide
         var text = isMovie
             ? ProgramText.Movie(title, year, description, rating, closedCaptions)
             : ProgramText.Show(title, closedCaptions);
-        return new GuideProgram(start, end, text, isMovie);
+        return new GuideProgram(start, end, text, isMovie, IsStereo(programme.Audio?.Stereo));
+    }
+
+    /// <summary>
+    /// True for an XMLTV stereo value of stereo sound: "stereo", "dolby", "dolby digital", "surround" or "bilingual".
+    /// "mono" and no value are not stereo.
+    /// </summary>
+    public static bool IsStereo(string? value)
+    {
+        var text = value?.Trim();
+        return !string.IsNullOrEmpty(text) && !text.Equals("mono", StringComparison.OrdinalIgnoreCase);
     }
 
     /// <summary>The English text, or the first text if no text is in English.</summary>
