@@ -9,6 +9,12 @@ namespace Prevue.Commands;
 /// the bytes after the digits and the NUL. A time is <c>YYYYDDDHH:MM</c>, where DDD is the day of the year, starting
 /// at 0. The start is the local time just after clocks go forward, and the end is the local time just after clocks
 /// go back. ESQ accepts a year only within one year of its clock (<c>_DATETIME_ParseString</c>).
+/// <para>
+/// ESQ keeps the window in memory. It writes the window to dst.dat only after a '%' save command and the next box off
+/// (<c>_ESQPARS_PersistStateDataAfterCommand</c>, <c>_DATETIME_SavePairToFile</c>), and it reads dst.dat when it starts
+/// (<c>_DST_LoadBannerPairFromFiles</c>). A test in Esquire showed both. The 'K' clock command uses the window: see
+/// <see cref="ClockCommand"/>.
+/// </para>
 /// </remarks>
 public class DaylightSavingTimeCommand : BaseCommand
 {
