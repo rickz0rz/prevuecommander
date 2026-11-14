@@ -684,7 +684,7 @@ Send them in a session on the data line. Then send `!!showWeather` on the contro
 | `!!showWeather` | `forecast` (`false`) | Shows the current weather (`W0`). With `forecast: true`, it shows the 3-day forecast (`W3`). |
 | `!!weatherText` | `minutes` (`60`), `icon` (`1`), `label` (`*`), `lines`, `color` (`1`) | Sends the weather text, for example a forecast or an alert. ESQ keeps it only if `label` matches the label of the status. `*` and `?` are wildcards, and upper case and lower case are different. ESQ shows the text for `minutes` (1 to 255). `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive, and `1` shows no picture. `lines` has a maximum of 10 lines. `color` shows only on the diagnostics screen of the operator menu. |
 
-The status text has a maximum of 39 bytes, with the digit, the label, a separator and the end. Prevue Commander stops before it sends a longer status, because ESQ ignores it. ESQ shows the lines of the weather text in pairs: the first line at the left of the picture, the second line at the right, and so on. Use only printable ASCII characters. This example shows a sun and four lines:
+The status text has a maximum of 39 bytes, with the digit, the label, a separator and the end. Prevue Commander stops before it sends a longer status, because ESQ ignores it. ESQ shows the lines of the weather text in pairs. The first line of a pair is at the left of the picture, and the second line is at the right. A text can have printable ASCII characters. It can also have the Latin-1 characters of the ESQ 9.0.4 fonts, for example `°` and `é`. A label can have printable ASCII characters only. This example shows a sun and four lines:
 
 ```yaml
 - !!address
@@ -749,7 +749,7 @@ This example shows a sun, clouds and rain for the next three days:
 
 `!!weatherGov` gets the weather of a US location from [weather.gov](https://www.weather.gov/documentation/services-web-api), the free API of the National Weather Service. It needs no key. weather.gov has data only for the USA. The command sends three parts:
 
-- The status: the city and the state, for example `Detroit, MI`.
+- The status: the city, for example `Philadelphia`.
 - The current weather of the nearest weather station, as a weather text. `!!showWeather {}` shows it.
 - The forecast of the next 3 days. `!!showWeather` with `forecast: true` shows it.
 
@@ -769,7 +769,7 @@ This example shows a sun, clouds and rain for the next three days:
 | `zip` | | A US ZIP code, for example `'48201'`. Put it in quotes, because a ZIP code can start with `0`. |
 | `latitude`, `longitude` | | The location, for example `42.33` and `-83.05`. Use them in place of `zip`. |
 | `label` | `LOCAL` | The label of the weather status, 0 to 10 characters. |
-| `status` | `{city}, {state}` | The status text at the top of the weather. It can have the placeholders of `currentLines`. |
+| `status` | `{city}` | The status text at the top of the weather. It can have the placeholders of `currentLines`. |
 | `current` | `true` | Sends the current weather. |
 | `forecast` | `true` | Sends the 3-day forecast. |
 | `minutes` | `90` | The minutes that ESQ shows the weather, 1 to 255. Each new read starts the minutes again. |
@@ -777,19 +777,31 @@ This example shows a sun, clouds and rain for the next three days:
 | `currentLines` | See below | The lines of the current weather, a maximum of 10. |
 | `contact` | | A contact, for example an e-mail address. weather.gov asks each program to identify itself, so that it can contact the owner if the program causes problems. Without `contact`, Prevue Commander sends only its name and the address of this project. |
 
-ESQ shows the lines of the current weather in pairs. The first line of a pair is at the left of the picture. The second line is at the right. The default lines are:
+ESQ shows the lines of the current weather in pairs. The first line of a pair is at the left of the picture. The second line is at the right. The default lines copy the "current conditions" screen of Prevue Weather:
 
 ```yaml
   currentLines:
   - '{condition}'
-  - '{temperature}{unit}'
-  - Humidity {humidity}%
+  - Temp {temperature}{degree}{unit}
   - Wind {wind}
-  - '{next}'
-  - '{nextHighLow} {nextTemperature}{unit}'
+  - Pressure {pressure}
+  - Humidity {humidity}%
+  - DewPoint {dewPoint}{degree}{unit}
+  - Visibility {visibility}
+  - ''
 ```
 
-For example, ESQ shows "Cloudy" and "34F", "Humidity 86%" and "Wind W 5 mph", and "Today" and "High 46F". Put a line that starts with `{` in quotes. A line can have these placeholders:
+ESQ then shows this screen:
+
+```
+               Philadelphia
+      Cloudy                  Temp 41°F
+  Wind NW 11 mph   (picture)  Pressure 29.81 in.
+   Humidity 56%               DewPoint 27°F
+  Visibility 10 M
+```
+
+The last line is empty, so the right column has only three lines. Put a line that starts with `{` in quotes. A line can have these placeholders:
 
 | Placeholder | Value |
 |---|---|
@@ -797,6 +809,10 @@ For example, ESQ shows "Cloudy" and "34F", "Humidity 86%" and "Wind W 5 mph", an
 | `{condition}` | The weather of the station, for example `Cloudy` or `Light Rain`. |
 | `{temperature}` | The temperature of the station. |
 | `{feelsLike}` | The wind chill or the heat index. Without one, the temperature. |
+| `{dewPoint}` | The dew point. |
+| `{pressure}` | The barometric pressure, for example `29.81 in.`, or `1009 hPa` with `units: C`. |
+| `{visibility}` | The visibility, for example `10 M` (miles), or `16 km` with `units: C`. |
+| `{degree}` | The degree sign `°`. With `characterSet: Ascii`, ESQ gets nothing for it. |
 | `{humidity}` | The relative humidity in percent. |
 | `{wind}` | The wind direction and speed, for example `W 5 mph`, or `Calm`. |
 | `{unit}` | `F` or `C`. |
@@ -806,7 +822,7 @@ For example, ESQ shows "Cloudy" and "34F", "Humidity 86%" and "Wind W 5 mph", an
 | `{nextTemperature}` | The temperature of the next period. |
 | `{nextHighLow}` | `High` for a day period, `Low` for a night period. |
 
-A missing value shows `--`. Prevue Commander removes the characters that ESQ cannot show, for example `°`. If the status is too long, ESQ gets only its start.
+A missing value shows `--`. Prevue Commander removes the characters that ESQ cannot show. With `characterSet: Ascii`, it also removes `°` and the accents. If the status is too long, ESQ gets only its start.
 
 Prevue Commander chooses the picture from the condition code of weather.gov:
 

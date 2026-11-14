@@ -48,6 +48,9 @@ public class WeatherGovTests
         {"properties": {"timestamp": "2026-11-14T11:10:00+00:00", "textDescription": "Cloudy",
           "icon": "https://api.weather.gov/icons/land/night/ovc?size=medium",
           "temperature": {"unitCode": "wmoUnit:degC", "value": 1},
+          "dewpoint": {"unitCode": "wmoUnit:degC", "value": -1},
+          "barometricPressure": {"unitCode": "wmoUnit:Pa", "value": 101625.52},
+          "visibility": {"unitCode": "wmoUnit:m", "value": 16093.44},
           "relativeHumidity": {"unitCode": "wmoUnit:percent", "value": 86.4987},
           "windDirection": {"unitCode": "wmoUnit:degree_(angle)", "value": 290},
           "windSpeed": {"unitCode": "wmoUnit:km_h-1", "value": 7.416},
@@ -155,9 +158,11 @@ public class WeatherGovTests
         var commands = new WeatherGovPlaybookCommand { Zip = "48201" }.Commands(Report(), false, TextWriter.Null);
 
         var status = Assert.IsType<WeatherStatusCommand>(commands[0]);
-        Assert.Equal(('1', "LOCAL", "Detroit, MI"), (status.Digit, status.Label, status.Text));
+        Assert.Equal(('1', "LOCAL", "Detroit"), (status.Digit, status.Label, status.Text));
         var text = Assert.IsType<WeatherTextCommand>(commands[1]);
-        Assert.Equal(["Cloudy", "34F", "Humidity 86%", "Wind W 5 mph", "Today", "High 46F"], text.Lines);
+        // The "current conditions" of Prevue Weather, with the values of the left column first in each pair.
+        Assert.Equal(["Cloudy", "Temp 34°F", "Wind W 5 mph", "Pressure 30.01 in.", "Humidity 86%", "DewPoint 30°F",
+            "Visibility 10 M", ""], text.Lines);
         Assert.Equal((90, WeatherIcons.Clouds, "LOCAL"), (text.Minutes, text.Icon, text.LabelPattern));
         var forecast = Assert.IsType<WeatherForecastCommand>(commands[2]);
         Assert.Equal([48, 50, 30], forecast.Days.Select(d => d.High));
@@ -178,6 +183,17 @@ public class WeatherGovTests
 
         Assert.Equal(2, commands.Count);
         Assert.Equal(["1C, feels -1", "W 7 km/h", "Today: 8"], Assert.IsType<WeatherTextCommand>(commands[1]).Lines);
+    }
+
+    [Fact]
+    public void Commands_UseHectopascalsAndKilometers_AndLeaveOutTheDegreeSignInAscii()
+    {
+        var command = new WeatherGovPlaybookCommand { Forecast = false, CurrentLines = ["{temperature}{degree}{unit}", "{pressure}", "{visibility}"] };
+
+        var lines = Assert.IsType<WeatherTextCommand>(
+            command.Commands(Report(), true, TextWriter.Null, Prevue.Core.CharacterSet.Ascii)[1]).Lines;
+
+        Assert.Equal(["1C", "1016 hPa", "16 km"], lines);
     }
 
     [Fact]

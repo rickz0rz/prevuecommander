@@ -48,7 +48,7 @@ public class WeatherStatusCommand : BaseCommand
 
     public override string ToString() => $"{nameof(WeatherStatusCommand)}: {Digit} [{Label}] \"{Text}\"";
 
-    protected override byte[] GetPayload() => [(byte)Digit, .. Ascii(Label), Separator, .. Ascii(Text)];
+    protected override byte[] GetPayload() => [(byte)Digit, .. Ascii(Label), Separator, .. WeatherText.Bytes(Text)];
 }
 
 /// <summary>
@@ -118,7 +118,7 @@ public class WeatherTextCommand : BaseCommand
         // ESQ drops the text after the last line break, so each line ends with one.
         var text = new List<byte>();
         foreach (var line in Lines)
-            text.AddRange([.. Ascii(line), LineBreak]);
+            text.AddRange([.. WeatherText.Bytes(line), LineBreak]);
 
         return [(byte)Minutes, (byte)Color, (byte)Icon, Unused, .. Ascii(LabelPattern), Separator, .. text];
     }
@@ -235,12 +235,22 @@ internal static class WeatherText
         if (label.Length > WeatherStatusCommand.MaximumLabelLength)
             throw new ArgumentException(
                 $"The label \"{label}\" has more than {WeatherStatusCommand.MaximumLabelLength} characters.", name);
-        CheckText(label, name);
+        // ESQ compares the labels byte by byte, so a label has only printable ASCII characters.
+        if (label.Any(c => c is < ' ' or > '~'))
+            throw new ArgumentException($"The label \"{label}\" must have printable ASCII characters only.", name);
     }
 
+    /// <summary>
+    /// Checks a text. It can have printable ASCII characters and the Latin-1 characters from $A1 to $FF, for example
+    /// "°" and "é". The fonts of ESQ 9.0.4 have these characters.
+    /// </summary>
     public static void CheckText(string text, string name)
     {
-        if (text.Any(c => c is < ' ' or > '~'))
-            throw new ArgumentException($"The weather text \"{text}\" must have printable ASCII characters only.", name);
+        if (text.Any(c => c is < ' ' or > '\xFF' || c is > '~' and < '\xA1' || c == '\xAD'))
+            throw new ArgumentException(
+                $"The weather text \"{text}\" must have printable ASCII or Latin-1 characters only.", name);
     }
+
+    /// <summary>The Latin-1 bytes of a checked text.</summary>
+    public static byte[] Bytes(string text) => System.Text.Encoding.Latin1.GetBytes(text);
 }
