@@ -466,7 +466,7 @@ The control line commands do not need a session. Send them after the listings, b
 | `!!configuration` | `configuration`: see the table below | Sends the status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
 | `!!newLookConfiguration` | `configuration`: see the table below | Sends the configuration record ('f'). ESQ saves it to `config.dat`. |
 | `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of `!!newLookConfiguration` is `'2'` (the default). See [The clock and daylight saving time](#the-clock-and-daylight-saving-time). |
-| `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. |
+| `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. ESQ writes the window to `dst.dat` only after `!!save`. See [The clock and daylight saving time](#the-clock-and-daylight-saving-time). |
 
 The settings of `!!configuration`:
 
@@ -529,7 +529,30 @@ A setting that is not in the playbook keeps its default. ESQ saves the configura
 | Summer, with the flag | No window of the year | One hour early. |
 | Summer, no flag | The window of the year | One hour late. |
 
-Prevue Commander sets the flag from the time zone of this computer, so send `!!configureDst` in the same playbook. The order of `!!clock` and `!!configureDst` is not important. If a playbook sends a summer clock without `!!configureDst`, Prevue Commander shows a warning. ESQ keeps the window in `dst.dat`, so a warning is not an error when the drive already has the window.
+Prevue Commander sets the flag from the time zone of this computer, so send `!!configureDst` in the same playbook. The order of `!!clock` and `!!configureDst` is not important. If a playbook sends a summer clock without `!!configureDst`, Prevue Commander shows a warning. Prevue Commander cannot read the drive, so the warning also shows when the drive already has the window.
+
+Use a time zone with the same daylight saving time rules as the area of ESQ. A computer without daylight saving time, for example in UTC, sends no flag. If ESQ has a window, it then shows a summer clock one hour late.
+
+##### The window in `dst.dat`
+
+ESQ keeps the window in memory. A test with Esquire showed these rules for the file `dst.dat` on the drive:
+
+- ESQ writes the window to `dst.dat` only after `!!save` and the next `!!boxOff`. Without `!!save`, ESQ loses the window when it restarts.
+- ESQ reads `dst.dat` when it starts. After a restart, a summer clock without `!!configureDst` showed the correct time.
+- The file has the window of one year only. ESQ accepts a window only within one year of its clock. Thus send `!!configureDst` and `!!save` each year, for example in the normal playbook.
+- The watch mode and the web server do not send `!!configureDst` again. If Prevue Commander runs across a new year, send the new window yourself.
+
+This playbook sends the window and makes ESQ keep it:
+
+```yaml
+- !!address
+  target: '*'
+- !!configureDst {}
+- !!save {}
+- !!boxOff {}
+```
+
+`dst.dat` has 60 bytes and no line breaks. It has two windows: first `g2`, then `g3`. Each window is a space, `g2:` or `g3:`, $04, the start, $13 and the end. A time is `YYYYDDDHH:MM`, where DDD is the day of the year from 0. For example, the 2026 window of Michigan starts with ` g2:` $04 `202606603:00` $13 `202630401:00`. Do not write the file yourself unless you prepare a new drive. Then copy a `dst.dat` that ESQ wrote. ESQ makes and checks the format of the window itself.
 
 ESQ also ignores the clock when `clockCommandInFSetting` of `!!newLookConfiguration` is not `'2'`. It then counts a line error (`DATACErrs`). If the playbook does not send `!!newLookConfiguration`, ESQ uses the setting of its drive.
 
