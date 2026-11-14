@@ -25,7 +25,7 @@ public class LocalAdCommand : BaseCommand
 
     private readonly byte[] _text;
 
-    /// <param name="characters">The characters that the text can have. ESQ 9.0.14 shows Latin-1 characters.</param>
+    /// <param name="characters">The characters that the text can have. ESQ 9.0.4 shows Latin-1 characters.</param>
     public LocalAdCommand(int number, string text, CharacterSet characters = CharacterSet.Latin1) : base('L')
     {
         if (number is < 1 or > MaximumAds)

@@ -7,7 +7,7 @@ namespace Prevue.Core;
 public enum CharacterSet
 {
     /// <summary>
-    /// Printable ASCII and the Latin-1 characters from $A1 to $FF, for example "é", "ñ" and "©". The fonts of ESQ 9.0.14
+    /// Printable ASCII and the Latin-1 characters from $A1 to $FF, for example "é", "ñ" and "©". The fonts of ESQ 9.0.4
     /// have these characters.
     /// </summary>
     Latin1,
