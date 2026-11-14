@@ -24,10 +24,9 @@ public sealed record AdLine(AdAlignment Alignment, string Text, bool IsFull);
 /// </summary>
 /// <remarks>
 /// <para>
-/// A line has 624 / (the width of a space of the h26f font) places: 624 / 15 = 41. An alignment code at the start of a
-/// line uses one place, so a line with an alignment code has 40 characters. When a line is full, ESQ continues the text
-/// on the next line, also in the middle of a word. An alignment code that is not at the start of a line starts a new
-/// line.
+/// A line has 40 characters, with or without an alignment code. A test with Esquire showed this. When a line is full,
+/// ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows
+/// it at the left. An alignment code that is not at the start of a line starts a new line.
 /// </para>
 /// <para>
 /// ESQ shows the number of lines of the LINE field of the 'F' command, a maximum of 6. Prevue Commander sends 6. ESQ
@@ -36,8 +35,8 @@ public sealed record AdLine(AdAlignment Alignment, string Text, bool IsFull);
 /// </remarks>
 public static class LocalAdLayout
 {
-    /// <summary>The places of a line, with the place of the alignment code.</summary>
-    public const int LinePlaces = 41;
+    /// <summary>The characters of a line. The alignment code is not a character.</summary>
+    public const int LineCharacters = 40;
 
     /// <summary>The lines that ESQ shows, from the LINE field of the 'F' command.</summary>
     public const int MaximumLines = 6;
@@ -50,14 +49,12 @@ public static class LocalAdLayout
         var lines = new List<AdLine>();
         var alignment = AdAlignment.None;
         var characters = new StringBuilder();
-        var places = 0;
 
         void EndLine(bool isFull)
         {
             lines.Add(new AdLine(alignment, characters.ToString(), isFull));
             alignment = AdAlignment.None;
             characters.Clear();
-            places = 0;
         }
 
         for (var i = 0; i < text.Length; i++)
@@ -76,21 +73,18 @@ public static class LocalAdLayout
             if (code != AdAlignment.None)
             {
                 // An alignment code that is not at the start of a line starts a new line.
-                if (places > 0)
+                if (characters.Length > 0)
                     EndLine(false);
                 alignment = code;
-            }
-            else
-            {
-                characters.Append((char)value);
+                continue;
             }
 
-            places++;
-            if (places == LinePlaces)
+            characters.Append((char)value);
+            if (characters.Length == LineCharacters)
                 EndLine(true);
         }
 
-        if (places > 0)
+        if (characters.Length > 0 || alignment != AdAlignment.None)
             EndLine(false);
         return lines;
     }
@@ -116,10 +110,10 @@ public static class LocalAdLayout
         return problems;
     }
 
-    /// <summary>A line as text for a preview, with its alignment in the 41 places of a line, between two '|'.</summary>
+    /// <summary>A line as text for a preview, with its alignment in the 40 characters of a line, between two '|'.</summary>
     public static string Preview(AdLine line)
     {
-        var width = LinePlaces;
+        var width = LineCharacters;
         var text = line.Text.Length > width ? line.Text : line.Alignment switch
         {
             AdAlignment.Center => line.Text.PadLeft((width + line.Text.Length) / 2).PadRight(width),

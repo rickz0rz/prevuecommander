@@ -35,12 +35,22 @@ public class LocalAdLayoutTests
     }
 
     [Fact]
-    public void ALineWithoutAnAlignmentCode_Has41Characters()
+    public void ALineWithoutAnAlignmentCode_Has40Characters()
     {
-        var lines = Lines(new string('a', 41) + "b");
+        // On Esquire, this text showed "...789abcd" on line 1 and "efghij" on line 2.
+        var lines = Lines("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghij");
 
-        Assert.Equal([new string('a', 41), "b"], lines.Select(l => l.Text));
+        Assert.Equal(["ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcd", "efghij"], lines.Select(l => l.Text));
+        Assert.Equal([AdAlignment.None, AdAlignment.None], lines.Select(l => l.Alignment));
         Assert.Single(LocalAdLayout.Problems(lines));
+    }
+
+    [Fact]
+    public void TheNextLineOfAFullAlignedLine_HasNoAlignment()
+    {
+        var lines = Lines("%CENTER%" + new string('a', 40) + "bc");
+
+        Assert.Equal([AdAlignment.Center, AdAlignment.None], lines.Select(l => l.Alignment));
     }
 
     [Fact]
@@ -63,9 +73,9 @@ public class LocalAdLayoutTests
     }
 
     [Theory]
-    [InlineData(AdAlignment.Left, "|ab                                       |")]
-    [InlineData(AdAlignment.Center, "|                   ab                    |")]
-    [InlineData(AdAlignment.Right, "|                                       ab|")]
+    [InlineData(AdAlignment.Left, "|ab                                      |")]
+    [InlineData(AdAlignment.Center, "|                   ab                   |")]
+    [InlineData(AdAlignment.Right, "|                                      ab|")]
     public void Preview_ShowsTheAlignment(AdAlignment alignment, string preview) =>
         Assert.Equal(preview, LocalAdLayout.Preview(new AdLine(alignment, "ab", false)));
 }

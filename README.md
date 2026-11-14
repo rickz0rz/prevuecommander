@@ -411,14 +411,14 @@ A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seco
 |---|---|---|
 | `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. Send `!!configuration` before it. |
 
-ESQ shows the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines. A line has 41 places. An alignment token at the start of a line uses one place, so that line has 40 characters. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. ESQ drops the text after line 6.
+ESQ keeps the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines of 40 characters. An alignment token is not a character. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows it at the left. ESQ drops the text after line 6. A test with Esquire showed these limits.
 
 `!!localAds` shows each ad as ESQ shows it, with a warning for text that ESQ breaks or drops. For example:
 
 ```text
 Local ad 2:
-  |ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcd |
-  |efghij                                   |
+  |ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcd|
+  |efghij                                  |
   Warning: Line 1 is longer than 40 characters. ESQ continues it on line 2, also in the middle of a word.
 ```
 
@@ -430,6 +430,24 @@ An ad can have these tokens:
 | `%TRANSPARENT%`, `%WHITE%`, `%BLACK%`, `%YELLOW%`, `%RED%`, `%CYAN%`, `%GRAY%`, `%BLUE%` | The colors 0 to 7 of the default palette. |
 | `%LEFT%`, `%CENTER%`, `%RIGHT%` | The alignment of a line. A token that is not at the start of a line starts a new line. |
 | `%%` | A `%` character. |
+
+#### Show a local ad
+
+ESQ has no timer for the local ads. ESQ shows a local ad only when the control line sends a type 12 packet. On a real system, the satellite feed sent this packet at the times of the ads. Each packet shows the next ad, in the order of the ad numbers. The ad stays on the screen until something else replaces it. Prevue Commander has no command for this packet, so send it with `!!controlPacket`:
+
+```yaml
+- !!controlPacket
+  type: 12
+```
+
+The packet shows a local ad only when all these conditions are true:
+
+- ESQ has local ads. Send `!!localAds` first.
+- `localTextAdSource` is `'R'` or `'S'`.
+- The graphic ad mode of the operator menu is `N`. This is the default.
+- No local avail filter is active (type 22).
+
+Otherwise, type 12 does the same as type 1. The operator key `T` also shows a local ad, but ESQ reads the keys on a different line of the serial port, and Esquire does not send them.
 
 ### Weather
 
@@ -554,7 +572,7 @@ These are the types of the control line, from the code of ESQ. Use `!!controlPac
 | 5* | two characters | Sets the channel codes of the two boxes. ESQ uses them in the title search. |
 | 7* | | Stops the read mode. |
 | 11* | 11 digits | Sets the clock and the battery clock of the Amiga. The CLOCKCMD setting must be `1`. Do not use it for tests: the battery clock keeps the time. |
-| 12 | `1<channels>` or `3` | The same as type 1, but only when no local avail filter and no graphic ads are active. |
+| 12 | any, or `1<channels>` or `3` | Shows the next local ad, if ESQ has local ads. See [Show a local ad](#show-a-local-ad). Without local ads, it is the same as type 1, but only when no local avail filter and no graphic ads are active. |
 | 13 | | ESQ ignores the next byte. |
 | 15 | a number | Sets the level of a copper effect to 63 minus the number. The effect on the screen is not known. |
 | 16* | | Starts the read mode. ESQ then stops the animation of the grid. |
