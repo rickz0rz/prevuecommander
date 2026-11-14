@@ -5,9 +5,6 @@ using PrevueCommander.Model;
 using PrevueCommander.Model.PlaybookCommands;
 using YamlDotNet.Core;
 
-Console.WriteLine("PrevueCommander - https://github.com/rickz0rz/prevuecommander");
-Console.WriteLine();
-
 CommandLineOptions options;
 try
 {
@@ -19,9 +16,31 @@ catch (CommandLineException e)
     return 5;
 }
 
+// The schema goes to the standard output alone, so that it can go to a file.
+if (!options.Schema)
+{
+    Console.WriteLine("PrevueCommander - https://github.com/rickz0rz/prevuecommander");
+    Console.WriteLine();
+}
+
 if (options.Help)
 {
     Console.WriteLine(CommandLine.Usage);
+    return 0;
+}
+
+if (options.Schema)
+{
+    if (options.SchemaTags)
+    {
+        foreach (var tag in PlaybookSchema.CustomTags())
+            Console.WriteLine(tag);
+    }
+    else
+    {
+        Console.Write(PlaybookSchema.Generate());
+    }
+
     return 0;
 }
 

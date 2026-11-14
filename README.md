@@ -38,6 +38,46 @@ If you do not give a playbook, Prevue Commander uses `playbook.yaml` in the curr
 
 A playbook has a `configuration` section and a list of `commands`. [`playbook.yaml`](playbook.yaml) is the example playbook.
 
+### Edit a playbook in an editor
+
+[`playbook.schema.json`](playbook.schema.json) is a JSON schema of the playbook. A YAML editor can use it to complete the settings and to find unknown settings. The first line of the example playbook names the schema:
+
+```yaml
+# yaml-language-server: $schema=https://raw.githubusercontent.com/rickz0rz/prevuecommander/main/playbook.schema.json
+```
+
+JSON schema has no YAML tags. Thus the editor must also know the tags of the commands. In Visual Studio Code with the YAML extension, add the tags to `yaml.customTags` in the settings:
+
+```json
+"yaml.customTags": [
+    "!!address mapping",
+    "!!banner mapping",
+    "!!boxOff mapping",
+    "!!channelsDVRGuideDataImport mapping",
+    "!!clearTopHalf mapping",
+    "!!clock mapping",
+    "!!configuration mapping",
+    "!!configureDst mapping",
+    "!!controlPacket mapping",
+    "!!fileTransfer mapping",
+    "!!graphicAd mapping",
+    "!!localAds mapping",
+    "!!logoList mapping",
+    "!!moveGrid mapping",
+    "!!newLookConfiguration mapping",
+    "!!pause mapping",
+    "!!promo mapping",
+    "!!reset mapping",
+    "!!save mapping",
+    "!!shell mapping",
+    "!!showLogo mapping",
+    "!!utility mapping",
+    "!!xmlTvGuideDataImport mapping"
+]
+```
+
+`dotnet run --project PrevueCommander -- schema` shows the schema, and `schema --tags` shows the tags. If you change a playbook class, write the schema again with `dotnet run --project PrevueCommander -- schema > playbook.schema.json`. A test fails if the schema of the repository is not up to date.
+
 ### Command-line options
 
 An option replaces a setting of the playbook for one run. Thus you can use one playbook with different systems. Run `dotnet run --project PrevueCommander -- --help` to show the options.

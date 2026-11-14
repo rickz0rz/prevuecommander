@@ -1,0 +1,782 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/rickz0rz/prevuecommander/main/playbook.schema.json",
+  "title": "Prevue Commander playbook",
+  "type": "object",
+  "properties": {
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "hostname": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "serialPort": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "output": {
+          "enum": [
+            "Minimal",
+            "Verbose"
+          ]
+        },
+        "baudRate": {
+          "type": "integer"
+        },
+        "commandDelay": {
+          "type": "integer"
+        },
+        "controlPort": {
+          "type": "integer"
+        },
+        "controlSerialPort": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "controlBaudRate": {
+          "type": "integer"
+        },
+        "now": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "characterSet": {
+          "enum": [
+            "Latin1",
+            "Ascii"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!address"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "fit": {
+                "enum": [
+                  "Contain",
+                  "Cover",
+                  "Stretch"
+                ]
+              },
+              "background": {
+                "type": "string"
+              },
+              "height": {
+                "type": "integer"
+              },
+              "reload": {
+                "type": "boolean"
+              },
+              "saveTo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!banner"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "!!boxOff"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "channelsDVRServers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "serverAddress": {
+                      "type": "string"
+                    },
+                    "maximumNumberOfChannels": {
+                      "type": "integer"
+                    },
+                    "filterOnlyHDChannels": {
+                      "type": "boolean"
+                    },
+                    "filterMusicChoiceChannels": {
+                      "type": "boolean"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "sendChannelLineUp": {
+                "type": "boolean"
+              },
+              "channelNumberOrder": {
+                "enum": [
+                  "None",
+                  "Ascending",
+                  "Descending"
+                ]
+              },
+              "premiumChannels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludedChannels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "channelLogos": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "keepLines": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "reload": {
+                    "type": "boolean"
+                  },
+                  "cacheDirectory": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "saveTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!channelsDVRGuideDataImport"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "!!clearTopHalf"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "useCurrentDate": {
+                "type": "boolean"
+              },
+              "date": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!clock"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "configuration": {
+                "type": "object",
+                "properties": {
+                  "timeZone": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "scrollSpeed": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "daylightSavingTime": {
+                    "type": "boolean"
+                  },
+                  "clockOffsetMinutes": {
+                    "type": "integer"
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!configuration"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "year": {
+                "type": [
+                  "integer",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!configureDst"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "type": {
+                "type": "integer"
+              },
+              "body": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!controlPacket"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              },
+              "address": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!fileTransfer"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "source": {
+                "type": "string"
+              },
+              "name": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "resolution": {
+                "enum": [
+                  "Low",
+                  "High"
+                ]
+              },
+              "fit": {
+                "enum": [
+                  "Contain",
+                  "Cover",
+                  "Stretch"
+                ]
+              },
+              "background": {
+                "type": "string"
+              },
+              "keyBackground": {
+                "type": "boolean"
+              },
+              "saveTo": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "address": {
+                "type": "string"
+              },
+              "logoListLine": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!graphicAd"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "ads": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!localAds"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "reload": {
+                "type": "boolean"
+              },
+              "address": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!logoList"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "position": {
+                "type": "string"
+              },
+              "seconds": {
+                "type": "number"
+              },
+              "channels": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!moveGrid"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "configuration": {
+                "type": "object",
+                "properties": {
+                  "rollAndHoldTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "gridSourceChannelOrder": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "mrReviewInFSetting": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "sbsFrequency": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "displayMode": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "advueInsertion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "pieFormat": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "language": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "primeTimeSummary": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "sportsSummary": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "sumBySourceRollAndHold": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "movieRecapRollAndHold": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "primeTimeSummaryRollAndHold": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "sportsSummaryRollAndHold": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "gridRollAndHold": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "videoVueInsertion": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "laserDiscInsertionType": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "primeTimeStartingSlot": {
+                    "type": "integer"
+                  },
+                  "primeTimeLookAhead": {
+                    "type": "integer"
+                  },
+                  "cycleSummaryInfo": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "gridSynopsis": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "lockGridOnSynopsis": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "primeTimePromotionTimeSlotStart": {
+                    "type": "integer"
+                  },
+                  "primeTimePromotionTimeSlotEnd": {
+                    "type": "integer"
+                  },
+                  "lengthOfLookAheadSportsSummary": {
+                    "type": "integer"
+                  },
+                  "minutesToDisplayPPVPostStart": {
+                    "type": "integer"
+                  },
+                  "summaryCycleFrequency": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "weatherHoldAndRoll": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "militaryTime": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "cleanUpUnusedLogos": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "displayLength": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "numberOfColorPalettes": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "localTextAdSource": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "pcDiskSupport": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "lrbnModeSelector": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "lrbnBannerControl": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "msnMode": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  },
+                  "clockCommandInFSetting": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 1
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!newLookConfiguration"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "seconds": {
+                "type": "number"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!pause"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "right": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "channels": {
+                    "type": "string"
+                  },
+                  "brush": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "left": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "channels": {
+                    "type": "string"
+                  },
+                  "brush": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "first": {
+                "enum": [
+                  "Right",
+                  "Left"
+                ]
+              },
+              "style": {
+                "enum": [
+                  "Box",
+                  "Text"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!promo"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "target": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!reset"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "!!save"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "commandLine": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!shell"
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "title": "!!showLogo"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "action": {
+                "enum": [
+                  "ReloadGraphicAds",
+                  "ReloadLogoList",
+                  "RebuildBrushList",
+                  "ReloadBrushes",
+                  "ReloadGradient",
+                  "ReloadBanner",
+                  "ReloadDefaults",
+                  "ReloadQTable",
+                  "ReloadSourceConfiguration",
+                  "ToggleMenu",
+                  "ShowDiagnostics",
+                  "ShowVersion"
+                ]
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!utility"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "xmlTvFiles": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "path": {
+                      "type": "string"
+                    },
+                    "maximumNumberOfChannels": {
+                      "type": "integer"
+                    }
+                  },
+                  "additionalProperties": false
+                }
+              },
+              "sendChannelLineUp": {
+                "type": "boolean"
+              },
+              "channelNumberOrder": {
+                "enum": [
+                  "None",
+                  "Ascending",
+                  "Descending"
+                ]
+              },
+              "premiumChannels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "excludedChannels": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "channelLogos": {
+                "type": [
+                  "object",
+                  "null"
+                ],
+                "properties": {
+                  "keepLines": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "reload": {
+                    "type": "boolean"
+                  },
+                  "cacheDirectory": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "saveTo": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!xmlTvGuideDataImport"
+          }
+        ]
+      }
+    }
+  },
+  "additionalProperties": false
+}
