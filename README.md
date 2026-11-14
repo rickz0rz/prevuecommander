@@ -380,6 +380,34 @@ An ad can have these tokens:
 | `%LEFT%`, `%CENTER%`, `%RIGHT%` | The alignment of a line. A token that is not at the start of a line starts a new line. |
 | `%%` | A `%` character. |
 
+### Weather
+
+ESQ shows the current weather in the top half of the screen when the control line sends `W0`. The weather has a status ('I') and a text ('W'). Send them in a session on the data line, and then send `!!showWeather` on the control line.
+
+| Command | Settings | Description |
+|---|---|---|
+| `!!weatherStatus` | `digit` (`'1'`), `label`, `text` | Sets the weather status. ESQ shows `text` at the top, for example the city. `label` has a maximum of 10 characters. The digit `'0'` clears the weather. ESQ saves the status in `curday.dat`. |
+| `!!weatherText` | `minutes` (`60`), `icon` (`1`), `label` (`*`), `lines`, `color` (`1`) | Sends the weather text, for example a forecast or an alert. ESQ keeps it only if `label` matches the label of the status. `*` and `?` are wildcards, and upper case and lower case are different. ESQ shows the text for `minutes` (1 to 255). `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive, and `1` shows no picture. `lines` has a maximum of 10 lines. `color` shows only on the diagnostics screen. |
+
+The status text has a maximum of 39 bytes, with the digit, the label, a separator and the end. Prevue Commander stops before it sends a longer status, because ESQ ignores it. ESQ shows the lines of the weather text in pairs: the first line at the left of the picture, the second line at the right, and so on. Use only printable ASCII characters. This example shows a sun and four lines:
+
+```yaml
+- !!address
+  target: '*'
+- !!weatherStatus
+  label: DETROIT
+  text: Detroit, Michigan
+- !!weatherText
+  minutes: 30
+  icon: 2
+  label: DETROIT
+  lines: [Tonight - Clear, Low 32, Saturday - Sunny, High 45]
+- !!boxOff {}
+- !!pause
+  seconds: 5
+- !!showWeather {}
+```
+
 ### Files and utilities
 
 | Command | Settings | Description |
@@ -450,6 +478,7 @@ The control line commands go to `controlPort` or `controlSerialPort`. ESQ reads 
 | `!!moveGrid` | `position` (`A0`), `seconds` (`1`), `channels` | Moves the top of the grid up or down. `position` is two hex digits: a larger value is lower on the screen. `seconds` is the time of the move, from 0 to 9.9. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the loaded logo. `!!clearTopHalf` moves the grid back. |
 | `!!clearTopHalf` | | Removes the promo or the logo, and moves the grid back. The top half shows the genlock video. |
 | `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
+| `!!showWeather` | | Sends `W0`: shows the current weather. See [Weather](#weather). |
 | `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. In a double-quoted YAML text, `\x12` is the separator of the two boxes. |
 | `!!pause` | `seconds` (`1`) | Waits before the next command. It does not send data. |
 
@@ -494,7 +523,7 @@ The sub-commands of type 1. The results come from tests with Esquire.
 | `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. `!!moveGrid` sends this sub-command. |
 | `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. In the test, it removed the promo and showed nothing. |
 | `F<op><text>` or `X<op><text>` | Sends a command to the text display: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
-| `W0` | Shows the current weather. Without weather data, it shows "No Current Weather Data Available". |
+| `W0` | Shows the current weather of `!!weatherStatus` and `!!weatherText`. Without weather data, it shows "No Current Weather Data Available". `!!showWeather` sends it. |
 | `W3` | Shows the weather forecast. Without weather data, it shows "No Forecast Weather Data Available". |
 | `W` and another character | Shows the logo. |
 
