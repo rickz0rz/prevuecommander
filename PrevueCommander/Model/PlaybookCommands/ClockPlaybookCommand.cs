@@ -19,4 +19,18 @@ public record ClockPlaybookCommand : SimplePlaybookCommand
             : DateTime.Parse(Date, CultureInfo.InvariantCulture);
         return [new ClockCommand(time)];
     }
+
+    /// <summary>
+    /// A warning for a clock with daylight saving time and no DST window in the same commands, or null. ESQ then shows
+    /// the clock one hour early, unless the drive already has the DST window of that year.
+    /// </summary>
+    public static string? DstWarning(IReadOnlyCollection<BaseCommand> commands)
+    {
+        var clock = commands.OfType<ClockCommand>().FirstOrDefault(c => c.DaylightSavingTime);
+        if (clock == null || commands.OfType<DaylightSavingTimeCommand>().Any())
+            return null;
+        return $"Warning: !!clock sends a time with daylight saving time ({clock.DateTime:yyyy-MM-dd HH:mm}), but the " +
+               "playbook has no !!configureDst. If ESQ has no DST window of this year, it shows the clock one hour " +
+               "early. Add !!configureDst to the playbook.";
+    }
 }

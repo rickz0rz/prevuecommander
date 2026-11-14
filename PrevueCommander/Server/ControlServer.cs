@@ -195,9 +195,8 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
                     : (409, new ErrorAnswer("No hold is active.")),
                 ("POST", "/prevue/data/local-ads") => await LocalAdsAsync(Read<LocalAdsRequest>(body), cancellationToken),
                 ("POST", "/prevue/data/weather") => await WeatherAsync(Read<WeatherRequest>(body), cancellationToken),
-                ("POST", "/prevue/data/clock") => Queue("Clock", parts.Session.Wrap(await TransformAsync(
-                    new ClockPlaybookCommand { Date = Read<ClockRequest>(body, new ClockRequest()).Date },
-                    cancellationToken))),
+                ("POST", "/prevue/data/clock") => await ClockAsync(Read<ClockRequest>(body, new ClockRequest()),
+                    cancellationToken),
                 ("POST", "/prevue/guide/refresh") => await RefreshAsync(cancellationToken),
                 ("POST", "/prevue/data/weather-gov") => await WeatherGovAsync(body, cancellationToken),
                 ("POST", "/prevue/weather/refresh") => await WeatherRefreshAsync(cancellationToken),
@@ -260,6 +259,18 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
         }
 
         return Queue("Weather", commands);
+    }
+
+    /// <summary>
+    /// Sets the clock of ESQ. The DST window of the year of the clock goes first. ESQ compares the daylight saving
+    /// time flag of the clock with this window, and without the window a summer clock shows one hour early.
+    /// </summary>
+    private async Task<(int, object)> ClockAsync(ClockRequest request, CancellationToken cancellationToken)
+    {
+        var clock = await TransformAsync(new ClockPlaybookCommand { Date = request.Date }, cancellationToken);
+        var year = clock.OfType<ClockCommand>().Single().DateTime.Year;
+        var window = await TransformAsync(new ConfigureDstPlaybookCommand { Year = year }, cancellationToken);
+        return Queue("Clock", parts.Session.Wrap([.. window, .. clock]));
     }
 
     private async Task<(int, object)> RefreshAsync(CancellationToken cancellationToken)
