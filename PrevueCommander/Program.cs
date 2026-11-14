@@ -107,8 +107,13 @@ try
         return 0;
     }
 
+    var progress = new TransferProgress(commands, configuration, Console.Out, TimeSpan.FromSeconds(30));
+    progress.Start();
     foreach (var command in commands)
+    {
         await lines.SendAsync(command, cancellation.Token);
+        progress.Sent(command);
+    }
 
     Console.WriteLine($"Sent {commands.Count} commands.");
     return 0;
