@@ -69,4 +69,4 @@ configuration:
   controlBaudRate: 110
 ```
 
-Connect the TX of the PL011 UART (GPIO14, pin 8) to T1IN of the MAX3232, and T1OUT to pin 5 of the Amiga. Connect the USB adapter to pin 3, as in [Connect to an Amiga](../README.md#connect-to-an-amiga).
+Connect the TX of the PL011 UART (GPIO14, pin 8) to T1IN of the MAX3232, and T1OUT to pin 5 of the Amiga. Connect the USB adapter to pin 3, as in [Connect to an Amiga](amiga.md).

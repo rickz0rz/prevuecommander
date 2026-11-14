@@ -1,5 +1,29 @@
 # Web server
 
+The web server lets you send commands while Prevue Commander runs. It has a control page for a browser, and an HTTP API for scripts. Set `servePort` in the configuration, or use `--serve`:
+
+```sh
+dotnet run --project PrevueCommander -- --serve 8095 playbook.yaml
+```
+
+Prevue Commander first sends the commands of the playbook. Then it starts the server and stays connected until you press Ctrl+C. The playbook can have no commands, for example a playbook with only the `configuration` section. The server can run together with the [watch mode](watch-mode.md) and the [automatic promos](auto-promos.md). `--validate` and `--output` do not start the server.
+
+Open `http://localhost:8095/` in a browser. The page has these parts:
+
+- The status of the lines, the queues, the hold, the guide and the automatic promos. The page shows the new status each 2 seconds.
+- Buttons for the top half of the screen: clear, logo, ad break, weather and forecast.
+- Keep the top half clear for some minutes, or until you stop it. See [Keep the top half clear](control-line.md#keep-the-top-half-clear).
+- A promo form.
+- A local ad editor with a preview of each ad, as ESQ shows it.
+- A weather form, the clock, and a button that reads the guide again.
+- A box for any playbook commands in YAML.
+- The list of jobs, with their errors.
+
+The page needs no internet connection, so it works on a Raspberry Pi without internet.
+
+> [!WARNING]
+> The server has no password. Anyone who can connect to the port can send commands to ESQ. The default address `127.0.0.1` accepts only this computer. Use `serveHost: 0.0.0.0` only on a network that you trust. On Windows, an address other than `127.0.0.1` can need administrator rights.
+
 ## Jobs
 
 Each request that sends commands makes all its commands first. If a command has an error, the server answers with status 400 and an error text, and it sends nothing. Otherwise, the server adds a job to a queue and answers at once with status 202 and the job.
@@ -40,7 +64,7 @@ The requests that Esquire also has use the same paths and bodies, so a script wo
 | `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. The server first sends the DST window of the year of the clock, as `!!configureDst`. |
 | `POST /prevue/data/weather-gov` | `{"zip": "48201", "show": "forecast", "pauseSeconds": 5}` | Gets the weather of weather.gov and sends it, as `!!weatherGov`. The body can have all the settings of `!!weatherGov`. `show` is `none` (the default), `current` or `forecast`. With `current` or `forecast`, the server then waits `pauseSeconds` and shows the weather. |
 | `POST /prevue/weather/refresh` | | Reads the weather of the `!!weatherGov` commands of the playbook again, and sends it. The playbook must have a `!!weatherGov` command. |
-| `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](../README.md#watch-mode) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
+| `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](watch-mode.md) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
 | `POST /prevue/commands` | YAML | Sends playbook commands. The body is a YAML list of commands, or a playbook with `commands:`. The server uses only the commands of a playbook. |
 
 The body of a promo is as the settings of `!!promo`. It has a box on the right, a box on the left, or both boxes:
