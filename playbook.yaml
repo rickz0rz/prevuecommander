@@ -25,6 +25,7 @@ commands:
 - !!configureDst {}
 - !!xmlTvGuideDataImport
   xmlTvFiles:
+  # A file, or an HTTP or HTTPS address, for example http://192.168.0.10/guide.xml.gz.
   - path: xmltv.xml
     maximumNumberOfChannels: 50
   sendChannelLineUp: true

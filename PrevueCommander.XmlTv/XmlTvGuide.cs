@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.IO.Compression;
 using System.Xml;
 using System.Xml.Serialization;
 using Prevue.Commands.Listings;
@@ -12,13 +13,58 @@ public static class XmlTvGuide
     private static readonly string[] DateFormats = ["yyyyMMddHHmmss zzz", "yyyyMMddHHmmss", "yyyyMMddHHmm zzz",
         "yyyyMMddHHmm"];
 
-    public static async Task<Tv> ParseFileAsync(string path)
+    /// <summary>Reads an XMLTV file. The file can be compressed with gzip.</summary>
+    public static async Task<Tv> ParseFileAsync(string path, CancellationToken cancellationToken = default)
     {
-        var settings = new XmlReaderSettings { Async = true, DtdProcessing = DtdProcessing.Ignore };
         await using var stream = File.OpenRead(path);
-        using var reader = XmlReader.Create(stream, settings);
-        return (Tv?)new XmlSerializer(typeof(Tv)).Deserialize(reader)
-               ?? throw new InvalidDataException($"The file {path} is not an XMLTV file.");
+        return await ParseAsync(stream, path, cancellationToken);
+    }
+
+    /// <summary>
+    /// Downloads an XMLTV file from an HTTP or HTTPS address. The file can be compressed with gzip.
+    /// </summary>
+    public static async Task<Tv> DownloadAsync(HttpClient http, Uri address, CancellationToken cancellationToken)
+    {
+        using var response = await http.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!response.IsSuccessStatusCode)
+            throw new HttpRequestException(
+                $"The XMLTV address {address} gave the status {(int)response.StatusCode} {response.ReasonPhrase}.");
+
+        // Copy the data to memory, because the gzip check reads the first bytes again.
+        var data = new MemoryStream();
+        await using (var body = await response.Content.ReadAsStreamAsync(cancellationToken))
+            await body.CopyToAsync(data, cancellationToken);
+        data.Position = 0;
+        return await ParseAsync(data, address.ToString(), cancellationToken);
+    }
+
+    /// <summary>Reads XMLTV data from a stream that can seek. Data that starts with the gzip signature is decompressed.</summary>
+    /// <param name="name">The file name or the address, for the error messages.</param>
+    public static async Task<Tv> ParseAsync(Stream stream, string name, CancellationToken cancellationToken)
+    {
+        var signature = new byte[2];
+        var count = await stream.ReadAtLeastAsync(signature, 2, false, cancellationToken);
+        stream.Position = 0;
+        var input = count == 2 && signature is [0x1F, 0x8B]
+            ? new GZipStream(stream, CompressionMode.Decompress, leaveOpen: true)
+            : stream;
+
+        try
+        {
+            var settings = new XmlReaderSettings { DtdProcessing = DtdProcessing.Ignore };
+            using var reader = XmlReader.Create(input, settings);
+            return (Tv?)new XmlSerializer(typeof(Tv)).Deserialize(reader)
+                   ?? throw new InvalidDataException($"{name} is not an XMLTV file.");
+        }
+        catch (InvalidOperationException e)
+        {
+            throw new InvalidDataException($"{name} is not an XMLTV file: {e.InnerException?.Message ?? e.Message}", e);
+        }
+        finally
+        {
+            if (input != stream)
+                await input.DisposeAsync();
+        }
     }
 
     /// <summary>The channels of the file, in the order of the file, each with its programs.</summary>
