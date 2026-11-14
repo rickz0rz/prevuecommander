@@ -33,6 +33,14 @@ public class WeatherTests
         Assert.ThrowsAny<ArgumentException>(() => new WeatherStatusCommand(digit, label, text));
 
     [Fact]
+    public void Text_SendsTheDegreeSignAsLatin1()
+    {
+        // A test in Esquire showed "Temp 41°F" with the byte $B0.
+        var command = new WeatherTextCommand(30, 1, 2, "*", ["Temp 41°F"]);
+        Assert.Contains((byte)0xB0, command.Render());
+    }
+
+    [Fact]
     public void Text_EndsEachLineWithALineBreak()
     {
         var command = new WeatherTextCommand(30, 1, 2, "DET*", ["Clear", "Low 32"]);

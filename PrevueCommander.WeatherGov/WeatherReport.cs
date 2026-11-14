@@ -2,6 +2,8 @@ namespace PrevueCommander.WeatherGov;
 
 /// <summary>The current weather of a station. The values use SI units, as weather.gov sends them.</summary>
 /// <param name="FeelsLikeCelsius">The wind chill or the heat index, if weather.gov has one.</param>
+/// <param name="PressurePascals">The barometric pressure, in pascals.</param>
+/// <param name="VisibilityMeters">The visibility, in meters.</param>
 /// <param name="Icon">The ESQ picture, 2 to 6, or null.</param>
 public sealed record WeatherCurrent(
     DateTimeOffset? Time,
@@ -11,7 +13,10 @@ public sealed record WeatherCurrent(
     double? Humidity,
     double? WindDirectionDegrees,
     double? WindSpeedKmh,
-    int? Icon);
+    int? Icon,
+    double? DewPointCelsius = null,
+    double? PressurePascals = null,
+    double? VisibilityMeters = null);
 
 /// <summary>One day of the forecast. The temperatures are in degrees Fahrenheit.</summary>
 /// <param name="High">The temperature of the day period.</param>
@@ -62,7 +67,8 @@ public sealed record WeatherReport(
             now = new WeatherCurrent(observation.Timestamp, observation.TextDescription,
                 observation.Temperature?.Value, observation.WindChill?.Value ?? observation.HeatIndex?.Value,
                 observation.RelativeHumidity?.Value, observation.WindDirection?.Value, observation.WindSpeed?.Value,
-                WeatherIcons.Choose(observation.Icon, observation.TextDescription));
+                WeatherIcons.Choose(observation.Icon, observation.TextDescription), observation.DewPoint?.Value,
+                observation.BarometricPressure?.Value, observation.Visibility?.Value);
         }
 
         var city = point.RelativeLocation?.Properties;

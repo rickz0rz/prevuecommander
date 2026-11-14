@@ -1,7 +1,7 @@
 using System.Globalization;
-using System.Text;
 using System.Text.RegularExpressions;
 using Prevue.Commands;
+using Prevue.Core;
 using PrevueCommander.WeatherGov;
 
 namespace PrevueCommander.Model.PlaybookCommands;
@@ -13,12 +13,16 @@ namespace PrevueCommander.Model.PlaybookCommands;
 /// </summary>
 public partial record WeatherGovPlaybookCommand : IPlaybookCommand
 {
-    /// <summary>The default lines of the current weather. ESQ shows them in pairs, at the left and the right of the picture.</summary>
+    /// <summary>
+    /// The default lines of the current weather, as the "current conditions" of Prevue Weather showed them. ESQ shows
+    /// the lines in pairs, at the left and the right of the picture.
+    /// </summary>
     public static readonly IReadOnlyList<string> DefaultCurrentLines =
     [
-        "{condition}", "{temperature}{unit}",
-        "Humidity {humidity}%", "Wind {wind}",
-        "{next}", "{nextHighLow} {nextTemperature}{unit}"
+        "{condition}", "Temp {temperature}{degree}{unit}",
+        "Wind {wind}", "Pressure {pressure}",
+        "Humidity {humidity}%", "DewPoint {dewPoint}{degree}{unit}",
+        "Visibility {visibility}", ""
     ];
 
     private static readonly AsyncLocal<Func<string?, WeatherGovClient>?> TestClientFactory = new();
@@ -41,7 +45,7 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
     public string Label { get; init; } = "LOCAL";
 
     /// <summary>The status text at the top of the weather. The same placeholders as <see cref="CurrentLines"/>.</summary>
-    public string Status { get; init; } = "{city}, {state}";
+    public string Status { get; init; } = "{city}";
 
     /// <summary>True sends the current weather as the weather text, for <c>!!showWeather {}</c> (W0).</summary>
     public bool Current { get; init; } = true;
@@ -57,8 +61,8 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
 
     /// <summary>
     /// The lines of the current weather, a maximum of 10. The placeholders are {city}, {state}, {condition},
-    /// {temperature}, {feelsLike}, {humidity}, {wind}, {unit}, {time}, {next}, {nextForecast}, {nextTemperature} and
-    /// {nextHighLow}. A missing value shows "--".
+    /// {temperature}, {feelsLike}, {dewPoint}, {humidity}, {wind}, {pressure}, {visibility}, {degree}, {unit}, {time},
+    /// {next}, {nextForecast}, {nextTemperature} and {nextHighLow}. A missing value shows "--".
     /// </summary>
     public List<string>? CurrentLines { get; init; }
 
@@ -86,14 +90,18 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
             Current, cancellationToken);
         context.Log.WriteLine($"weather.gov: {report.City}, {report.State}: " +
                               $"{report.Current?.Description ?? "no current weather"}, {report.Days.Count} forecast days.");
-        return Commands(report, celsius, context.Log);
+        return Commands(report, celsius, context.Log, context.Characters);
     }
 
     /// <summary>Makes the commands of a report.</summary>
-    public IReadOnlyList<BaseCommand> Commands(WeatherReport report, bool celsius, TextWriter log)
+    /// <param name="characters">The characters of the texts. With Ascii, "°" is left out.</param>
+    public IReadOnlyList<BaseCommand> Commands(WeatherReport report, bool celsius, TextWriter log,
+        CharacterSet characters = CharacterSet.Latin1)
     {
         var values = Values(report, celsius);
-        var commands = new List<BaseCommand> { new WeatherStatusCommand('1', Label, StatusText(values, log)) };
+        string Printable(string text) => PrevueText.ToPrintable(text, characters);
+        var commands = new List<BaseCommand>
+            { new WeatherStatusCommand('1', Label, StatusText(Printable(Fill(Status, values)), log)) };
 
         if (Current)
         {
@@ -104,7 +112,7 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
             }
             else
             {
-                var lines = (CurrentLines ?? [.. DefaultCurrentLines]).Select(line => Ascii(Fill(line, values))).ToList();
+                var lines = (CurrentLines ?? [.. DefaultCurrentLines]).Select(line => Printable(Fill(line, values))).ToList();
                 commands.Add(new WeatherTextCommand(Minutes, 1, report.Current.Icon ?? 1,
                     string.IsNullOrEmpty(Label) ? "*" : Label, lines));
             }
@@ -130,9 +138,8 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
         throw new ArgumentException("!!weatherGov needs a zip, or a latitude and a longitude.");
     }
 
-    private string StatusText(Dictionary<string, string> values, TextWriter log)
+    private string StatusText(string text, TextWriter log)
     {
-        var text = Ascii(Fill(Status, values));
         // ESQ accepts a status of 39 bytes: the digit, the label, the separator, the text and the end.
         var maximum = WeatherStatusCommand.MaximumPayloadLength - 3 - Label.Length;
         if (text.Length <= maximum)
@@ -166,6 +173,18 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
             ["condition"] = now?.Description ?? missing,
             ["temperature"] = Number(Convert(now?.TemperatureCelsius)),
             ["feelsLike"] = Number(Convert(now?.FeelsLikeCelsius ?? now?.TemperatureCelsius)),
+            ["dewPoint"] = Number(Convert(now?.DewPointCelsius)),
+            ["pressure"] = now?.PressurePascals is { } pascals
+                ? celsius
+                    ? $"{Math.Round(pascals / 100).ToString(CultureInfo.InvariantCulture)} hPa"
+                    : $"{(pascals / 3386.389).ToString("0.00", CultureInfo.InvariantCulture)} in."
+                : missing,
+            ["visibility"] = now?.VisibilityMeters is { } meters
+                ? celsius
+                    ? $"{Math.Round(meters / 1000).ToString(CultureInfo.InvariantCulture)} km"
+                    : $"{Math.Round(meters / 1609.344).ToString(CultureInfo.InvariantCulture)} M"
+                : missing,
+            ["degree"] = "°",
             ["humidity"] = Number(now?.Humidity),
             ["wind"] = wind,
             ["unit"] = celsius ? "C" : "F",
@@ -195,16 +214,6 @@ public partial record WeatherGovPlaybookCommand : IPlaybookCommand
                 : throw new ArgumentException(
                     $"The placeholder {match.Value} of !!weatherGov is not known. The placeholders are " +
                     string.Join(", ", values.Keys.Select(k => $"{{{k}}}")) + "."));
-
-    /// <summary>ESQ shows only printable ASCII characters. Other characters are left out.</summary>
-    private static string Ascii(string text)
-    {
-        var builder = new StringBuilder(text.Length);
-        foreach (var c in text.Normalize(NormalizationForm.FormD))
-            if (c is >= ' ' and <= '~')
-                builder.Append(c);
-        return builder.ToString();
-    }
 
     [GeneratedRegex(@"\{(\w+)\}")]
     private static partial Regex Placeholder();
