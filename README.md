@@ -11,6 +11,19 @@ ESQ, the Prevue Guide program, reads two serial lines:
 
 You write the commands in a YAML file, the playbook. Prevue Commander reads the playbook and sends its commands in order.
 
+### Documents
+
+| Document | Contents |
+|---|---|
+| [Web server](docs/web-server.md) | The jobs and the HTTP API of the web server. |
+| [Connect from a Raspberry Pi](docs/pi.md) | The wiring and the UART setup of a Pi. |
+| [The clock and daylight saving time](docs/clock.md) | How ESQ moves the clock, and the file `dst.dat`. |
+| [Local ads](docs/local-ads.md) | How to show a local ad, and the graphic ads of ESQ. |
+| [Weather](docs/weather.md) | The 3-day forecast, and the weather from weather.gov. |
+| [Send your own IFF picture](docs/pictures.md) | The picture formats that ESQ loads, and how to make a picture smaller. |
+| [Control line](docs/control-line.md) | How to keep the top half clear, and the packet types. |
+| [Test with an emulator](docs/testing.md) | Tests with Esquire and FS-UAE, and the feed file tools. |
+
 ## What is Prevue Guide?
 
 If you had cable TV in the 1980s or 1990s, you may remember [this channel](https://www.youtube.com/watch?v=ceukujHQvwM) in your lineup. An Amiga at the cable company ran it. The program of the Amiga is ESQ ("Esquire"), and it [was recovered](https://prevueguide.com/wiki/Prevue_(ESQ)).
@@ -29,7 +42,7 @@ The fonts of ESQ 9.0.4 have the Latin-1 characters, for example `é`, `ñ` and `
 | Data line | The serial line that sends the guide data to ESQ. The satellite feed used 2400 baud. |
 | Control line | A second, slow serial line (110 baud). It tells ESQ what to show in the top half of the screen. |
 | Data line command | One record on the data line. It starts with the bytes `55 AA`, then a letter that names the command, then its data and a checksum. For example, 'A' is the address command and 'L' is a local ad. This README writes the letter in quotes, for example 'F'. The case of the letter is important: 'F' and 'f' are different commands. |
-| Control packet | One record on the control line. It starts with a type number from 1 to 22. See [Packet types](#packet-types). |
+| Control packet | One record on the control line. It starts with a type number from 1 to 22. See [Packet types](docs/control-line.md#packet-types). |
 | Unit | One Prevue machine. A cable company could have many units on one satellite feed. Each unit has an address. |
 | Session | A group of data line commands for the selected units: an address command, the commands, and a box off command. See [Commands](#commands). |
 | Status packet | The 'F' command (`!!configuration`). It has the time zone, the scroll speed and the daylight saving time setting. ESQ needs it before the listings. |
@@ -51,7 +64,7 @@ The fonts of ESQ 9.0.4 have the Latin-1 characters, for example `é`, `ñ` and `
 
 - The [.NET 11 SDK](https://dotnet.microsoft.com/download).
 - A Prevue system, one of these:
-  - An emulator that gives the serial port of ESQ on a TCP port. [Esquire](https://prevueguide.neocities.org/guides/Esquire) opens the data line on TCP port 5400. [FS-UAE](#test-with-fs-uae) can also open the serial port of the Amiga on a TCP port.
+  - An emulator that gives the serial port of ESQ on a TCP port. [Esquire](https://prevueguide.neocities.org/guides/Esquire) opens the data line on TCP port 5400. [FS-UAE](docs/testing.md#test-with-fs-uae) can also open the serial port of the Amiga on a TCP port.
   - An Amiga that runs ESQ, connected to a serial port of this computer or to the UARTs of a Raspberry Pi. See [Connect to an Amiga](#connect-to-an-amiga).
 - Guide data, if you send listings: an XMLTV file (for example from [zap2xml](https://github.com/jef/zap2xml)), or a [Channels DVR](https://getchannels.com/dvr-server/) server.
 
@@ -120,11 +133,11 @@ An option replaces a setting of the playbook for one run. Thus you can use one p
 | `--now <date>` | `now` | The time of the run, for example `1993-02-23T18:00`. |
 | `--verbose` | `output` | Shows the bytes of each command. |
 | `--watch <minutes>` | `watchMinutes` | After the commands, reads the guide again at this interval and sends only the changes. See [Watch mode](#watch-mode). |
-| `--weather <minutes>` | `weatherMinutes` | After the commands, reads the weather of `!!weatherGov` again at this interval and sends it. See [Weather from weather.gov](#weather-from-weathergov). |
+| `--weather <minutes>` | `weatherMinutes` | After the commands, reads the weather of `!!weatherGov` again at this interval and sends it. See [Weather from weather.gov](docs/weather.md#weather-from-weathergov). |
 | `--serve <port>` | `servePort` | After the commands, starts the web server on this port. See [Web server](#web-server). |
 | `--serve-host <address>` | `serveHost` | The address of the web server. `0.0.0.0` accepts all the computers of the network. |
 | `--validate` | | Makes all the commands and shows them, but does not connect. Use it to check a playbook. |
-| `--output <file>` | | Writes the bytes of the data line to the file, but does not connect. See [Replay a feed file](#replay-a-feed-file). |
+| `--output <file>` | | Writes the bytes of the data line to the file, but does not connect. See [Replay a feed file](docs/testing.md#replay-a-feed-file). |
 | `--control-output <file>` | | With `--output`, writes the bytes of the control line to the file. Without it, `--output` leaves out the control line commands. |
 | `-h`, `--help` | | Shows the options. |
 
@@ -175,7 +188,7 @@ Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port t
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `now` | | A local date and time that the playbook uses in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of the broadcast day of this time and of the next day. `!!clock` without `date` sends this time, and `!!configureDst` without `year` uses its year. A Channels DVR server has only current listings, so use an XMLTV file for a date in the past. |
 | `watchMinutes` | `0` | The minutes between two reads of the guide in the [watch mode](#watch-mode). `0` stops after the commands. |
-| `weatherMinutes` | `0` | The minutes between two reads of the weather of `!!weatherGov`. See [Weather from weather.gov](#weather-from-weathergov). `0` stops after the commands. |
+| `weatherMinutes` | `0` | The minutes between two reads of the weather of `!!weatherGov`. See [Weather from weather.gov](docs/weather.md#weather-from-weathergov). `0` stops after the commands. |
 | `servePort` | `0` | The TCP port of the [web server](#web-server). `0` starts no server. |
 | `serveHost` | `127.0.0.1` | The address of the web server. `127.0.0.1` accepts only this computer. `0.0.0.0` accepts all the computers of the network. |
 | `characterSet` | `Latin1` | The characters of the listings, the local ads and the promo titles. `Latin1` sends letters with accents and other Latin-1 characters, for example `Fiancé`. `Ascii` removes the accents, for example `Fiance`, for older versions of ESQ. See [ESQ versions](#esq-versions). |
@@ -245,7 +258,7 @@ Open `http://localhost:8095/` in a browser. The page has these parts:
 
 - The status of the lines, the queues, the hold, the guide and the automatic promos. The page shows the new status each 2 seconds.
 - Buttons for the top half of the screen: clear, logo, ad break, weather and forecast.
-- Keep the top half clear for some minutes, or until you stop it. See [Keep the top half clear](#keep-the-top-half-clear).
+- Keep the top half clear for some minutes, or until you stop it. See [Keep the top half clear](docs/control-line.md#keep-the-top-half-clear).
 - A promo form.
 - A local ad editor with a preview of each ad, as ESQ shows it.
 - A weather form, the clock, and a button that reads the guide again.
@@ -257,79 +270,7 @@ The page needs no internet connection, so it works on a Raspberry Pi without int
 > [!WARNING]
 > The server has no password. Anyone who can connect to the port can send commands to ESQ. The default address `127.0.0.1` accepts only this computer. Use `serveHost: 0.0.0.0` only on a network that you trust. On Windows, an address other than `127.0.0.1` can need administrator rights.
 
-### Jobs
-
-Each request that sends commands makes all its commands first. If a command has an error, the server answers with status 400 and an error text, and it sends nothing. Otherwise, the server adds a job to a queue and answers at once with status 202 and the job.
-
-The server has two queues:
-
-- The control queue has the jobs with only control line commands, for example a promo.
-- The data queue has the jobs with data line commands, for example local ads.
-
-Each queue sends one job at a time, in order. Thus a promo does not wait for a long file transfer on the data line. A job always sends all its commands together. No other command of the same line can come between them, also from the watch mode or the automatic promos.
-
-A job has one of these states: `queued`, `sending`, `done`, `failed` or `cancelled`. You can cancel a queued job. A job that started always finishes, because ESQ cannot use a record that stops in the middle. If a line cannot connect, the job fails, and the next job tries to connect again.
-
-The server puts the data line commands of a request in a session. The session has the first `!!address` and the last `!!configuration` of the playbook, and `!!save` if the playbook has one. Without these commands in the playbook, the session uses the address `*` and the default status packet. `POST /prevue/commands` is different: it sends the commands as you write them.
-
-### HTTP API
-
-The requests that Esquire also has use the same paths and bodies, so a script works with both programs. A body is JSON, except for `POST /prevue/commands`.
-
-| Request | Body | What it does |
-|---|---|---|
-| `GET /` | | The control page. |
-| `GET /status` | | The status: the lines, the queues, the hold, the guide, the automatic promos and the last 10 jobs. |
-| `GET /prevue/ctrl` | | The state of the control line, with the fields of Esquire. `queued` is the bytes that wait, and `seconds` is the time to send them. `sent` is the bytes sent. |
-| `GET /jobs` | | The last 50 jobs, the newest first. |
-| `GET /jobs/<id>` | | One job. |
-| `DELETE /jobs/<id>` | | Cancels a queued job. |
-| `POST /prevue/ctrl/promo` | `{"title": "Seinfeld", "brush": "AT"}` | Shows a promo. See below. |
-| `POST /prevue/ctrl/clear` | | Removes what the top half shows (`!!clearTopHalf`). |
-| `POST /prevue/ctrl/logo` | | Shows the loaded logo (`!!showLogo`). |
-| `POST /prevue/ctrl/ad` | | Starts an ad break: a type 12 packet. See [Show a local ad](#show-a-local-ad). |
-| `POST /prevue/ctrl/weather` | `{"forecast": false}` | Shows the current weather (`W0`). With `"forecast": true`, shows the 3-day forecast (`W3`). |
-| `POST /prevue/ctrl/packets` | `[{"type": 17, "body": "Seinfeld"}]` | Sends control packets, as `!!controlPacket`. In JSON, `\u0012` is the separator of the two boxes. |
-| `POST /prevue/ctrl/hold` | `{"minutes": 30, "intervalSeconds": 150}` | Keeps the top half clear. It sends a clear at once and then at each interval. Without `minutes`, the hold has no end. `intervalSeconds` is 5 to 170. The default is 150. |
-| `DELETE /prevue/ctrl/hold` | | Stops the hold. The logo rotation starts again. |
-| `POST /prevue/data/local-ads` | `{"ads": ["%CENTER%Joe's Pizza"], "dryRun": false}` | Replaces the local ads of ESQ, as `!!localAds`. The answer has the preview and the warnings of each ad. With `"dryRun": true`, the server only gives the preview and sends nothing. |
-| `POST /prevue/data/weather` | `{"status": {...}, "text": {...}, "forecast": {...}, "show": true, "pauseSeconds": 5}` | Sends the weather status, the weather text and the 3-day forecast, with the settings of `!!weatherStatus`, `!!weatherText` and `!!weatherForecast`. Each part is optional, but one part is necessary. With `show`, the server then waits `pauseSeconds` and shows the weather. With a forecast, it shows the forecast (`W3`). Without a forecast, it shows the current weather (`W0`). |
-| `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. The server first sends the DST window of the year of the clock, as `!!configureDst`. |
-| `POST /prevue/data/weather-gov` | `{"zip": "48201", "show": "forecast", "pauseSeconds": 5}` | Gets the weather of weather.gov and sends it, as `!!weatherGov`. The body can have all the settings of `!!weatherGov`. `show` is `none` (the default), `current` or `forecast`. With `current` or `forecast`, the server then waits `pauseSeconds` and shows the weather. |
-| `POST /prevue/weather/refresh` | | Reads the weather of the `!!weatherGov` commands of the playbook again, and sends it. The playbook must have a `!!weatherGov` command. |
-| `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](#watch-mode) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
-| `POST /prevue/commands` | YAML | Sends playbook commands. The body is a YAML list of commands, or a playbook with `commands:`. The server uses only the commands of a playbook. |
-
-The body of a promo is as the settings of `!!promo`. It has a box on the right, a box on the left, or both boxes:
-
-```json
-{
-  "right": {"title": "Bob's Burgers", "channels": "*", "brush": "AT"},
-  "left": {"title": "Seinfeld", "channels": "KTIV*", "brush": "DT"},
-  "first": "left",
-  "style": "box"
-}
-```
-
-`title`, `channels` and `brush` at the top of the body are for the right box, for example `{"title": "Seinfeld"}`.
-
-Examples with `curl`:
-
-```sh
-curl -X POST localhost:8095/prevue/ctrl/promo -d '{"title": "Seinfeld", "brush": "AT"}'
-curl -X POST localhost:8095/prevue/ctrl/clear -d ''
-curl -X POST localhost:8095/prevue/ctrl/hold -d '{"minutes": 30}'
-curl -X DELETE localhost:8095/prevue/ctrl/hold
-curl -X POST localhost:8095/prevue/data/local-ads -d '{"ads": ["%CENTER%Visit Joe'"'"'s Pizza"]}'
-curl -X POST localhost:8095/prevue/ctrl/ad -d ''
-curl -X POST localhost:8095/prevue/commands --data-binary $'- !!showLogo {}\n'
-curl -X POST localhost:8095/prevue/data/weather-gov -d '{"zip": "48201", "show": "current"}'
-curl localhost:8095/status
-```
-
-A POST needs a `Content-Length` header. Thus use `-d ''` for a request without a body. HttpListener answers "411 Length Required" to a POST without the header, and the server then does nothing.
-
-A test with Esquire sent each of these requests. ESQ showed two local ads, a promo, the weather and a clear. Then a hold of 4 minutes kept the top half clear.
+[Web server](docs/web-server.md) tells about the jobs and the queues, and has all the requests of the HTTP API.
 
 ## Connect to an Amiga
 
@@ -365,76 +306,7 @@ The wiring is from the ESQ code and the Amiga documentation. It was not tested o
 
 ### Connect from a Raspberry Pi
 
-A Raspberry Pi can run Prevue Commander next to the Amiga. The UARTs of the Pi can send the two lines. This setup was not tested. The information comes from the Raspberry Pi documentation.
-
-To build Prevue Commander for a Pi with a 64-bit Raspberry Pi OS, run `./build-linux-arm64.sh` on a computer with the .NET 11 SDK. Then copy `publish_linux-arm64/PrevueCommander` to the Pi. The Pi does not need .NET.
-
-> [!WARNING]
-> The GPIO pins of the Pi use 3.3 V logic. The serial port of the Amiga uses RS-232 levels, and the signal is inverted. Do not connect a GPIO pin directly to the Amiga. Use a MAX3232 level shifter board between the Pi and the Amiga.
-
-A MAX3232 has two drivers, one for each line. Connect these pins:
-
-| Line | Pi | MAX3232 | Amiga DB25 pin |
-|---|---|---|---|
-| Data line | TX of the first UART | T1IN, then T1OUT | 3 (RXD) |
-| Control line | TX of the second UART | T2IN, then T2OUT | 5 (CTS) |
-| Power | 3.3 V and GND | VCC and GND | |
-| Ground | | GND | 7 (GND) |
-
-Do not connect the RX pins of the Pi. ESQ does not send data back.
-
-Set up the UARTs:
-
-1. Run `sudo raspi-config`.
-2. Select **Interface Options**, and then **Serial Port**.
-3. Disable the login shell on the serial port.
-4. Enable the serial port hardware.
-5. Add the overlay lines for your model to `/boot/firmware/config.txt`, as the sections below show.
-6. Restart the Pi.
-7. Run `ls /dev/ttyAMA*` to find the names of the UARTs.
-
-Use the PL011 UARTs (`/dev/ttyAMA*`). Do not use the mini UART (`/dev/ttyS0`). Its speed changes with the clock of the processor, and it cannot send 110 baud.
-
-#### Pi 4 and Pi 5
-
-These models have more than one PL011 UART on the GPIO header. Use one UART for each line. For example, on a Pi 4, add these lines to `config.txt`:
-
-```
-dtoverlay=disable-bt
-dtoverlay=uart3
-```
-
-`disable-bt` moves UART0 from Bluetooth to GPIO14 (pin 8). `uart3` adds UART3 with TX on GPIO4 (pin 7). The Pi 5 has its UARTs in the RP1 chip, and its overlays are different. Read the Raspberry Pi documentation for your model.
-
-```yaml
-configuration:
-  serialPort: /dev/ttyAMA0
-  baudRate: 2400
-  controlSerialPort: /dev/ttyAMA3
-  controlBaudRate: 110
-```
-
-The names of the UARTs can be different on your Pi. Use the names that `ls /dev/ttyAMA*` shows.
-
-#### Pi 3
-
-The Pi 3 has only one PL011 UART and the mini UART, and both use GPIO14 for TX. Thus the GPIO header gives only one serial line. Use the PL011 UART for the control line, and a USB to RS-232 adapter for the data line. Some USB adapters cannot send 110 baud, for example the CP2102 starts at 300 baud. With this split, the adapter sends only 2400 baud.
-
-Add this line to `config.txt`, and then run `sudo systemctl disable hciuart`:
-
-```
-dtoverlay=disable-bt
-```
-
-```yaml
-configuration:
-  serialPort: /dev/ttyUSB0
-  baudRate: 2400
-  controlSerialPort: /dev/ttyAMA0
-  controlBaudRate: 110
-```
-
-Connect the TX of the PL011 UART (GPIO14, pin 8) to T1IN of the MAX3232, and T1OUT to pin 5 of the Amiga. Connect the USB adapter to pin 3, as in [Connect to an Amiga](#connect-to-an-amiga).
+A Raspberry Pi can run Prevue Commander next to the Amiga. Its UARTs can send the two lines. See [Connect from a Raspberry Pi](docs/pi.md).
 
 ## Commands
 
@@ -465,8 +337,8 @@ The control line commands do not need a session. Send them after the listings, b
 |---|---|---|
 | `!!configuration` | `configuration`: see the table below | Sends the status packet ('F'). ESQ needs it before a channel lineup or a change of the local ads. |
 | `!!newLookConfiguration` | `configuration`: see the table below | Sends the configuration record ('f'). ESQ saves it to `config.dat`. |
-| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of `!!newLookConfiguration` is `'2'` (the default). See [The clock and daylight saving time](#the-clock-and-daylight-saving-time). |
-| `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. ESQ writes the window to `dst.dat` only after `!!save`. See [The clock and daylight saving time](#the-clock-and-daylight-saving-time). |
+| `!!clock` | `date`, `useCurrentDate` (`false`) | Sets the clock of ESQ. Without `date`, it sends the local time of this computer. With `date`, for example `2020-11-01T16:00`, it sends that time. `useCurrentDate: true` sends the local time also when `date` is set. ESQ accepts the clock only when `clockCommandInFSetting` of `!!newLookConfiguration` is `'2'` (the default). See [The clock and daylight saving time](docs/clock.md#the-clock-and-daylight-saving-time). |
+| `!!configureDst` | `year` (the current year) | Sends the daylight saving time window of the year, from the time zone of this computer. ESQ writes the window to `dst.dat` only after `!!save`. See [The clock and daylight saving time](docs/clock.md#the-clock-and-daylight-saving-time). |
 
 The settings of `!!configuration`:
 
@@ -520,41 +392,7 @@ A setting that is not in the playbook keeps its default. ESQ saves the configura
 
 #### The clock and daylight saving time
 
-`!!clock` sends the local time and a daylight saving time flag. The flag tells ESQ that the time includes daylight saving time. ESQ compares the flag with its own DST window from `!!configureDst`. When they do not agree, ESQ moves the clock by one hour. Tests with Esquire showed these results:
-
-| Clock that was sent | DST window of ESQ | ESQ shows |
-|---|---|---|
-| Winter, no flag | Any | The correct time. |
-| Summer, with the flag | The window of the year | The correct time. |
-| Summer, with the flag | No window of the year | One hour early. |
-| Summer, no flag | The window of the year | One hour late. |
-
-Prevue Commander sets the flag from the time zone of this computer, so send `!!configureDst` in the same playbook. The order of `!!clock` and `!!configureDst` is not important. If a playbook sends a summer clock without `!!configureDst`, Prevue Commander shows a warning. Prevue Commander cannot read the drive, so the warning also shows when the drive already has the window.
-
-Use a time zone with the same daylight saving time rules as the area of ESQ. A computer without daylight saving time, for example in UTC, sends no flag. If ESQ has a window, it then shows a summer clock one hour late.
-
-##### The window in `dst.dat`
-
-ESQ keeps the window in memory. A test with Esquire showed these rules for the file `dst.dat` on the drive:
-
-- ESQ writes the window to `dst.dat` only after `!!save` and the next `!!boxOff`. Without `!!save`, ESQ loses the window when it restarts.
-- ESQ reads `dst.dat` when it starts. After a restart, a summer clock without `!!configureDst` showed the correct time.
-- The file has the window of one year only. ESQ accepts a window only within one year of its clock. Thus send `!!configureDst` and `!!save` each year, for example in the normal playbook.
-- The watch mode and the web server do not send `!!configureDst` again. If Prevue Commander runs across a new year, send the new window yourself.
-
-This playbook sends the window and makes ESQ keep it:
-
-```yaml
-- !!address
-  target: '*'
-- !!configureDst {}
-- !!save {}
-- !!boxOff {}
-```
-
-`dst.dat` has 60 bytes and no line breaks. It has two windows: first `g2`, then `g3`. Each window is a space, `g2:` or `g3:`, $04, the start, $13 and the end. A time is `YYYYDDDHH:MM`, where DDD is the day of the year from 0. For example, the 2026 window of Michigan starts with ` g2:` $04 `202606603:00` $13 `202630401:00`. Do not write the file yourself unless you prepare a new drive. Then copy a `dst.dat` that ESQ wrote. ESQ makes and checks the format of the window itself.
-
-ESQ also ignores the clock when `clockCommandInFSetting` of `!!newLookConfiguration` is not `'2'`. It then counts a line error (`DATACErrs`). If the playbook does not send `!!newLookConfiguration`, ESQ uses the setting of its drive.
+`!!clock` also sends a daylight saving time flag. ESQ compares it with its DST window, and can move the clock by one hour. Send `!!configureDst` in the same playbook. See [The clock and daylight saving time](docs/clock.md).
 
 ### Listings
 
@@ -662,49 +500,7 @@ An ad can have these tokens:
 | `%LEFT%`, `%CENTER%`, `%RIGHT%` | The alignment of a line. A token that is not at the start of a line starts a new line. |
 | `%%` | A `%` character. |
 
-#### Show a local ad
-
-ESQ has no timer for the local ads. ESQ shows local ads only when the control line sends a type 12 packet. On a real system, the satellite feed sent this packet at the times of the commercial breaks. Prevue Commander has no command for this packet, so send it with `!!controlPacket`:
-
-```yaml
-- !!controlPacket
-  type: 12
-```
-
-One type 12 packet starts an ad break of about 30 seconds:
-
-1. ESQ shows the next ad at once.
-2. After 16 seconds, ESQ shows the ad after it.
-3. After 16 more seconds, the break ends. The second ad stays on the screen.
-
-ESQ shows the ads in the order of their numbers. After the last ad, the first ad comes again. During a break, ESQ ignores another type 12 packet. Thus send type 12 at intervals of 35 seconds or more. A test with Esquire showed this behavior. The code of ESQ sets the 16 seconds. A local avail filter can change this time.
-
-An ad stays on the screen until one of these events:
-
-- `!!clearTopHalf` removes it at once.
-- The next ad break shows other ads.
-- A promo replaces it.
-- The logo rotation shows the next logo, about 3 minutes later. See [Keep the top half clear](#keep-the-top-half-clear).
-
-The packet shows a local ad only when all these conditions are true:
-
-- ESQ has local ads. Send `!!localAds` first.
-- `localTextAdSource` is `'R'` or `'S'`. With `'L'`, the ads that an operator typed also show.
-- The graphic ad mode of the operator menu is `N`. This is the default. With another mode, ESQ shows graphic ads in place of the local ads. See [Graphic ads of ESQ](#graphic-ads-of-esq).
-- No local avail filter is active. A type 22 packet starts this filter. See [Packet types](#packet-types).
-
-Otherwise, type 12 does the same as type 1. The key `T` of the operator menu also shows a local ad. But ESQ reads the keys of the operator on a different pin of the serial port. Esquire does not send these keys.
-
-#### Graphic ads of ESQ
-
-ESQ can also show graphic ads from the file `gfx/g_ads.data` of its drive. These graphic ads are not the pictures of `!!graphicAd`. A picture of `!!graphicAd` is a logo, and the logo rotation shows it.
-
-The graphic ads of `gfx/g_ads.data` have no timer, as the local ads. ESQ shows the next graphic ad only at these times:
-
-- At a type 12 packet, if ESQ has graphic ads and the graphic ad mode is not `N`.
-- When an operator presses the key `A` in the operator menu.
-
-Only the operator menu sets the graphic ad mode. Prevue Commander cannot set it. The drive of Esquire does not have `gfx/g_ads.data`, and the format of this file is not known. Thus these rules come from the code of ESQ only. They were not tested.
+ESQ shows a local ad only at an ad break of the control line. See [Local ads](docs/local-ads.md).
 
 ### Weather
 
@@ -721,6 +517,8 @@ Send them in a session on the data line. Then send `!!showWeather` on the contro
 | `!!weatherStatus` | `digit` (`'1'`), `label`, `text` | Sets the weather status. ESQ shows `text` at the top, for example the city. `label` has a maximum of 10 characters. The digit `'0'` clears the weather. ESQ saves the status in `curday.dat`. |
 | `!!showWeather` | `forecast` (`false`) | Shows the current weather (`W0`). With `forecast: true`, it shows the 3-day forecast (`W3`). |
 | `!!weatherText` | `minutes` (`60`), `icon` (`1`), `label` (`*`), `lines`, `color` (`1`) | Sends the weather text, for example a forecast or an alert. ESQ keeps it only if `label` matches the label of the status. `*` and `?` are wildcards, and upper case and lower case are different. ESQ shows the text for `minutes` (1 to 255). `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive, and `1` shows no picture. `lines` has a maximum of 10 lines. `color` shows only on the diagnostics screen of the operator menu. |
+| `!!weatherForecast` | `minutes` (`60`), `label` (`*`), `days` | Sends the 3-day forecast. See [3-day forecast](docs/weather.md#3-day-forecast). |
+| `!!weatherGov` | `zip`, or `latitude` and `longitude`, and other settings | Gets the weather of a US location from weather.gov, and sends the status, the current weather and the 3-day forecast. See [Weather from weather.gov](docs/weather.md#weather-from-weathergov). |
 
 The status text has a maximum of 39 bytes, with the digit, the label, a separator and the end. Prevue Commander stops before it sends a longer status, because ESQ ignores it. ESQ shows the lines of the weather text in pairs. The first line of a pair is at the left of the picture, and the second line is at the right. A text can have printable ASCII characters. It can also have the Latin-1 characters of the ESQ 9.0.4 fonts, for example `°` and `é`. A label can have printable ASCII characters only. This example shows a sun and four lines:
 
@@ -741,146 +539,7 @@ The status text has a maximum of 39 bytes, with the digit, the label, a separato
 - !!showWeather {}
 ```
 
-#### 3-day forecast
-
-| Command | Settings | Description |
-|---|---|---|
-| `!!weatherForecast` | `minutes` (`60`), `label` (`*`), `days` | Sends the 3-day forecast. ESQ shows it for `minutes` (1 to 255). `days` has a maximum of 4 days. Each day has `icon`, `high`, `low` and an optional `date`. |
-
-The settings of a day:
-
-- `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive. Without `icon`, the day has no picture.
-- `high` and `low` are -99 to 999. Without a value, ESQ shows `???`.
-- `date` is a day, for example `2026-11-15`. Without dates, the first day is tomorrow, and each next day is one day later.
-
-ESQ shows three panels: tomorrow, the day after, and the day after that. Each panel has the name of the day, the picture, and the high and the low, for example `82/52`. ESQ uses its own clock for the names of the days, so set the clock of ESQ correctly. ESQ keeps four days but shows only three. ESQ ignores a day that is not one of the next four days. A panel without a day shows "No Forecast Weather Data Available".
-
-ESQ shows the panels only when two things are true:
-
-- The forecast time (`minutes`) has not ended.
-- The digit of `!!weatherStatus` is not `'0'`. Send `!!weatherStatus` before the forecast.
-
-Keep `label: '*'`. ESQ compares the label with a forecast label that the 'i' command sets. Prevue Commander does not send the 'i' command, so the forecast label is empty. Only `*` matches an empty label.
-
-This example shows a sun, clouds and rain for the next three days:
-
-```yaml
-- !!address
-  target: '*'
-- !!weatherStatus
-  label: DETROIT
-  text: Detroit, Michigan
-- !!weatherForecast
-  minutes: 30
-  days:
-  - {icon: 2, high: 81, low: 51}
-  - {icon: 3, high: 82, low: 52}
-  - {icon: 4, high: 83, low: 53}
-- !!boxOff {}
-- !!pause
-  seconds: 5
-- !!showWeather
-  forecast: true
-```
-
-#### Weather from weather.gov
-
-`!!weatherGov` gets the weather of a US location from [weather.gov](https://www.weather.gov/documentation/services-web-api), the free API of the National Weather Service. It needs no key. weather.gov has data only for the USA. The command sends three parts:
-
-- The status: the city, for example `Philadelphia`.
-- The current weather of the nearest weather station, as a weather text. `!!showWeather {}` shows it.
-- The forecast of the next 3 days. `!!showWeather` with `forecast: true` shows it.
-
-```yaml
-- !!address
-  target: '*'
-- !!weatherGov
-  zip: '48201'
-- !!boxOff {}
-- !!pause
-  seconds: 5
-- !!showWeather {}
-```
-
-| Setting | Default | Description |
-|---|---|---|
-| `zip` | | A US ZIP code, for example `'48201'`. Put it in quotes, because a ZIP code can start with `0`. |
-| `latitude`, `longitude` | | The location, for example `42.33` and `-83.05`. Use them in place of `zip`. |
-| `label` | `LOCAL` | The label of the weather status, 0 to 10 characters. |
-| `status` | `{city}` | The status text at the top of the weather. It can have the placeholders of `currentLines`. |
-| `current` | `true` | Sends the current weather. |
-| `forecast` | `true` | Sends the 3-day forecast. |
-| `minutes` | `90` | The minutes that ESQ shows the weather, 1 to 255. Each new read starts the minutes again. |
-| `units` | `F` | `F` for degrees Fahrenheit and miles per hour. `C` for degrees Celsius and kilometers per hour. |
-| `currentLines` | See below | The lines of the current weather, a maximum of 10. |
-| `contact` | | A contact, for example an e-mail address. weather.gov asks each program to identify itself, so that it can contact the owner if the program causes problems. Without `contact`, Prevue Commander sends only its name and the address of this project. |
-
-ESQ shows the lines of the current weather in pairs. The first line of a pair is at the left of the picture. The second line is at the right. The default lines copy the "current conditions" screen of Prevue Weather:
-
-```yaml
-  currentLines:
-  - '{condition}'
-  - Temp {temperature}{degree}{unit}
-  - Wind {wind}
-  - Pressure {pressure}
-  - Humidity {humidity}%
-  - DewPoint {dewPoint}{degree}{unit}
-  - Visibility {visibility}
-  - ''
-```
-
-ESQ then shows this screen:
-
-```
-               Philadelphia
-      Cloudy                  Temp 41°F
-  Wind NW 11 mph   (picture)  Pressure 29.81 in.
-   Humidity 56%               DewPoint 27°F
-  Visibility 10 M
-```
-
-The last line is empty, so the right column has only three lines. Put a line that starts with `{` in quotes. A line can have these placeholders:
-
-| Placeholder | Value |
-|---|---|
-| `{city}`, `{state}` | The city and the state of the location, for example `Detroit` and `MI`. |
-| `{condition}` | The weather of the station, for example `Cloudy` or `Light Rain`. |
-| `{temperature}` | The temperature of the station. |
-| `{feelsLike}` | The wind chill or the heat index. Without one, the temperature. |
-| `{dewPoint}` | The dew point. |
-| `{pressure}` | The barometric pressure, for example `29.81 in.`, or `1009 hPa` with `units: C`. |
-| `{visibility}` | The visibility, for example `10 M` (miles), or `16 km` with `units: C`. |
-| `{degree}` | The degree sign `°`. With `characterSet: Ascii`, ESQ gets nothing for it. |
-| `{humidity}` | The relative humidity in percent. |
-| `{wind}` | The wind direction and speed, for example `W 5 mph`, or `Calm`. |
-| `{unit}` | `F` or `C`. |
-| `{time}` | The time of the observation, for example `6:10 AM`. |
-| `{next}` | The name of the next forecast period, for example `Today` or `Tonight`. |
-| `{nextForecast}` | The weather of the next period, for example `Partly Sunny`. |
-| `{nextTemperature}` | The temperature of the next period. |
-| `{nextHighLow}` | `High` for a day period, `Low` for a night period. |
-
-A missing value shows `--`. Prevue Commander removes the characters that ESQ cannot show. With `characterSet: Ascii`, it also removes `°` and the accents. If the status is too long, ESQ gets only its start.
-
-Prevue Commander chooses the picture from the condition code of weather.gov:
-
-| Picture | Conditions |
-|---|---|
-| `PWI1`, the sun | Clear, a few clouds, hot, cold |
-| `PWI2`, clouds | Overcast, fog, haze, smoke, dust |
-| `PWI3`, rain | Rain, showers, thunderstorms, freezing rain, sleet, tropical storms |
-| `PWI4`, the sun with clouds | Partly cloudy, mostly cloudy |
-| `PWI5`, snow | Snow, rain and snow, a blizzard |
-
-The drive has only these five pictures. ESQ shows the sun for a clear night too.
-
-Prevue Commander finds the location of a ZIP code in a table in the program. The table has the center of each ZIP Code Tabulation Area of the 2024 Gazetteer of the U.S. Census Bureau. Some ZIP codes, for example ZIP codes for post office boxes only, are not in the table. For them, use `latitude` and `longitude`.
-
-To send new weather at an interval, set `weatherMinutes` in the configuration, or use `--weather`. weather.gov updates its forecast a few times each day, so an interval of 30 or 60 minutes is sufficient. If weather.gov does not answer, Prevue Commander shows the error, and ESQ keeps the last weather. The next interval tries again.
-
-```sh
-dotnet run --project PrevueCommander -- --weather 30 playbook.yaml
-```
+[Weather](docs/weather.md) tells about the 3-day forecast and the weather from weather.gov.
 
 ### Files and utilities
 
@@ -957,30 +616,7 @@ ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,
 
 The ad shows in turn with the other logos, and `!!showLogo` shows the next logo at once. Without `reload`, the new list applies after a restart of ESQ, for example with `!!reset`.
 
-#### Send your own IFF picture
-
-`!!fileTransfer` sends an IFF picture that you made yourself, for example to `DF0:Logos/Ads/MYAD`. ESQ loads a picture for the top half of the screen only in one of these formats:
-
-An IFF picture keeps its colors in bit planes: 5 planes give 32 colors, and 4 planes give 16 colors. CAMG is the part of the file that names the display mode of the Amiga.
-
-| Format | Width | Planes | Colors | Aspect | CAMG |
-|---|---|---|---|---|---|
-| Low resolution | 320 | a maximum of 5 | a maximum of 32 | 44:26 | `0x11004` |
-| High resolution | 640 | a maximum of 4 | a maximum of 16 | 22:26 | `0x19004` |
-
-- ESQ shows the top 220 rows. Use 240 rows, as the logos of the drive do.
-- A test with Esquire showed a picture of 320 by 240 pixels with 5 planes and with 4 planes.
-- Color 0 is the background, the border around the picture, and the genlock key.
-- A picture with too many planes stops ESQ with "Report Error Code ER009", the file name, the width and the colors. A test with Esquire showed this for a picture with 320 by 240 pixels and 64 colors (6 planes). ESQ then shows nothing in the top half until an operator presses ESC two times.
-
-A file transfer of a large picture takes a long time. The time in seconds is about the bytes of the file × 10 / the baud rate. Thus a file of 30,000 bytes takes about 2 minutes at 2400 baud. To make a picture smaller:
-
-- Do not dither. ESQ uses ByteRun1 compression, which packs only runs of the same byte.
-- Use large areas of one color. Make the color of the largest area color 0.
-- Use the minimum number of colors. Each plane less makes the picture about 20% smaller.
-- Try different orders of the palette. The order changes the runs in each plane.
-
-For example, a picture with text on a green background was 30,356 bytes with 32 colors. With 10 colors that were selected by hand, no dither, and a better order of the palette, it was 15,666 bytes.
+To send an IFF picture that you made yourself, see [Send your own IFF picture](docs/pictures.md).
 
 ### Control line
 
@@ -990,10 +626,10 @@ The control line commands go to `controlPort` or `controlSerialPort`. ESQ reads 
 |---|---|---|
 | `!!promo` | `right`, `left`: a box with `title`, `channels` (`*`) and `brush`. `first` (`Right`). `style` (`Box`) | Shows a promo in the top half of the screen. With `style: Text`, ESQ draws only the text, over what the top half shows at that time. |
 | `!!moveGrid` | `position` (`A0`), `seconds` (`1`), `channels` | Moves the top of the grid up or down. `position` is two hex digits: a larger value is lower on the screen. `seconds` is the time of the move, from 0 to 9.9. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the loaded logo. `!!clearTopHalf` moves the grid back. |
-| `!!clearTopHalf` | | Removes the promo, the logo or the local ad, and moves the grid back. The top half shows the genlock video. The next logo of the rotation comes about 3 minutes later. See [Keep the top half clear](#keep-the-top-half-clear). |
+| `!!clearTopHalf` | | Removes the promo, the logo or the local ad, and moves the grid back. The top half shows the genlock video. The next logo of the rotation comes about 3 minutes later. See [Keep the top half clear](docs/control-line.md#keep-the-top-half-clear). |
 | `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
 | `!!showWeather` | | Sends `W0`: shows the current weather. See [Weather](#weather). |
-| `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. See [Packet types](#packet-types). In a double-quoted YAML text, `\x12` is the byte that separates the text of the two boxes. |
+| `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. See [Packet types](docs/control-line.md#packet-types). In a double-quoted YAML text, `\x12` is the byte that separates the text of the two boxes. |
 | `!!pause` | `seconds` (`1`) | Waits before the next command. It does not send data. |
 
 A promo has a box on the right, a box on the left, or both boxes. ESQ finds the program in its listings, so send the listings first. A box has these settings:
@@ -1004,75 +640,7 @@ A promo has a box on the right, a box on the left, or both boxes. ESQ finds the 
 
 The box shows the call letters, the title, the next time of the program and the channel number. The box shows the title as the promo gives it, not as the listings give it. For example, `title: family or fiancé` shows "family or fiancé". ESQ shows only one box. It tries the `first` box, and then the other box. If ESQ does not find a title, it shows the loaded logo.
 
-#### Keep the top half clear
-
-ESQ shows the logos of `LOGO.LST` in turn, with a timer. It counts the seconds, and after 180 seconds it shows the next logo. The logo stays until the next logo, a promo, an ad or a clear.
-
-Each `!!clearTopHalf` removes what the top half shows, and the next logo comes about 3 minutes later. Thus, to keep the genlock video in the top half, send `!!clearTopHalf` again at intervals of less than 3 minutes. The [web server](#web-server) does this for you with `POST /prevue/ctrl/hold`, and the control page has a button for it. Without the web server, use a playbook. For example, this playbook keeps the top half clear for 10 minutes:
-
-```yaml
-configuration:
-  controlPort: 5402
-commands:
-- !!clearTopHalf {}
-- !!pause
-  seconds: 150
-- !!clearTopHalf {}
-- !!pause
-  seconds: 150
-- !!clearTopHalf {}
-- !!pause
-  seconds: 150
-- !!clearTopHalf {}
-- !!pause
-  seconds: 150
-- !!clearTopHalf {}
-```
-
-When you stop the clears, the logo rotation starts again. A test with Esquire showed this: with a clear each 150 seconds, no logo showed in 8 minutes. Without the clears, the first logo showed about 3 minutes after the start of ESQ. When the top half has nothing to show, a clear does not change the screen.
-
-The clear does not stop a promo or an ad break that comes later. Do not send `!!promo` or a type 12 packet while you keep the top half clear.
-
-To stop the logos for a long time, `!!logoList` can send a `LOGO.LST` without lines. ESQ then has no logos to show. But this changes the file on the drive, and you must send all the lines again to start the logos. Tests with Esquire showed that an empty `LOGO.LST` stops the logos. The tests did not send the empty file with `!!logoList`.
-
-#### Packet types
-
-These are the types of the control line, from the code of ESQ. Use `!!controlPacket` to send a type that has no command. A packet has a body of a maximum of 196 characters. ESQ ignores the types 6, 8, 9, 10, 14, 18, 19 and 21. A unit with the selection code `RAVESC` in its configuration ignores the types with an asterisk (*). The purpose of that mode is not known.
-
-Some types have results that are not known. The satellite feed sent these types, and a playbook does not usually need them.
-
-| Type | Body | What ESQ does |
-|---|---|---|
-| 1 | a sub-command, see below | Controls the top half of the screen. |
-| 2* | two brush IDs | Sets the backgrounds of the two promo boxes. `00` keeps a background, and `11` removes it. `!!promo` sends this type. |
-| 3* | any | Nothing. ESQ counts the packet only. |
-| 4* | `L` or `R` | Sets the box that ESQ tries first. Another character changes the order. `!!promo` sends this type. |
-| 5* | two characters | Sets the channel codes of the two boxes. ESQ uses them in the title search. |
-| 7* | | Stops the read mode (see type 16). |
-| 11* | 11 digits | Sets the clock and the battery clock of the Amiga. The `CLOCKCMD` setting of the configuration file of ESQ must be `1`. Do not use it for tests: the battery clock keeps the time after a restart. |
-| 12 | any, or `1<channels>` or `3` | Shows the next local ad, if ESQ has local ads. See [Show a local ad](#show-a-local-ad). Without local ads, it is the same as type 1, but only when no local avail filter and no graphic ads are active. |
-| 13 | | ESQ ignores the next byte. |
-| 15 | a number | Sets the level of a copper effect to 63 minus the number. The copper is the display processor of the Amiga, which can change colors on each line of the screen. The effect on the screen is not known. |
-| 16* | | Starts the read mode. ESQ then stops the animation of the grid. |
-| 17* | `<title>` or `<title>\x12<title>` | Sets the titles that a promo finds. `!!promo` sends this type. |
-| 20* | one character | Keeps a promo type for the next type 1 or 12. If the type is in the file `PromoId.Dat` of the drive, ESQ shows the logo in place of the promo. |
-| 22* | `9<tokens>` or `8` | `9` starts a local avail filter, and `8` stops it. The filter controls what ESQ shows in the top half for the next type 12 packets. The details of the tokens are not known. With the VIN setting of the diagnostics screen, `0` to `3` control the CTRL output. |
-
-The sub-commands of type 1. The results come from tests with Esquire.
-
-| Body | What ESQ does |
-|---|---|
-| `1<channels>[\x12<channels>]` | Shows a promo in a box (`!!promo`). If the program plays now, the box shows "Now showing" and the next time. |
-| `8<channels>[\x12<channels>]` | Shows the text of the promo without the box background, over what the top half shows (`!!promo` with `style: Text`). |
-| `3` | Removes the promo, the logo or the local ad (`!!clearTopHalf`). |
-| `D` | Shows the loaded logo (`!!showLogo`). |
-| `4<channels>` or `6<channels>` | Finds a channel by its call letters. If ESQ finds the channel, it clears the top half. If not, it shows the logo. |
-| `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. `!!moveGrid` sends this sub-command. |
-| `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. In the test, it removed the promo and showed nothing. |
-| `F<op><text>` or `X<op><text>` | Sends a command to the text display of the top half. `<op>` is one letter: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
-| `W0` | Shows the current weather of `!!weatherStatus` and `!!weatherText`. Without weather data, it shows "No Current Weather Data Available". `!!showWeather` sends it. |
-| `W3` | Shows the 3-day forecast of `!!weatherForecast`. Without a forecast, it shows "No Forecast Weather Data Available". `!!showWeather` with `forecast: true` sends it. |
-| `W` and another character | Shows the logo. |
+[Control line](docs/control-line.md) tells how to keep the top half clear, and has all the packet types.
 
 ## Build and test
 
@@ -1087,77 +655,7 @@ GitHub Actions runs these commands for each pull request and each push to `main`
 
 Do not trim the output: YamlDotNet and the XMLTV reader need the metadata that trimming removes.
 
-## Test with Esquire
-
-Esquire can show what ESQ does with each command. Run a second Esquire on a copy of its drive, with its own serial port, so that you do not change a running Esquire. Run this command in the Esquire directory:
-
-```sh
-Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-drive --serial-port 5401 \
-    --serial-speed 4 --prevue-feed-trace /tmp/feed.log --screenshot /tmp/prevue.png --seconds 120 \
-    --screenshot-every 15
-```
-
-`/tmp/prevue-drive` is the copy of the drive. Run Prevue Commander with `--port 5401` when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs`, the counter of ESQ for the data line errors, shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
-
-To test the control line, add `--prevue-ctrl-port 5402` and run Prevue Commander with `--control-port 5402`. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum. `--watch` shows the changes of a variable of ESQ. The names come from `ESQ.lst`, the listing of the ESQ program in the Esquire directory.
-
-### Replay a feed file
-
-`--output` writes the bytes of the data line to a file. The file has no pauses, and Prevue Commander does not connect. Esquire can replay the file, so you can test a playbook again with the same bytes:
-
-```sh
-dotnet run --project PrevueCommander -- --output /tmp/feed.bin playbook.yaml
-```
-
-Then run this command in the Esquire directory:
-
-```sh
-Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-drive --serial-file /tmp/feed.bin \
-    --serial-start 8 --virtual-time --prevue-feed-trace /tmp/feed.log --screenshot /tmp/prevue.png --seconds 120
-```
-
-Esquire sends the file at the speed of the line, 8 seconds after the start of ESQ. `--virtual-time` makes the run the same each time.
-
-### Decode a feed file
-
-`decode` shows the commands of a feed file, their fields and the result of each checksum. Use it to compare the feed of Prevue Commander with a feed from another source.
-
-```sh
-dotnet run --project PrevueCommander -- decode /tmp/feed.bin
-```
-
-The file can come from `--output`, or from another capture of the data line. `--control` reads a file of the control line, for example from `--control-output`. `--verbose` also shows the bytes of each command.
-
-This is the start of the output for the example playbook:
-
-```text
-000000  'A' address (6 bytes)
-        target: "*"
-000006  'F' status packet (25 bytes)
-        scroll speed: "3"
-        time zone: "6"
-        daylight saving time: "Y"
-        clock offset minutes: 0
-```
-
-The first number is the position of the command in the file, in hexadecimal. Then come the letter and the name of the command. A command with a bad checksum shows `BAD CHECKSUM`. Each data line command starts with the bytes `55 AA`. Bytes before the first `55 AA` show as `junk`.
-
-## Test with FS-UAE
-
-[FS-UAE](https://fs-uae.net/) emulates all the Amiga hardware, so it shows the real behavior of ESQ. Its serial port can be a TCP port. For example, this line of the FS-UAE configuration opens the serial port of the Amiga on TCP port 1234:
-
-```
-serial_port = tcp://127.0.0.1:1234
-```
-
-1. Make a copy of the hard drive directory of Prevue. The commands change files on the drive, for example `config.dat` and `LOGO.LST`.
-2. Set `hard_drive_1` in the FS-UAE configuration to the copy.
-3. Start FS-UAE, and wait until the grid shows.
-4. Set `port: 1234` and `baudRate: 2400` in the playbook, and run Prevue Commander.
-
-FS-UAE writes the files of the drive to the host directory, so you can examine them after a file transfer.
-
-The control line was not tested with FS-UAE. ESQ reads the control line on the CTS pin, and the TCP serial port of FS-UAE possibly does not control that pin. Use Esquire to test the control line.
+To see what ESQ does with each command, test with Esquire or FS-UAE. See [Test with an emulator](docs/testing.md).
 
 ## Project layout
 
