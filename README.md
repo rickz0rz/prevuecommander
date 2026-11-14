@@ -68,6 +68,13 @@ dotnet run --project PrevueCommander -- --port 5401 playbook.yaml
 
 Prevue Commander makes all the commands before it connects. If a command fails, for example because it cannot read the guide data, Prevue Commander sends nothing. If all the commands are correct, it connects and sends them in the order of the list.
 
+Before the first command, Prevue Commander shows the total bytes, the expected time and the expected end time. Each 30 seconds, it shows the bytes sent and the new expected end time. The expected time is the bytes at `baudRate` or `controlBaudRate`, plus `commandDelay` after each command, plus the pauses. For example:
+
+```text
+The run sends 5,504 bytes. It takes about 43 s. Expected end: 19:45:48.
+Sent 3,812 of 5,504 bytes (69%). Expected end: 19:45:48.
+```
+
 When Prevue Commander stops, it gives one of these exit codes:
 
 | Code | Meaning |
