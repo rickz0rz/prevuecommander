@@ -61,6 +61,27 @@ public static partial class ProgramText
         return match == null ? null : $"({match})";
     }
 
+    /// <summary>
+    /// The text that ESQ changes to the stereo symbol, if bit 7 of the attribute of the channel is set. ESQ finds it at
+    /// any position and in any letter case.
+    /// </summary>
+    public const string StereoTag = "In Stereo";
+
+    /// <summary>
+    /// Adds <see cref="StereoTag"/> before the closed caption symbol, or at the end. If the text then has more than
+    /// <paramref name="maximumLength"/> characters, the text before the tag becomes shorter, so that the tag stays
+    /// complete.
+    /// </summary>
+    public static string AddStereo(string text, int maximumLength = int.MaxValue)
+    {
+        var captions = text.EndsWith(" |", StringComparison.Ordinal);
+        var body = captions ? text[..^2] : text;
+        var suffix = $" {StereoTag}{(captions ? " |" : string.Empty)}";
+        if (body.Length + suffix.Length > maximumLength)
+            body = body[..Math.Max(0, maximumLength - suffix.Length)].TrimEnd();
+        return body + suffix;
+    }
+
     /// <summary>"|" is the closed caption symbol in the grid, so it becomes "/" in the text of the guide.</summary>
     private static string Clean(string? text) => (text ?? string.Empty).Trim().Replace('|', '/');
 

@@ -304,6 +304,7 @@ The two imports also have these settings:
 | `channelNumberOrder` | `None` | The order of the channels in the grid: `None` (the order of the guide data), `Ascending` or `Descending`. |
 | `premiumChannels` | | Channel numbers or call signs. ESQ shows their programs on a red background. |
 | `excludedChannels` | | Channel numbers or call signs to leave out. |
+| `showStereo` | `false` | Shows the stereo symbol for programs with stereo sound. See the rules below. |
 | `channelLogos` | | Sends a logo for each channel that has a logo image. See [Channel logos](#channel-logos). |
 
 ESQ keeps the listings of two broadcast days. A broadcast day starts at 5:00 AM and has 48 half-hour slots. ESQ changes to the next day at 5:30 AM. An import sends the lineup and the programs of the current day and of the next day.
@@ -318,6 +319,7 @@ The import follows these rules:
 - With `characterSet: Latin1` (the default), Latin-1 characters stay, for example `é`. A letter with an accent outside Latin-1 loses its accent. Typographic quotation marks and dashes become ASCII. Other characters are removed.
 - With `characterSet: Ascii`, all letters lose their accents.
 - The text has a maximum of 120 characters.
+- With `showStereo: true`, the import sets the stereo bit (bit 7) of the attribute of each channel. It adds `In Stereo` before the closed caption symbol of each program with stereo sound. ESQ shows the stereo symbol in place of that text. If the text is then longer than 120 characters, the text before `In Stereo` becomes shorter. A Channels DVR program has stereo sound if it has the tag `Stereo`. An XMLTV program has stereo sound if it has an `<audio><stereo>` value that is not `mono`.
 
 ### Channel logos
 

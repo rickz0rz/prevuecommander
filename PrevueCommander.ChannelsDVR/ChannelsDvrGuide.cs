@@ -39,6 +39,6 @@ public static class ChannelsDvrGuide
             ? ProgramText.Movie(title, airing.ReleaseYear, airing.Summary, airing.ContentRating, closedCaptions)
             : ProgramText.Show(title, closedCaptions,
                 airing.Categories?.Contains("Sports") == true ? airing.EventTitle : null);
-        return new GuideProgram(start, end, text, isMovie);
+        return new GuideProgram(start, end, text, isMovie, airing.Tags?.Contains("Stereo") == true);
     }
 }
