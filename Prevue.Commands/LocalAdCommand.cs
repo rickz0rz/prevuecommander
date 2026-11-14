@@ -44,6 +44,9 @@ public class LocalAdCommand : BaseCommand
 
     public string Text { get; }
 
+    /// <summary>The bytes of the text, with the tokens as their codes.</summary>
+    public ReadOnlySpan<byte> EncodedText => _text;
+
     public override string ToString() => $"{nameof(LocalAdCommand)}: #{Number} \"{Text}\"";
 
     protected override byte[] GetPayload() => [(byte)Number, .. _text];
