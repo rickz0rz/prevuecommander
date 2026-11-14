@@ -19,6 +19,8 @@
     <ItemGroup>
         <!-- The example playbook, which the program writes when no playbook exists. -->
         <EmbeddedResource Include="..\playbook.yaml" LogicalName="PrevueCommander.playbook.yaml"/>
+        <!-- The control page of the web server. -->
+        <EmbeddedResource Include="wwwroot\index.html" LogicalName="PrevueCommander.index.html"/>
     </ItemGroup>
 
 </Project>

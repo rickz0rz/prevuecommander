@@ -28,6 +28,17 @@ public class CommandLineTests
         Assert.Equal("10.0.0.2", options.Hostname);
     }
 
+    [Fact]
+    public void ServeOptions_ReplaceTheSettings()
+    {
+        var options = CommandLine.Parse(["--serve", "8095", "--serve-host=0.0.0.0"]);
+        var configuration = options.Apply(new Configuration());
+
+        Assert.Equal(8095, configuration.ServePort);
+        Assert.Equal("0.0.0.0", configuration.ServeHost);
+        Assert.Equal("127.0.0.1", CommandLine.Parse([]).Apply(new Configuration()).ServeHost);
+    }
+
     [Theory]
     [InlineData("-h")]
     [InlineData("--help")]

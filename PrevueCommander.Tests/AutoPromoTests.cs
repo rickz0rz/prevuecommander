@@ -88,9 +88,9 @@ public class AutoPromoTests
     {
         var sent = new List<BaseCommand>();
         var promoter = new AutoPromoter(new AutoPromoSettings { Brush = "AT", Movies = true }, () => Now,
-            (command, _) =>
+            (commands, _) =>
             {
-                sent.Add(command);
+                sent.AddRange(commands);
                 return Task.CompletedTask;
             }, TextWriter.Null);
         promoter.SetListings(Listings());

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prevue Commander</title>
+<style>
+  :root {
+    --bg: #f4f5f8; --panel: #ffffff; --text: #1b1f2a; --muted: #5d6475; --line: #d9dce4;
+    --accent: #1d3f91; --accent-text: #ffffff; --ok: #1f7a3a; --warn: #9a6200; --bad: #b3261e; --code: #eef0f5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #10131a; --panel: #191d27; --text: #e6e8ee; --muted: #a0a6b5; --line: #2c3242;
+      --accent: #5b82e0; --accent-text: #0b0e14; --ok: #5cc27c; --warn: #e0a940; --bad: #f2776d; --code: #222838;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { background: #000033; color: #f2d14b; padding: 14px 16px; display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: .5px; }
+  header span { color: #c9cde0; font-size: 13px; }
+  main { max-width: 1100px; margin: 0 auto; padding: 16px; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; min-width: 0; }
+  section.wide { grid-column: 1 / -1; }
+  h2 { margin: 0 0 10px; font-size: 16px; }
+  p.help { margin: 0 0 10px; color: var(--muted); font-size: 13px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 8px 0 3px; }
+  input, select, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; }
+  textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; min-height: 120px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+  .row > * { flex: 1 1 120px; }
+  button { padding: 8px 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 8px; }
+  .stat { background: var(--bg); border-radius: 8px; padding: 8px 10px; }
+  .stat b { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+  .ok { color: var(--ok); } .warn { color: var(--warn); } .bad { color: var(--bad); }
+  pre.preview { background: #000033; color: #ffffff; padding: 8px; border-radius: 6px; overflow-x: auto; font-size: 13px; margin: 6px 0; }
+  .warning { color: var(--warn); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 500; }
+  .table-wrap { overflow-x: auto; }
+  #message { position: fixed; bottom: 16px; left: 16px; right: 16px; max-width: 560px; margin: 0 auto; padding: 10px 14px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); box-shadow: 0 4px 16px rgba(0,0,0,.2); display: none; }
+  #message.error { border-color: var(--bad); color: var(--bad); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Prevue Commander</h1>
+  <span id="clock">Connecting...</span>
+</header>
+<main>
+  <section class="wide">
+    <h2>Status</h2>
+    <div class="status-grid">
+      <div class="stat"><b>Data line</b><span id="s-data">-</span></div>
+      <div class="stat"><b>Control line</b><span id="s-control">-</span></div>
+      <div class="stat"><b>Queued jobs</b><span id="s-queues">-</span></div>
+      <div class="stat"><b>Top half hold</b><span id="s-hold">-</span></div>
+      <div class="stat"><b>Guide</b><span id="s-watch">-</span></div>
+      <div class="stat"><b>Automatic promos</b><span id="s-promo">-</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Top half of the screen</h2>
+    <p class="help">These commands go on the control line. ESQ reads them only when its display is not busy.</p>
+    <div class="buttons">
+      <button data-post="/prevue/ctrl/clear">Clear</button>
+      <button data-post="/prevue/ctrl/logo">Show logo</button>
+      <button data-post="/prevue/ctrl/ad">Ad break</button>
+      <button data-post="/prevue/ctrl/weather">Weather</button>
+      <button data-post="/prevue/ctrl/weather" data-body='{"forecast":true}' class="secondary">Forecast</button>
+    </div>
+    <label for="hold-minutes">Keep the top half clear (minutes, empty for no end)</label>
+    <div class="row">
+      <input id="hold-minutes" type="number" min="1" step="1" placeholder="No end">
+      <button id="hold-start">Keep clear</button>
+      <button id="hold-stop" class="secondary">Stop</button>
+    </div>
+    <p class="help" style="margin-top:8px">Sends a clear each 150 seconds. The logo rotation of ESQ stays stopped, and LOGO.LST does not change.</p>
+  </section>
+
+  <section>
+    <h2>Promo</h2>
+    <p class="help">ESQ finds the program in its listings. A part of the title is enough. Put the title in quotes to find only that title.</p>
+    <label for="promo-title">Title</label>
+    <input id="promo-title" placeholder="Seinfeld">
+    <div class="row">
+      <div><label for="promo-channels">Channels</label><input id="promo-channels" value="*"></div>
+      <div><label for="promo-brush">Brush</label><input id="promo-brush" placeholder="AT"></div>
+    </div>
+    <div class="row">
+      <div><label for="promo-side">Box</label><select id="promo-side"><option value="right">Right</option><option value="left">Left</option></select></div>
+      <div><label for="promo-style">Style</label><select id="promo-style"><option value="box">Box</option><option value="text">Text only</option></select></div>
+    </div>
+    <div class="buttons"><button id="promo-send">Show promo</button></div>
+  </section>
+
+  <section>
+    <h2>Local ads</h2>
+    <p class="help">One ad on each line. ESQ shows 6 lines of 40 characters. Tokens: %CENTER%, %LEFT%, %RIGHT%, %COLOR%%BLACK%%CYAN% and the other colors. Sending the ads replaces all the ads of ESQ.</p>
+    <textarea id="ads" placeholder="%CENTER%Visit Joe's Pizza%CENTER%Open until midnight"></textarea>
+    <div id="ads-preview"></div>
+    <div class="buttons">
+      <button id="ads-preview-button" class="secondary">Preview</button>
+      <button id="ads-send">Send ads</button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Weather</h2>
+    <p class="help">Sends the weather on the data line, and then shows it in the top half.</p>
+    <div class="row">
+      <div><label for="w-label">Label (max 10)</label><input id="w-label" maxlength="10" placeholder="DETROIT"></div>
+      <div><label for="w-icon">Picture</label>
+        <select id="w-icon"><option value="1">None</option><option value="2">PWI1</option><option value="3">PWI2</option><option value="4">PWI3</option><option value="5">PWI4</option><option value="6">PWI5</option></select></div>
+    </div>
+    <label for="w-city">Status text</label>
+    <input id="w-city" placeholder="Detroit, Michigan">
+    <label for="w-lines">Lines (one on each line, max 10)</label>
+    <textarea id="w-lines" style="min-height:80px" placeholder="Tonight - Clear&#10;Low 32"></textarea>
+    <div class="row">
+      <div><label for="w-minutes">Minutes</label><input id="w-minutes" type="number" min="1" max="255" value="60"></div>
+    </div>
+    <div class="buttons"><button id="weather-send">Send and show</button></div>
+  </section>
+
+  <section>
+    <h2>Data line</h2>
+    <p class="help">Send the clock, or read the guide again and send the changes.</p>
+    <label for="clock-date">Clock (empty for now)</label>
+    <input id="clock-date" type="datetime-local">
+    <div class="buttons">
+      <button id="clock-send">Send clock</button>
+      <button id="refresh" class="secondary">Read the guide again</button>
+    </div>
+  </section>
+
+  <section class="wide">
+    <h2>Playbook commands</h2>
+    <p class="help">Any playbook commands in YAML. Prevue Commander sends them as they are written, so put data line commands in a session (!!address, !!configuration, ..., !!boxOff).</p>
+    <textarea id="yaml">- !!clearTopHalf {}</textarea>
+    <div class="buttons"><button id="yaml-send">Send commands</button></div>
+  </section>
+
+  <section class="wide">
+    <h2>Jobs</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Id</th><th>Job</th><th>Line</th><th>State</th><th>Bytes</th><th>Time</th><th></th></tr></thead>
+        <tbody id="jobs"><tr><td colspan="7">No jobs.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<div id="message"></div>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let messageTimer;
+
+  function show(text, error) {
+    const box = $('message');
+    box.textContent = text;
+    box.className = error ? 'error' : '';
+    box.style.display = 'block';
+    clearTimeout(messageTimer);
+    messageTimer = setTimeout(() => { box.style.display = 'none'; }, error ? 8000 : 3000);
+  }
+
+  async function call(method, path, body, contentType) {
+    const options = { method, headers: {} };
+    if (body !== undefined) {
+      options.body = typeof body === 'string' ? body : JSON.stringify(body);
+      options.headers['Content-Type'] = contentType || 'application/json';
+    }
+    let response, answer;
+    try {
+      response = await fetch(path, options);
+      answer = await response.json();
+    } catch (e) {
+      show('The server does not answer. Is Prevue Commander running?', true);
+      throw e;
+    }
+    if (!response.ok) {
+      show(answer.error || ('Error ' + response.status), true);
+      throw new Error(answer.error);
+    }
+    if (answer.job) show('Queued: ' + answer.job.name + ' (about ' + Math.ceil(answer.job.seconds) + ' s)');
+    refresh();
+    return answer;
+  }
+
+  const text = value => String(value).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const time = value => value ? new Date(value).toLocaleTimeString() : '-';
+
+  async function refresh() {
+    let s;
+    try {
+      s = await (await fetch('/status')).json();
+    } catch {
+      $('clock').textContent = 'The server does not answer.';
+      return;
+    }
+    $('clock').textContent = 'Time ' + time(s.time);
+    const line = l => l.connected ? '<span class="ok">Connected</span>, ' + l.bytesSent.toLocaleString() + ' bytes sent' : 'Not connected yet';
+    $('s-data').innerHTML = line(s.lines.data);
+    $('s-control').innerHTML = line(s.lines.control);
+    $('s-queues').textContent = 'Control ' + s.queues.control + ', data ' + s.queues.data;
+    $('s-hold').innerHTML = s.hold.active
+      ? '<span class="ok">Active</span>' + (s.hold.until ? ' until ' + time(s.hold.until) : ', no end')
+      : 'Off';
+    $('s-watch').innerHTML = !s.watch.canRefresh ? 'No guide import'
+      : (s.watch.enabled ? 'Watch each ' + s.watch.minutes + ' min. ' : '') + 'Last read ' + time(s.watch.lastRead)
+        + (s.watch.lastError ? ' <span class="bad">' + text(s.watch.lastError) + '</span>' : '');
+    $('s-promo').textContent = s.autoPromo.enabled ? 'Last: ' + (s.autoPromo.lastTitle || '-') + ' at ' + time(s.autoPromo.lastTime) : 'Off';
+    $('refresh').disabled = !s.watch.canRefresh;
+    const rows = s.jobs.map(j => '<tr><td>' + j.id + '</td><td>' + text(j.name) + (j.error ? '<br><span class="bad">' + text(j.error) + '</span>' : '')
+      + '</td><td>' + j.queue + '</td><td class="' + ({ done: 'ok', failed: 'bad', sending: 'warn' }[j.state] || '') + '">' + j.state
+      + '</td><td>' + j.bytesSent.toLocaleString() + ' / ' + j.bytes.toLocaleString() + '</td><td>' + time(j.created) + '</td><td>'
+      + (j.state === 'queued' ? '<button class="secondary" data-cancel="' + j.id + '">Cancel</button>' : '') + '</td></tr>');
+    $('jobs').innerHTML = rows.length ? rows.join('') : '<tr><td colspan="7">No jobs.</td></tr>';
+  }
+
+  document.addEventListener('click', e => {
+    const button = e.target.closest('button');
+    if (!button) return;
+    if (button.dataset.post) call('POST', button.dataset.post, button.dataset.body ? JSON.parse(button.dataset.body) : undefined).catch(() => {});
+    if (button.dataset.cancel) call('DELETE', '/jobs/' + button.dataset.cancel).then(() => show('Cancelled.')).catch(() => {});
+  });
+
+  $('hold-start').onclick = () => {
+    const minutes = $('hold-minutes').value;
+    call('POST', '/prevue/ctrl/hold', minutes ? { minutes: Number(minutes) } : {}).then(() => show('The top half stays clear.')).catch(() => {});
+  };
+  $('hold-stop').onclick = () => call('DELETE', '/prevue/ctrl/hold').then(() => show('Hold stopped.')).catch(() => {});
+
+  $('promo-send').onclick = () => {
+    const box = { title: $('promo-title').value, channels: $('promo-channels').value || '*', brush: $('promo-brush').value || null };
+    const side = $('promo-side').value;
+    call('POST', '/prevue/ctrl/promo', { [side]: box, first: side, style: $('promo-style').value }).catch(() => {});
+  };
+
+  const ads = () => $('ads').value.split('\n').map(a => a.trimEnd()).filter(a => a.length);
+  function preview(answer) {
+    $('ads-preview').innerHTML = answer.ads.map(a => '<div><b>Ad ' + a.number + '</b><pre class="preview">' + a.lines.map(text).join('\n') + '</pre>'
+      + a.warnings.map(w => '<div class="warning">' + text(w) + '</div>').join('') + '</div>').join('');
+  }
+  $('ads-preview-button').onclick = () => call('POST', '/prevue/data/local-ads', { ads: ads(), dryRun: true }).then(preview).catch(() => {});
+  $('ads-send').onclick = () => {
+    if (!confirm('Replace all the local ads of ESQ with these ' + ads().length + ' ads?')) return;
+    call('POST', '/prevue/data/local-ads', { ads: ads() }).then(a => preview(a.details)).catch(() => {});
+  };
+
+  $('weather-send').onclick = () => {
+    const label = $('w-label').value;
+    call('POST', '/prevue/data/weather', {
+      status: { label, text: $('w-city').value },
+      text: { label: label || '*', icon: Number($('w-icon').value), minutes: Number($('w-minutes').value) || 60,
+              lines: $('w-lines').value.split('\n').map(l => l.trimEnd()).filter(l => l.length) }
+    }).catch(() => {});
+  };
+
+  $('clock-send').onclick = () => call('POST', '/prevue/data/clock', { date: $('clock-date').value || null }).catch(() => {});
+  $('refresh').onclick = () => call('POST', '/prevue/guide/refresh').then(a => show(a.error ? 'The guide cannot be read: ' + a.error : a.changes + ' listings commands sent.', !!a.error)).catch(() => {});
+  $('yaml-send').onclick = () => call('POST', '/prevue/commands', $('yaml').value, 'application/yaml').catch(() => {});
+
+  refresh();
+  setInterval(refresh, 2000);
+})();
+</script>
+</body>
+</html>

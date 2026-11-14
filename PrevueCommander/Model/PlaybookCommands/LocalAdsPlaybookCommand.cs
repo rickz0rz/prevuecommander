@@ -20,14 +20,32 @@ public record LocalAdsPlaybookCommand : SimplePlaybookCommand
         return [new ResetLocalAdsCommand(), .. commands];
     }
 
+    /// <summary>The local ad commands of the ads, with the reset command first.</summary>
+    public IReadOnlyList<BaseCommand> Commands(PlaybookContext context) => Transform(context);
+
+    /// <summary>The lines of an ad as ESQ shows them, and the text that ESQ breaks or drops.</summary>
+    public static LocalAdPreview Preview(LocalAdCommand ad)
+    {
+        var lines = LocalAdLayout.Lines(ad.EncodedText);
+        return new LocalAdPreview(ad.Number,
+            lines.Take(LocalAdLayout.MaximumLines).Select(LocalAdLayout.Preview).ToList(),
+            LocalAdLayout.Problems(lines));
+    }
+
     /// <summary>Shows the lines of the ad as ESQ shows them, and a warning for text that ESQ breaks or drops.</summary>
     private static void ShowPreview(LocalAdCommand ad, TextWriter log)
     {
-        var lines = LocalAdLayout.Lines(ad.EncodedText);
+        var preview = Preview(ad);
         log.WriteLine($"Local ad {ad.Number}:");
-        foreach (var line in lines.Take(LocalAdLayout.MaximumLines))
-            log.WriteLine($"  {LocalAdLayout.Preview(line)}");
-        foreach (var problem in LocalAdLayout.Problems(lines))
-            log.WriteLine($"  Warning: {problem}");
+        foreach (var line in preview.Lines)
+            log.WriteLine($"  {line}");
+        foreach (var warning in preview.Warnings)
+            log.WriteLine($"  Warning: {warning}");
     }
 }
+
+/// <summary>The preview of a local ad.</summary>
+/// <param name="Number">The number of the ad, from 1.</param>
+/// <param name="Lines">The lines that ESQ shows, each between two '|'.</param>
+/// <param name="Warnings">The text that ESQ breaks or drops.</param>
+public sealed record LocalAdPreview(int Number, IReadOnlyList<string> Lines, IReadOnlyList<string> Warnings);

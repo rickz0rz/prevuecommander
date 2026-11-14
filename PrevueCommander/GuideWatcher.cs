@@ -15,19 +15,29 @@ namespace PrevueCommander;
 /// <param name="imports">The guide data imports of the playbook.</param>
 /// <param name="contextAt">Makes the context of an update for a local time.</param>
 /// <param name="clock">The local time of an update.</param>
-/// <param name="send">Sends one command.</param>
+/// <param name="send">Sends the commands of one session together.</param>
 /// <param name="log">The output for messages.</param>
 public sealed class GuideWatcher(
     IReadOnlyList<GuideDataImportPlaybookCommand> imports,
     Func<DateTime, PlaybookContext> contextAt,
     Func<DateTime> clock,
-    Func<BaseCommand, CancellationToken, Task> send,
+    Func<IReadOnlyList<BaseCommand>, CancellationToken, Task> send,
     TextWriter log)
 {
     private readonly ListingsState _state = new();
-    private AddressCommand _address = new("*");
-    private ConfigurationCommand _status = new();
-    private bool _save;
+    private readonly SessionTemplate _session = new();
+
+    // The watch loop and the web server can start an update at the same time. One update runs at a time.
+    private readonly SemaphoreSlim _update = new(1, 1);
+
+    /// <summary>The local time of the last read of the guide, or null before the first read.</summary>
+    public DateTime? LastRead { get; private set; }
+
+    /// <summary>The listings commands that the last update sent.</summary>
+    public int LastChanges { get; private set; }
+
+    /// <summary>The error of the last read, or null if the guide was read.</summary>
+    public string? LastError { get; private set; }
 
     /// <summary>Gets all the listings of each read of the guide, for example for the automatic promos.</summary>
     public Action<IReadOnlyList<BaseCommand>>? ListingsRead { get; init; }
@@ -38,9 +48,7 @@ public sealed class GuideWatcher(
     public void Start(IReadOnlyList<BaseCommand> sent)
     {
         _state.Remember(sent);
-        _address = sent.OfType<AddressCommand>().FirstOrDefault() ?? _address;
-        _status = sent.OfType<ConfigurationCommand>().LastOrDefault() ?? _status;
-        _save = sent.OfType<SaveCommand>().Any();
+        _session.Remember(sent);
     }
 
     /// <summary>Waits for the interval, and updates the listings, until the cancellation.</summary>
@@ -58,22 +66,40 @@ public sealed class GuideWatcher(
     /// <returns>The number of listings commands that were sent.</returns>
     public async Task<int> UpdateAsync(CancellationToken cancellationToken)
     {
+        await _update.WaitAsync(cancellationToken);
+        try
+        {
+            return await UpdateOnceAsync(cancellationToken);
+        }
+        finally
+        {
+            _update.Release();
+        }
+    }
+
+    private async Task<int> UpdateOnceAsync(CancellationToken cancellationToken)
+    {
         var now = clock();
+        LastRead = now;
         List<BaseCommand> listings;
         try
         {
             listings = await ReadAsync(now, cancellationToken);
+            LastError = null;
         }
         catch (Exception e) when (e is HttpRequestException or IOException or InvalidDataException or FormatException
                                        or InvalidOperationException or UnauthorizedAccessException ||
                                    e is OperationCanceledException && !cancellationToken.IsCancellationRequested)
         {
             log.WriteLine($"{now:HH:mm:ss} The guide cannot be read: {e.Message} The next update tries again.");
+            LastError = e.Message;
+            LastChanges = 0;
             return 0;
         }
 
         ListingsRead?.Invoke(listings);
         var changes = _state.Changes(listings);
+        LastChanges = changes.Count;
         if (changes.Count == 0)
         {
             log.WriteLine($"{now:HH:mm:ss} The guide has no changes.");
@@ -82,12 +108,7 @@ public sealed class GuideWatcher(
 
         log.WriteLine($"{now:HH:mm:ss} The guide changed. Sending {changes.Count} listings " +
                       (changes.Count == 1 ? "command." : "commands."));
-        List<BaseCommand> session = [_address, _status, .. changes];
-        if (_save)
-            session.Add(new SaveCommand());
-        session.Add(new BoxOffCommand());
-        foreach (var command in session)
-            await send(command, cancellationToken);
+        await send(_session.Wrap(changes), cancellationToken);
 
         return changes.Count;
     }

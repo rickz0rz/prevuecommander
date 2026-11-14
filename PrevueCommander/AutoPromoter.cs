@@ -9,18 +9,24 @@ namespace PrevueCommander;
 
 /// <summary>Sends an automatic promo at each interval, with a program from the listings that ESQ has.</summary>
 /// <param name="clock">The local time.</param>
-/// <param name="send">Sends one command.</param>
+/// <param name="send">Sends the packets of one promo together.</param>
 /// <param name="characters">The characters of the listings, so that the title finds its program.</param>
 public sealed class AutoPromoter(
     AutoPromoSettings settings,
     Func<DateTime> clock,
-    Func<BaseCommand, CancellationToken, Task> send,
+    Func<IReadOnlyList<BaseCommand>, CancellationToken, Task> send,
     TextWriter log,
     CharacterSet characters = CharacterSet.Latin1)
 {
     private readonly AutoPromoPicker _picker = new();
     private readonly AutoPromoCriteria _criteria = settings.Criteria();
     private IReadOnlyList<BaseCommand> _listings = [];
+
+    /// <summary>The program of the last promo, or null.</summary>
+    public PromoProgram? LastProgram { get; private set; }
+
+    /// <summary>The local time of the last promo, or null.</summary>
+    public DateTime? LastTime { get; private set; }
 
     /// <summary>Sets the listings that ESQ has, for example after an update of the watch mode.</summary>
     public void SetListings(IReadOnlyList<BaseCommand> listings) => Volatile.Write(ref _listings, listings);
@@ -53,10 +59,10 @@ public sealed class AutoPromoter(
         var box = new PromoBox(program.Search, program.CallLetters.Length > 0 ? program.CallLetters : "*",
             settings.Brush);
         var right = settings.Side == PromoSide.Right;
-        foreach (var command in Promo.Commands(right ? box : null, right ? null : box, right, settings.Style,
-                     characters))
-            await send(command, cancellationToken);
-
+        await send(Promo.Commands(right ? box : null, right ? null : box, right, settings.Style, characters),
+            cancellationToken);
+        LastProgram = program;
+        LastTime = now;
         return program;
     }
 }
