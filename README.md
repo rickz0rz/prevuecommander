@@ -411,7 +411,18 @@ A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seco
 |---|---|---|
 | `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. Send `!!configuration` before it. |
 
-ESQ keeps the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines of 40 characters. An alignment token is not a character. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows it at the left. ESQ drops the text after line 6. A test with Esquire showed these limits.
+`localTextAdSource` of `!!newLookConfiguration` (the 'f' command) sets the source of the local ads:
+
+| Value | Local ads | 'L' commands of the data line | Ad editor of the operator menu |
+|---|---|---|---|
+| `'N'` | Off. ESQ shows no local ads. | Ignored | Not available |
+| `'L'` | Local: an operator types the ads on the Amiga. | Ignored | Available |
+| `'R'` | From the data line. | Accepted | Not available |
+| `'S'` (default) | From the data line. | Accepted | Not available |
+
+The code of ESQ 9.0.14 does the same for `'R'` and `'S'`. The names of these two values are not known. Use `'S'` or `'R'` for the ads of `!!localAds`. ESQ also keeps the ads in the file `local.ads` on its drive.
+
+An ad has a maximum of 6 lines of 40 characters. An alignment token is not a character. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows it at the left. ESQ drops the text after line 6. A test with Esquire showed these limits.
 
 `!!localAds` shows each ad as ESQ shows it, with a warning for text that ESQ breaks or drops. For example:
 
@@ -443,7 +454,7 @@ ESQ has no timer for the local ads. ESQ shows a local ad only when the control l
 The packet shows a local ad only when all these conditions are true:
 
 - ESQ has local ads. Send `!!localAds` first.
-- `localTextAdSource` is `'R'` or `'S'`.
+- `localTextAdSource` is `'R'` or `'S'`. With `'L'`, the ads that an operator typed also show.
 - The graphic ad mode of the operator menu is `N`. This is the default.
 - No local avail filter is active (type 22).
 
@@ -536,6 +547,29 @@ ESQ shows an ad only when `LOGO.LST` has its line, for example `Logos/Ads/PIZZA,
 ```
 
 The ad shows in turn with the other logos, and `!!showLogo` shows the next logo at once. Without `reload`, the new list applies after a restart of ESQ, for example with `!!reset`.
+
+#### Send your own IFF picture
+
+`!!fileTransfer` sends an IFF picture that you made yourself, for example to `DF0:Logos/Ads/MYAD`. ESQ loads a picture for the top half of the screen only in one of these formats:
+
+| Format | Width | Planes | Colors | Aspect | CAMG |
+|---|---|---|---|---|---|
+| Low resolution | 320 | a maximum of 5 | a maximum of 32 | 44:26 | `0x11004` |
+| High resolution | 640 | a maximum of 4 | a maximum of 16 | 22:26 | `0x19004` |
+
+- ESQ shows the top 220 rows. Use 240 rows, as the logos of the drive do.
+- A test with Esquire showed a picture of 320 by 240 pixels with 5 planes and with 4 planes.
+- Color 0 is the background, the border around the picture, and the genlock key.
+- A picture with too many planes stops ESQ with "Report Error Code ER009", the file name, the width and the colors. A test with Esquire showed this for a picture with 320 by 240 pixels and 64 colors (6 planes). ESQ then shows nothing in the top half until an operator presses ESC two times.
+
+A file transfer of a large picture takes a long time. The time in seconds is about the bytes of the file × 10 / the baud rate. Thus a file of 30,000 bytes takes about 2 minutes at 2400 baud. To make a picture smaller:
+
+- Do not dither. ESQ uses ByteRun1 compression, which packs only runs of the same byte.
+- Use large areas of one color. Make the color of the largest area color 0.
+- Use the minimum number of colors. Each plane less makes the picture about 20% smaller.
+- Try different orders of the palette. The order changes the runs in each plane.
+
+For example, a picture with text on a green background was 30,356 bytes with 32 colors. With 10 colors that were selected by hand, no dither, and a better order of the palette, it was 15,666 bytes.
 
 ### Control line
 

@@ -106,7 +106,10 @@ public record NewLookConfiguration
     /// <summary>45: ESQ always uses 8.</summary>
     public char NumberOfColorPalettes { get; init; } = '8';
 
-    /// <summary>46: 'N', 'R', 'L' or 'S'. ESQ accepts local ads only with 'R' or 'S'.</summary>
+    /// <summary>
+    /// 46: the source of the local ads. 'N' turns them off. 'L' is for ads that an operator types in the operator menu.
+    /// 'R' and 'S' accept the 'L' commands of the data line. The code of ESQ does the same for 'R' and 'S'.
+    /// </summary>
     public char LocalTextAdSource { get; init; } = 'S';
 
     /// <summary>47: 'Y' mounts PC1: as the graphics drive.</summary>
