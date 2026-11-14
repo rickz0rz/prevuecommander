@@ -47,6 +47,12 @@ public sealed record CommandLineOptions
     /// <summary>True if <see cref="DecodePath"/> has the bytes of the control line.</summary>
     public bool DecodeControl { get; init; }
 
+    /// <summary>True to show the JSON schema of the playbook, for the <c>schema</c> command.</summary>
+    public bool Schema { get; init; }
+
+    /// <summary>True to show the YAML tags of the commands in place of the schema.</summary>
+    public bool SchemaTags { get; init; }
+
     /// <summary>The configuration of the playbook, with the settings of the command line in place of its settings.</summary>
     public Configuration Apply(Configuration configuration) => configuration with
     {
@@ -69,6 +75,7 @@ public static class CommandLine
     public const string Usage = """
         Usage: PrevueCommander [options] [playbook]
                PrevueCommander decode [--control] [--verbose] <file>
+               PrevueCommander schema [--tags]
 
         Sends the commands of a playbook to ESQ. The default playbook is playbook.yaml in the current directory.
         If the playbook does not exist, PrevueCommander writes an example playbook to that path.
@@ -92,14 +99,21 @@ public static class CommandLine
 
         decode shows the commands of a captured feed, their fields and the result of the checksums.
         --control reads the file as the control line. --verbose also shows the bytes of each command.
+
+        schema shows the JSON schema of the playbook. --tags shows the YAML tags of the commands, for the
+        yaml.customTags setting of Visual Studio Code.
         """;
 
     private const string DecodeCommand = "decode";
+
+    private const string SchemaCommand = "schema";
 
     public static CommandLineOptions Parse(IReadOnlyList<string> args)
     {
         if (args.Count > 0 && args[0] == DecodeCommand)
             return ParseDecode(args.Skip(1).ToList());
+        if (args.Count > 0 && args[0] == SchemaCommand)
+            return ParseSchema(args.Skip(1).ToList());
 
         var options = new CommandLineOptions();
         string? playbook = null;
@@ -201,6 +215,22 @@ public static class CommandLine
             throw new CommandLineException("Use --validate or --output, not both.");
 
         return playbook == null ? options : options with { PlaybookPath = playbook };
+    }
+
+    private static CommandLineOptions ParseSchema(IReadOnlyList<string> args)
+    {
+        var options = new CommandLineOptions { Schema = true };
+        foreach (var arg in args)
+        {
+            options = arg switch
+            {
+                "-h" or "--help" => options with { Help = true },
+                "--tags" => options with { SchemaTags = true },
+                _ => throw new CommandLineException($"The argument {arg} is not known for schema. Use --help to show the options.")
+            };
+        }
+
+        return options;
     }
 
     private static CommandLineOptions ParseDecode(IReadOnlyList<string> args)
