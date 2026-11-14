@@ -18,6 +18,8 @@ namespace PrevueCommander.Server;
 /// <param name="Watcher">The watch mode, or null if the playbook has no guide import.</param>
 /// <param name="WatchMinutes">The interval of the watch mode, or 0.</param>
 /// <param name="Promoter">The automatic promos, or null.</param>
+/// <param name="Weather">The weather mode, or null if the playbook has no !!weatherGov command.</param>
+/// <param name="WeatherMinutes">The interval of the weather mode, or 0.</param>
 public sealed record ServerParts(
     Func<PlaybookContext> Context,
     SessionTemplate Session,
@@ -26,7 +28,9 @@ public sealed record ServerParts(
     double ControlBaudRate,
     GuideWatcher? Watcher = null,
     int WatchMinutes = 0,
-    AutoPromoter? Promoter = null);
+    AutoPromoter? Promoter = null,
+    WeatherWatcher? Weather = null,
+    int WeatherMinutes = 0);
 
 /// <summary>
 /// The web server: the control page and the HTTP API. The paths and the bodies that Esquire also has
@@ -103,6 +107,12 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
         cancellationToken.ThrowIfCancellationRequested();
     }
 
+    /// <summary>True for a POST or a PUT without a Content-Length and without chunks, for example from curl -X POST.</summary>
+    internal static bool NoBodyLength(HttpListenerRequest request) =>
+        // HttpListener gives ContentLength64 = 0 without the header, so read the header.
+        request.HttpMethod is "POST" or "PUT" && request.Headers["Content-Length"] == null &&
+        !string.Equals(request.Headers["Transfer-Encoding"], "chunked", StringComparison.OrdinalIgnoreCase);
+
     private async Task ServeAsync(HttpListenerContext context, CancellationToken cancellationToken)
     {
         var request = context.Request;
@@ -114,6 +124,15 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
             if (method == "GET" && path is "" or "/index.html")
             {
                 await WriteAsync(response, 200, Page(), "text/html; charset=utf-8");
+                return;
+            }
+
+            if (NoBodyLength(request))
+            {
+                // HttpListener on macOS and Linux already answered "411 Length Required" to this request, but it still
+                // gives the request to the server. The client thinks that the request failed, so do nothing.
+                log.WriteLine($"{clock():HH:mm:ss} HTTP {method} {path}: 411. The request has no Content-Length. " +
+                              "Send a body, for example with curl -d ''.");
                 return;
             }
 
@@ -180,6 +199,8 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
                     new ClockPlaybookCommand { Date = Read<ClockRequest>(body, new ClockRequest()).Date },
                     cancellationToken))),
                 ("POST", "/prevue/guide/refresh") => await RefreshAsync(cancellationToken),
+                ("POST", "/prevue/data/weather-gov") => await WeatherGovAsync(body, cancellationToken),
+                ("POST", "/prevue/weather/refresh") => await WeatherRefreshAsync(cancellationToken),
                 ("POST", "/prevue/commands") => await CommandsAsync(body, cancellationToken),
                 _ => (404, new ErrorAnswer($"The server has no {method} {path}. GET /status shows the state."))
             };
@@ -251,6 +272,41 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
     }
 
     /// <summary>
+    /// Reads the weather of weather.gov for the settings of the body, as <c>!!weatherGov</c>, and sends it in a session.
+    /// With <c>"show"</c>, the server then shows the current weather or the forecast.
+    /// </summary>
+    private async Task<(int, object)> WeatherGovAsync(string body, CancellationToken cancellationToken)
+    {
+        var settings = Read<WeatherGovPlaybookCommand>(body);
+        var request = Read<WeatherGovRequest>(body);
+        var show = request.Show?.Trim().ToLowerInvariant() switch
+        {
+            null or "" or "none" => (bool?)null,
+            "current" => false,
+            "forecast" => true,
+            _ => throw new ArgumentException($"\"show\" must be \"none\", \"current\" or \"forecast\", not \"{request.Show}\".")
+        };
+        var data = await TransformAsync(settings, cancellationToken);
+        var commands = parts.Session.Wrap(data);
+        if (show is { } forecast)
+        {
+            commands.Add(new PauseCommand(TimeSpan.FromSeconds(Math.Max(0, request.PauseSeconds))));
+            commands.Add(new ShowWeatherCommand(forecast));
+        }
+
+        return Queue("weather.gov", commands, data.Select(c => c.ToString()).ToList());
+    }
+
+    private async Task<(int, object)> WeatherRefreshAsync(CancellationToken cancellationToken)
+    {
+        if (parts.Weather == null)
+            return (409, new ErrorAnswer("The playbook has no !!weatherGov command, so the server cannot read the weather again."));
+
+        var sent = await parts.Weather.UpdateAsync(cancellationToken);
+        return (200, new { sent, error = parts.Weather.LastError });
+    }
+
+    /// <summary>
     /// Runs playbook commands from a YAML body: a playbook with <c>commands:</c>, or only the list of commands. The
     /// server sends the commands as they are written, without an added session.
     /// </summary>
@@ -299,6 +355,14 @@ public sealed class ControlServer(ServerParts parts, JobQueue jobs, TopHalfHold 
                 lastRead = watcher?.LastRead,
                 lastChanges = watcher?.LastChanges,
                 lastError = watcher?.LastError
+            },
+            weather = new
+            {
+                enabled = parts.WeatherMinutes > 0,
+                minutes = parts.WeatherMinutes,
+                canRefresh = parts.Weather != null,
+                lastRead = parts.Weather?.LastRead,
+                lastError = parts.Weather?.LastError
             },
             autoPromo = new
             {

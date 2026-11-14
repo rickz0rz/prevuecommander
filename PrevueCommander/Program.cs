@@ -110,6 +110,11 @@ try
     if (watch && imports.Count == 0)
         throw new InvalidOperationException(
             "The watch mode reads the guide of the imports again, but the playbook has no guide data import.");
+    var weatherReaders = playbook.Commands.OfType<WeatherGovPlaybookCommand>().ToList();
+    var weatherMode = configuration.WeatherMinutes > 0 && !options.Validate && options.OutputPath == null;
+    if (weatherMode && weatherReaders.Count == 0)
+        throw new InvalidOperationException(
+            "The weather mode reads the weather of !!weatherGov again, but the playbook has no !!weatherGov command.");
     playbook.AutoPromo?.Check();
     var autoPromo = playbook.AutoPromo != null && !options.Validate && options.OutputPath == null;
     if (autoPromo && configuration.ControlPort <= 0 && string.IsNullOrEmpty(configuration.ControlSerialPort))
@@ -158,7 +163,7 @@ try
     }
 
     Console.WriteLine($"Sent {commands.Count} commands.");
-    if (!watch && !autoPromo && !serve)
+    if (!watch && !autoPromo && !serve && !weatherMode)
         return 0;
 
     // With the setting now, the time after the commands is that time plus the time since the start.
@@ -182,13 +187,22 @@ try
         watcher.Start(commands);
     }
 
-    // The watch mode, the automatic promos and the web server run until Ctrl+C. If one of them stops with an error,
+    WeatherWatcher? weather = null;
+    if (weatherReaders.Count > 0 && (weatherMode || serve))
+    {
+        weather = new WeatherWatcher(weatherReaders, ContextAt, Clock, SendBatch, Console.Out);
+        weather.Start(commands);
+    }
+
+    // The watch mode, the weather mode, the automatic promos and the web server run until Ctrl+C. If one of them stops with an error,
     // all stop.
     using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
     var loops = new List<Task>();
     if (watch)
         loops.Add(watcher!.RunAsync(TimeSpan.FromMinutes(configuration.WatchMinutes), stop.Token));
 
+    if (weatherMode)
+        loops.Add(weather!.RunAsync(TimeSpan.FromMinutes(configuration.WeatherMinutes), stop.Token));
     if (promoter != null)
         loops.Add(promoter.RunAsync(stop.Token));
 
@@ -201,7 +215,7 @@ try
         var hold = new TopHalfHold(jobs, Clock, Console.Out, stop.Token);
         var parts = new ServerParts(() => ContextAt(Clock()), session, lines.Check,
             line => (lines.IsConnected(line), lines.BytesSent(line)), configuration.ControlBaudRate, watcher,
-            watch ? configuration.WatchMinutes : 0, promoter);
+            watch ? configuration.WatchMinutes : 0, promoter, weather, weatherMode ? configuration.WeatherMinutes : 0);
         var server = new ControlServer(parts, jobs, hold, Clock, Console.Out);
         loops.Add(jobs.RunAsync(stop.Token));
         loops.Add(server.RunAsync(configuration.ServeHost, configuration.ServePort, stop.Token));

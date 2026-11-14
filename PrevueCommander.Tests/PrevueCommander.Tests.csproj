@@ -11,6 +11,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\PrevueCommander\PrevueCommander.csproj"/>
+        <ProjectReference Include="..\PrevueCommander.WeatherGov\PrevueCommander.WeatherGov.csproj"/>
     </ItemGroup>
 
 </Project>

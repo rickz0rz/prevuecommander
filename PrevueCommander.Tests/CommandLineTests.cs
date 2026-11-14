@@ -29,6 +29,14 @@ public class CommandLineTests
     }
 
     [Fact]
+    public void WeatherOption_ReplacesTheSetting()
+    {
+        var configuration = CommandLine.Parse(["--weather", "30"]).Apply(new Configuration { WeatherMinutes = 60 });
+        Assert.Equal(30, configuration.WeatherMinutes);
+        Assert.Equal(60, CommandLine.Parse([]).Apply(new Configuration { WeatherMinutes = 60 }).WeatherMinutes);
+    }
+
+    [Fact]
     public void ServeOptions_ReplaceTheSettings()
     {
         var options = CommandLine.Parse(["--serve", "8095", "--serve-host=0.0.0.0"]);

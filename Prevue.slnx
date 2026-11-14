@@ -4,6 +4,7 @@
   <Project Path="Prevue.Graphics/Prevue.Graphics.csproj" />
   <Project Path="PrevueCommander.ChannelsDVR/PrevueCommander.ChannelsDVR.csproj" />
   <Project Path="PrevueCommander.Tests/PrevueCommander.Tests.csproj" />
+  <Project Path="PrevueCommander.WeatherGov/PrevueCommander.WeatherGov.csproj" />
   <Project Path="PrevueCommander.XmlTv/PrevueCommander.XmlTv.csproj" />
   <Project Path="PrevueCommander/PrevueCommander.csproj" />
 </Solution>

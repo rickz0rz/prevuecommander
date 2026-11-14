@@ -54,6 +54,14 @@ public sealed record WeatherRequest(
     bool Show = true,
     double PauseSeconds = 5);
 
+/// <summary>
+/// The fields of <c>POST /prevue/data/weather-gov</c> that are not settings of <c>!!weatherGov</c>. The body also has
+/// the settings, for example <c>"zip"</c>.
+/// </summary>
+/// <param name="Show">"none", "current" (W0) or "forecast" (W3).</param>
+/// <param name="PauseSeconds">The pause between the session and the show command.</param>
+public sealed record WeatherGovRequest(string? Show = null, double PauseSeconds = 5);
+
 /// <summary>The body of <c>POST /prevue/data/clock</c>.</summary>
 /// <param name="Date">A local date and time, for example "2020-11-01T16:00". Null sends the current time.</param>
 public sealed record ClockRequest(string? Date = null);

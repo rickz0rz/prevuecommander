@@ -120,6 +120,7 @@ An option replaces a setting of the playbook for one run. Thus you can use one p
 | `--now <date>` | `now` | The time of the run, for example `1993-02-23T18:00`. |
 | `--verbose` | `output` | Shows the bytes of each command. |
 | `--watch <minutes>` | `watchMinutes` | After the commands, reads the guide again at this interval and sends only the changes. See [Watch mode](#watch-mode). |
+| `--weather <minutes>` | `weatherMinutes` | After the commands, reads the weather of `!!weatherGov` again at this interval and sends it. See [Weather from weather.gov](#weather-from-weathergov). |
 | `--serve <port>` | `servePort` | After the commands, starts the web server on this port. See [Web server](#web-server). |
 | `--serve-host <address>` | `serveHost` | The address of the web server. `0.0.0.0` accepts all the computers of the network. |
 | `--validate` | | Makes all the commands and shows them, but does not connect. Use it to check a playbook. |
@@ -174,6 +175,7 @@ Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port t
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `now` | | A local date and time that the playbook uses in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of the broadcast day of this time and of the next day. `!!clock` without `date` sends this time, and `!!configureDst` without `year` uses its year. A Channels DVR server has only current listings, so use an XMLTV file for a date in the past. |
 | `watchMinutes` | `0` | The minutes between two reads of the guide in the [watch mode](#watch-mode). `0` stops after the commands. |
+| `weatherMinutes` | `0` | The minutes between two reads of the weather of `!!weatherGov`. See [Weather from weather.gov](#weather-from-weathergov). `0` stops after the commands. |
 | `servePort` | `0` | The TCP port of the [web server](#web-server). `0` starts no server. |
 | `serveHost` | `127.0.0.1` | The address of the web server. `127.0.0.1` accepts only this computer. `0.0.0.0` accepts all the computers of the network. |
 | `characterSet` | `Latin1` | The characters of the listings, the local ads and the promo titles. `Latin1` sends letters with accents and other Latin-1 characters, for example `Fiancé`. `Ascii` removes the accents, for example `Fiance`, for older versions of ESQ. See [ESQ versions](#esq-versions). |
@@ -293,6 +295,8 @@ The requests that Esquire also has use the same paths and bodies, so a script wo
 | `POST /prevue/data/local-ads` | `{"ads": ["%CENTER%Joe's Pizza"], "dryRun": false}` | Replaces the local ads of ESQ, as `!!localAds`. The answer has the preview and the warnings of each ad. With `"dryRun": true`, the server only gives the preview and sends nothing. |
 | `POST /prevue/data/weather` | `{"status": {...}, "text": {...}, "forecast": {...}, "show": true, "pauseSeconds": 5}` | Sends the weather status, the weather text and the 3-day forecast, with the settings of `!!weatherStatus`, `!!weatherText` and `!!weatherForecast`. Each part is optional, but one part is necessary. With `show`, the server then waits `pauseSeconds` and shows the weather. With a forecast, it shows the forecast (`W3`). Without a forecast, it shows the current weather (`W0`). |
 | `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. |
+| `POST /prevue/data/weather-gov` | `{"zip": "48201", "show": "forecast", "pauseSeconds": 5}` | Gets the weather of weather.gov and sends it, as `!!weatherGov`. The body can have all the settings of `!!weatherGov`. `show` is `none` (the default), `current` or `forecast`. With `current` or `forecast`, the server then waits `pauseSeconds` and shows the weather. |
+| `POST /prevue/weather/refresh` | | Reads the weather of the `!!weatherGov` commands of the playbook again, and sends it. The playbook must have a `!!weatherGov` command. |
 | `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](#watch-mode) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
 | `POST /prevue/commands` | YAML | Sends playbook commands. The body is a YAML list of commands, or a playbook with `commands:`. The server uses only the commands of a playbook. |
 
@@ -313,14 +317,17 @@ Examples with `curl`:
 
 ```sh
 curl -X POST localhost:8095/prevue/ctrl/promo -d '{"title": "Seinfeld", "brush": "AT"}'
-curl -X POST localhost:8095/prevue/ctrl/clear
+curl -X POST localhost:8095/prevue/ctrl/clear -d ''
 curl -X POST localhost:8095/prevue/ctrl/hold -d '{"minutes": 30}'
 curl -X DELETE localhost:8095/prevue/ctrl/hold
 curl -X POST localhost:8095/prevue/data/local-ads -d '{"ads": ["%CENTER%Visit Joe'"'"'s Pizza"]}'
-curl -X POST localhost:8095/prevue/ctrl/ad
+curl -X POST localhost:8095/prevue/ctrl/ad -d ''
 curl -X POST localhost:8095/prevue/commands --data-binary $'- !!showLogo {}\n'
+curl -X POST localhost:8095/prevue/data/weather-gov -d '{"zip": "48201", "show": "current"}'
 curl localhost:8095/status
 ```
+
+A POST needs a `Content-Length` header. Thus use `-d ''` for a request without a body. HttpListener answers "411 Length Required" to a POST without the header, and the server then does nothing.
 
 A test with Esquire sent each of these requests. ESQ showed two local ads, a promo, the weather and a clear. Then a hold of 4 minutes kept the top half clear.
 
@@ -738,6 +745,89 @@ This example shows a sun, clouds and rain for the next three days:
   forecast: true
 ```
 
+#### Weather from weather.gov
+
+`!!weatherGov` gets the weather of a US location from [weather.gov](https://www.weather.gov/documentation/services-web-api), the free API of the National Weather Service. It needs no key. weather.gov has data only for the USA. The command sends three parts:
+
+- The status: the city and the state, for example `Detroit, MI`.
+- The current weather of the nearest weather station, as a weather text. `!!showWeather {}` shows it.
+- The forecast of the next 3 days. `!!showWeather` with `forecast: true` shows it.
+
+```yaml
+- !!address
+  target: '*'
+- !!weatherGov
+  zip: '48201'
+- !!boxOff {}
+- !!pause
+  seconds: 5
+- !!showWeather {}
+```
+
+| Setting | Default | Description |
+|---|---|---|
+| `zip` | | A US ZIP code, for example `'48201'`. Put it in quotes, because a ZIP code can start with `0`. |
+| `latitude`, `longitude` | | The location, for example `42.33` and `-83.05`. Use them in place of `zip`. |
+| `label` | `LOCAL` | The label of the weather status, 0 to 10 characters. |
+| `status` | `{city}, {state}` | The status text at the top of the weather. It can have the placeholders of `currentLines`. |
+| `current` | `true` | Sends the current weather. |
+| `forecast` | `true` | Sends the 3-day forecast. |
+| `minutes` | `90` | The minutes that ESQ shows the weather, 1 to 255. Each new read starts the minutes again. |
+| `units` | `F` | `F` for degrees Fahrenheit and miles per hour. `C` for degrees Celsius and kilometers per hour. |
+| `currentLines` | See below | The lines of the current weather, a maximum of 10. |
+| `contact` | | A contact, for example an e-mail address. weather.gov asks each program to identify itself, so that it can contact the owner if the program causes problems. Without `contact`, Prevue Commander sends only its name and the address of this project. |
+
+ESQ shows the lines of the current weather in pairs. The first line of a pair is at the left of the picture. The second line is at the right. The default lines are:
+
+```yaml
+  currentLines:
+  - '{condition}'
+  - '{temperature}{unit}'
+  - Humidity {humidity}%
+  - Wind {wind}
+  - '{next}'
+  - '{nextHighLow} {nextTemperature}{unit}'
+```
+
+For example, ESQ shows "Cloudy" and "34F", "Humidity 86%" and "Wind W 5 mph", and "Today" and "High 46F". Put a line that starts with `{` in quotes. A line can have these placeholders:
+
+| Placeholder | Value |
+|---|---|
+| `{city}`, `{state}` | The city and the state of the location, for example `Detroit` and `MI`. |
+| `{condition}` | The weather of the station, for example `Cloudy` or `Light Rain`. |
+| `{temperature}` | The temperature of the station. |
+| `{feelsLike}` | The wind chill or the heat index. Without one, the temperature. |
+| `{humidity}` | The relative humidity in percent. |
+| `{wind}` | The wind direction and speed, for example `W 5 mph`, or `Calm`. |
+| `{unit}` | `F` or `C`. |
+| `{time}` | The time of the observation, for example `6:10 AM`. |
+| `{next}` | The name of the next forecast period, for example `Today` or `Tonight`. |
+| `{nextForecast}` | The weather of the next period, for example `Partly Sunny`. |
+| `{nextTemperature}` | The temperature of the next period. |
+| `{nextHighLow}` | `High` for a day period, `Low` for a night period. |
+
+A missing value shows `--`. Prevue Commander removes the characters that ESQ cannot show, for example `°`. If the status is too long, ESQ gets only its start.
+
+Prevue Commander chooses the picture from the condition code of weather.gov:
+
+| Picture | Conditions |
+|---|---|
+| `PWI1`, the sun | Clear, a few clouds, hot, cold |
+| `PWI2`, clouds | Overcast, fog, haze, smoke, dust |
+| `PWI3`, rain | Rain, showers, thunderstorms, freezing rain, sleet, tropical storms |
+| `PWI4`, the sun with clouds | Partly cloudy, mostly cloudy |
+| `PWI5`, snow | Snow, rain and snow, a blizzard |
+
+The drive has only these five pictures. ESQ shows the sun for a clear night too.
+
+Prevue Commander finds the location of a ZIP code in a table in the program. The table has the center of each ZIP Code Tabulation Area of the 2024 Gazetteer of the U.S. Census Bureau. Some ZIP codes, for example ZIP codes for post office boxes only, are not in the table. For them, use `latitude` and `longitude`.
+
+To send new weather at an interval, set `weatherMinutes` in the configuration, or use `--weather`. weather.gov updates its forecast a few times each day, so an interval of 30 or 60 minutes is sufficient. If weather.gov does not answer, Prevue Commander shows the error, and ESQ keeps the last weather. The next interval tries again.
+
+```sh
+dotnet run --project PrevueCommander -- --weather 30 playbook.yaml
+```
+
 ### Files and utilities
 
 | Command | Settings | Description |
@@ -1024,5 +1114,6 @@ The control line was not tested with FS-UAE. ESQ reads the control line on the C
 | `Prevue.Commands` | The commands of the data line and of the control line (`Control`), and the listings builder. Each class tells the format that ESQ reads. |
 | `PrevueCommander.XmlTv` | The XMLTV reader. |
 | `PrevueCommander.ChannelsDVR` | The Channels DVR client. |
+| `PrevueCommander.WeatherGov` | The weather.gov client, the ZIP code table and the choice of the weather pictures. |
 | `PrevueCommander` | The program, the playbook commands and the web server (`Server`, and the control page in `wwwroot`). |
 | `PrevueCommander.Tests` | The tests. |
