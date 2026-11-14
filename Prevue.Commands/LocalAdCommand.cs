@@ -3,8 +3,8 @@ using Prevue.Core;
 namespace Prevue.Commands;
 
 /// <summary>
-/// The 'L' command: a local text ad. ESQ shows the ads between the listings when the local text ad source of the 'f'
-/// configuration is 'R' or 'S'.
+/// The 'L' command: a local text ad. ESQ keeps the ads when the local text ad source of the 'f' configuration is 'R' or
+/// 'S'. ESQ shows the next ad in the top half of the screen when the control line sends a type 12 packet.
 /// </summary>
 /// <remarks>
 /// The text can have these tokens (see <see cref="MapToken"/>):
@@ -13,7 +13,7 @@ namespace Prevue.Commands;
 /// <item>%LEFT%, %CENTER% and %RIGHT%: the alignment of a line. A token that is not at the start of a line starts a
 /// new line.</item>
 /// </list>
-/// An ad has a maximum of 6 lines of 40 characters. ESQ does not wrap words.
+/// An ad has a maximum of 6 lines of 40 characters. ESQ does not wrap words. See <see cref="LocalAdLayout"/>.
 /// </remarks>
 public class LocalAdCommand : BaseCommand
 {
