@@ -76,4 +76,16 @@ public record Configuration
     /// commands.
     /// </summary>
     public int WatchMinutes { get; init; }
+
+    /// <summary>
+    /// The TCP port of the web server. After the commands, Prevue Commander stays connected and accepts commands from
+    /// the control page and the HTTP API on this port. 0 starts no server.
+    /// </summary>
+    public int ServePort { get; init; }
+
+    /// <summary>
+    /// The address of the web server. The default 127.0.0.1 accepts only this computer. 0.0.0.0 accepts all the
+    /// computers of the network. The server has no password, so use 0.0.0.0 only on a network that you trust.
+    /// </summary>
+    public string ServeHost { get; init; } = "127.0.0.1";
 }

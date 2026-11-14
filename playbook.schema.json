@@ -57,6 +57,12 @@
         },
         "watchMinutes": {
           "type": "integer"
+        },
+        "servePort": {
+          "type": "integer"
+        },
+        "serveHost": {
+          "type": "string"
         }
       },
       "additionalProperties": false

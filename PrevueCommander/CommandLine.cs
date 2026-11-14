@@ -37,6 +37,10 @@ public sealed record CommandLineOptions
 
     public int? WatchMinutes { get; init; }
 
+    public int? ServePort { get; init; }
+
+    public string? ServeHost { get; init; }
+
     /// <summary>A file for the bytes of the data line, in place of the connection. Null sends the commands.</summary>
     public string? OutputPath { get; init; }
 
@@ -68,7 +72,9 @@ public sealed record CommandLineOptions
         ControlBaudRate = ControlBaudRate ?? configuration.ControlBaudRate,
         Now = Now ?? configuration.Now,
         Output = Verbose ? Output.Verbose : configuration.Output,
-        WatchMinutes = WatchMinutes ?? configuration.WatchMinutes
+        WatchMinutes = WatchMinutes ?? configuration.WatchMinutes,
+        ServePort = ServePort ?? configuration.ServePort,
+        ServeHost = ServeHost ?? configuration.ServeHost
     };
 }
 
@@ -95,6 +101,10 @@ public static class CommandLine
           --verbose                     Show the bytes of each command (output: Verbose).
           --watch <minutes>             After the commands, read the guide again at this interval, and send only
                                         the changes (watchMinutes). 0 stops after the commands.
+          --serve <port>                After the commands, start the web server on this port (servePort). It has
+                                        the control page and the HTTP API.
+          --serve-host <address>        The address of the web server (serveHost). 0.0.0.0 accepts all the
+                                        computers of the network.
           --validate                    Make all the commands, and stop. Do not connect.
           --output <file>               Write the bytes of the data line to the file. Do not connect.
           --control-output <file>       With --output, write the bytes of the control line to the file.
@@ -208,6 +218,12 @@ public static class CommandLine
                     break;
                 case "--watch":
                     options = options with { WatchMinutes = Number() };
+                    break;
+                case "--serve":
+                    options = options with { ServePort = Number() };
+                    break;
+                case "--serve-host":
+                    options = options with { ServeHost = Value() };
                     break;
                 case "--now":
                     options = options with { Now = Value() };

@@ -3,6 +3,7 @@ using Prevue.Commands;
 using PrevueCommander;
 using PrevueCommander.Model;
 using PrevueCommander.Model.PlaybookCommands;
+using PrevueCommander.Server;
 using YamlDotNet.Core;
 
 CommandLineOptions options;
@@ -114,6 +115,7 @@ try
     if (autoPromo && configuration.ControlPort <= 0 && string.IsNullOrEmpty(configuration.ControlSerialPort))
         throw new InvalidOperationException(
             "The automatic promos need the control line. Set controlPort or controlSerialPort in the configuration.");
+    var serve = configuration.ServePort > 0 && !options.Validate && options.OutputPath == null;
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
     var commands = new List<BaseCommand>();
@@ -156,33 +158,54 @@ try
     }
 
     Console.WriteLine($"Sent {commands.Count} commands.");
-    if (!watch && !autoPromo)
+    if (!watch && !autoPromo && !serve)
         return 0;
 
     // With the setting now, the time after the commands is that time plus the time since the start.
     var started = System.Diagnostics.Stopwatch.StartNew();
     DateTime Clock() => string.IsNullOrWhiteSpace(configuration.Now) ? DateTime.Now : now + started.Elapsed;
 
+    Task SendBatch(IReadOnlyList<BaseCommand> batch, CancellationToken token) => lines.SendBatchAsync(batch, null, token);
     var promoter = autoPromo
-        ? new AutoPromoter(playbook.AutoPromo!, Clock, lines.SendAsync, Console.Out, configuration.CharacterSet)
+        ? new AutoPromoter(playbook.AutoPromo!, Clock, SendBatch, Console.Out, configuration.CharacterSet)
         : null;
     promoter?.SetListings(commands);
 
-    // The watch mode and the automatic promos run until Ctrl+C. If one of them stops with an error, both stop.
-    using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
-    var loops = new List<Task>();
-    if (watch)
+    // The web server can also read the guide again, so it needs the watcher without the watch mode.
+    GuideWatcher? watcher = null;
+    if (imports.Count > 0 && (watch || serve))
     {
-        var watcher = new GuideWatcher(imports, ContextAt, Clock, lines.SendAsync, Console.Out)
+        watcher = new GuideWatcher(imports, ContextAt, Clock, SendBatch, Console.Out)
         {
             ListingsRead = listings => promoter?.SetListings(listings)
         };
         watcher.Start(commands);
-        loops.Add(watcher.RunAsync(TimeSpan.FromMinutes(configuration.WatchMinutes), stop.Token));
     }
+
+    // The watch mode, the automatic promos and the web server run until Ctrl+C. If one of them stops with an error,
+    // all stop.
+    using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellation.Token);
+    var loops = new List<Task>();
+    if (watch)
+        loops.Add(watcher!.RunAsync(TimeSpan.FromMinutes(configuration.WatchMinutes), stop.Token));
 
     if (promoter != null)
         loops.Add(promoter.RunAsync(stop.Token));
+
+    if (serve)
+    {
+        var session = new SessionTemplate();
+        session.Remember(commands);
+        var times = new TransferProgress([], configuration, TextWriter.Null, TimeSpan.MaxValue);
+        var jobs = new JobQueue(lines, times.Time, Clock, Console.Out);
+        var hold = new TopHalfHold(jobs, Clock, Console.Out, stop.Token);
+        var parts = new ServerParts(() => ContextAt(Clock()), session, lines.Check,
+            line => (lines.IsConnected(line), lines.BytesSent(line)), configuration.ControlBaudRate, watcher,
+            watch ? configuration.WatchMinutes : 0, promoter);
+        var server = new ControlServer(parts, jobs, hold, Clock, Console.Out);
+        loops.Add(jobs.RunAsync(stop.Token));
+        loops.Add(server.RunAsync(configuration.ServeHost, configuration.ServePort, stop.Token));
+    }
 
     var first = await Task.WhenAny(loops);
     await stop.CancelAsync();

@@ -120,6 +120,8 @@ An option replaces a setting of the playbook for one run. Thus you can use one p
 | `--now <date>` | `now` | The time of the run, for example `1993-02-23T18:00`. |
 | `--verbose` | `output` | Shows the bytes of each command. |
 | `--watch <minutes>` | `watchMinutes` | After the commands, reads the guide again at this interval and sends only the changes. See [Watch mode](#watch-mode). |
+| `--serve <port>` | `servePort` | After the commands, starts the web server on this port. See [Web server](#web-server). |
+| `--serve-host <address>` | `serveHost` | The address of the web server. `0.0.0.0` accepts all the computers of the network. |
 | `--validate` | | Makes all the commands and shows them, but does not connect. Use it to check a playbook. |
 | `--output <file>` | | Writes the bytes of the data line to the file, but does not connect. See [Replay a feed file](#replay-a-feed-file). |
 | `--control-output <file>` | | With `--output`, writes the bytes of the control line to the file. Without it, `--output` leaves out the control line commands. |
@@ -172,6 +174,8 @@ Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port t
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `now` | | A local date and time that the playbook uses in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of the broadcast day of this time and of the next day. `!!clock` without `date` sends this time, and `!!configureDst` without `year` uses its year. A Channels DVR server has only current listings, so use an XMLTV file for a date in the past. |
 | `watchMinutes` | `0` | The minutes between two reads of the guide in the [watch mode](#watch-mode). `0` stops after the commands. |
+| `servePort` | `0` | The TCP port of the [web server](#web-server). `0` starts no server. |
+| `serveHost` | `127.0.0.1` | The address of the web server. `127.0.0.1` accepts only this computer. `0.0.0.0` accepts all the computers of the network. |
 | `characterSet` | `Latin1` | The characters of the listings, the local ads and the promo titles. `Latin1` sends letters with accents and other Latin-1 characters, for example `Fiancé`. `Ascii` removes the accents, for example `Fiance`, for older versions of ESQ. See [ESQ versions](#esq-versions). |
 
 Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line. If a playbook has control line commands, but `controlPort` and `controlSerialPort` are not set, Prevue Commander stops before it sends a command.
@@ -224,6 +228,101 @@ autoPromo:
 | `style` | `Box` | `Box` shows the background of the box. `Text` draws only the text. |
 
 The promo of a movie finds the title in quotation marks, so that ESQ finds only that title. The promo uses the call letters of the channel as its channel pattern. With the [watch mode](#watch-mode), the promos use the listings of the last read of the guide. Without the watch mode, they use the listings of the commands. If no program fits, Prevue Commander shows a message and tries again at the next interval. Press Ctrl+C to stop.
+
+## Web server
+
+The web server lets you send commands while Prevue Commander runs. It has a control page for a browser, and an HTTP API for scripts. Set `servePort` in the configuration, or use `--serve`:
+
+```sh
+dotnet run --project PrevueCommander -- --serve 8095 playbook.yaml
+```
+
+Prevue Commander first sends the commands of the playbook. Then it starts the server and stays connected until you press Ctrl+C. The playbook can have no commands, for example a playbook with only the `configuration` section. The server can run together with the [watch mode](#watch-mode) and the [automatic promos](#automatic-promos). `--validate` and `--output` do not start the server.
+
+Open `http://localhost:8095/` in a browser. The page has these parts:
+
+- The status of the lines, the queues, the hold, the guide and the automatic promos. The page shows the new status each 2 seconds.
+- Buttons for the top half of the screen: clear, logo, ad break, weather and forecast.
+- Keep the top half clear for some minutes, or until you stop it. See [Keep the top half clear](#keep-the-top-half-clear).
+- A promo form.
+- A local ad editor with a preview of each ad, as ESQ shows it.
+- A weather form, the clock, and a button that reads the guide again.
+- A box for any playbook commands in YAML.
+- The list of jobs, with their errors.
+
+The page needs no internet connection, so it works on a Raspberry Pi without internet.
+
+> [!WARNING]
+> The server has no password. Anyone who can connect to the port can send commands to ESQ. The default address `127.0.0.1` accepts only this computer. Use `serveHost: 0.0.0.0` only on a network that you trust. On Windows, an address other than `127.0.0.1` can need administrator rights.
+
+### Jobs
+
+Each request that sends commands makes all its commands first. If a command has an error, the server answers with status 400 and an error text, and it sends nothing. Otherwise, the server adds a job to a queue and answers at once with status 202 and the job.
+
+The server has two queues:
+
+- The control queue has the jobs with only control line commands, for example a promo.
+- The data queue has the jobs with data line commands, for example local ads.
+
+Each queue sends one job at a time, in order. Thus a promo does not wait for a long file transfer on the data line. A job always sends all its commands together. No other command of the same line can come between them, also from the watch mode or the automatic promos.
+
+A job has one of these states: `queued`, `sending`, `done`, `failed` or `cancelled`. You can cancel a queued job. A job that started always finishes, because ESQ cannot use a record that stops in the middle. If a line cannot connect, the job fails, and the next job tries to connect again.
+
+The server puts the data line commands of a request in a session. The session has the first `!!address` and the last `!!configuration` of the playbook, and `!!save` if the playbook has one. Without these commands in the playbook, the session uses the address `*` and the default status packet. `POST /prevue/commands` is different: it sends the commands as you write them.
+
+### HTTP API
+
+The requests that Esquire also has use the same paths and bodies, so a script works with both programs. A body is JSON, except for `POST /prevue/commands`.
+
+| Request | Body | What it does |
+|---|---|---|
+| `GET /` | | The control page. |
+| `GET /status` | | The status: the lines, the queues, the hold, the guide, the automatic promos and the last 10 jobs. |
+| `GET /prevue/ctrl` | | The state of the control line, with the fields of Esquire. `queued` is the bytes that wait, and `seconds` is the time to send them. `sent` is the bytes sent. |
+| `GET /jobs` | | The last 50 jobs, the newest first. |
+| `GET /jobs/<id>` | | One job. |
+| `DELETE /jobs/<id>` | | Cancels a queued job. |
+| `POST /prevue/ctrl/promo` | `{"title": "Seinfeld", "brush": "AT"}` | Shows a promo. See below. |
+| `POST /prevue/ctrl/clear` | | Removes what the top half shows (`!!clearTopHalf`). |
+| `POST /prevue/ctrl/logo` | | Shows the loaded logo (`!!showLogo`). |
+| `POST /prevue/ctrl/ad` | | Starts an ad break: a type 12 packet. See [Show a local ad](#show-a-local-ad). |
+| `POST /prevue/ctrl/weather` | `{"forecast": false}` | Shows the current weather (`W0`). With `"forecast": true`, shows the forecast (`W3`). |
+| `POST /prevue/ctrl/packets` | `[{"type": 17, "body": "Seinfeld"}]` | Sends control packets, as `!!controlPacket`. In JSON, `\u0012` is the separator of the two boxes. |
+| `POST /prevue/ctrl/hold` | `{"minutes": 30, "intervalSeconds": 150}` | Keeps the top half clear. It sends a clear at once and then at each interval. Without `minutes`, the hold has no end. `intervalSeconds` is 5 to 170. The default is 150. |
+| `DELETE /prevue/ctrl/hold` | | Stops the hold. The logo rotation starts again. |
+| `POST /prevue/data/local-ads` | `{"ads": ["%CENTER%Joe's Pizza"], "dryRun": false}` | Replaces the local ads of ESQ, as `!!localAds`. The answer has the preview and the warnings of each ad. With `"dryRun": true`, the server only gives the preview and sends nothing. |
+| `POST /prevue/data/weather` | `{"status": {...}, "text": {...}, "show": true, "pauseSeconds": 5}` | Sends the weather status and the weather text, with the settings of `!!weatherStatus` and `!!weatherText`. With `show`, the server then waits `pauseSeconds` and shows the weather. |
+| `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. |
+| `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](#watch-mode) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
+| `POST /prevue/commands` | YAML | Sends playbook commands. The body is a YAML list of commands, or a playbook with `commands:`. The server uses only the commands of a playbook. |
+
+The body of a promo is as the settings of `!!promo`. It has a box on the right, a box on the left, or both boxes:
+
+```json
+{
+  "right": {"title": "Bob's Burgers", "channels": "*", "brush": "AT"},
+  "left": {"title": "Seinfeld", "channels": "KTIV*", "brush": "DT"},
+  "first": "left",
+  "style": "box"
+}
+```
+
+`title`, `channels` and `brush` at the top of the body are for the right box, for example `{"title": "Seinfeld"}`.
+
+Examples with `curl`:
+
+```sh
+curl -X POST localhost:8095/prevue/ctrl/promo -d '{"title": "Seinfeld", "brush": "AT"}'
+curl -X POST localhost:8095/prevue/ctrl/clear
+curl -X POST localhost:8095/prevue/ctrl/hold -d '{"minutes": 30}'
+curl -X DELETE localhost:8095/prevue/ctrl/hold
+curl -X POST localhost:8095/prevue/data/local-ads -d '{"ads": ["%CENTER%Visit Joe'"'"'s Pizza"]}'
+curl -X POST localhost:8095/prevue/ctrl/ad
+curl -X POST localhost:8095/prevue/commands --data-binary $'- !!showLogo {}\n'
+curl localhost:8095/status
+```
+
+A test with Esquire sent each of these requests. ESQ showed two local ads, a promo, the weather and a clear. Then a hold of 4 minutes kept the top half clear.
 
 ## Connect to an Amiga
 
@@ -721,7 +820,7 @@ The box shows the call letters, the title, the next time of the program and the 
 
 ESQ shows the logos of `LOGO.LST` in turn, with a timer. It counts the seconds, and after 180 seconds it shows the next logo. The logo stays until the next logo, a promo, an ad or a clear.
 
-Each `!!clearTopHalf` removes what the top half shows, and the next logo comes about 3 minutes later. Thus, to keep the genlock video in the top half, send `!!clearTopHalf` again at intervals of less than 3 minutes. For example, this playbook keeps the top half clear for 10 minutes:
+Each `!!clearTopHalf` removes what the top half shows, and the next logo comes about 3 minutes later. Thus, to keep the genlock video in the top half, send `!!clearTopHalf` again at intervals of less than 3 minutes. The [web server](#web-server) does this for you with `POST /prevue/ctrl/hold`, and the control page has a button for it. Without the web server, use a playbook. For example, this playbook keeps the top half clear for 10 minutes:
 
 ```yaml
 configuration:
@@ -881,5 +980,5 @@ The control line was not tested with FS-UAE. ESQ reads the control line on the C
 | `Prevue.Commands` | The commands of the data line and of the control line (`Control`), and the listings builder. Each class tells the format that ESQ reads. |
 | `PrevueCommander.XmlTv` | The XMLTV reader. |
 | `PrevueCommander.ChannelsDVR` | The Channels DVR client. |
-| `PrevueCommander` | The program and the playbook commands. |
+| `PrevueCommander` | The program, the playbook commands and the web server (`Server`, and the control page in `wwwroot`). |
 | `PrevueCommander.Tests` | The tests. |

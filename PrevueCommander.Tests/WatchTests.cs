@@ -95,9 +95,9 @@ public class WatchTests
 
             var sent = new List<BaseCommand>();
             var watcher = new GuideWatcher([import], ContextAt, () => Evening,
-                (command, _) =>
+                (commands, _) =>
                 {
-                    sent.Add(command);
+                    sent.AddRange(commands);
                     return Task.CompletedTask;
                 }, TextWriter.Null);
             watcher.Start([new AddressCommand("*"), new ConfigurationCommand(), .. first, new SaveCommand(),
