@@ -251,7 +251,7 @@ ESQ adds (time zone - 6) hours to the clock and to the times of the grid. With t
 
 | Command | Settings | Description |
 |---|---|---|
-| `!!xmlTvGuideDataImport` | `xmlTvFiles`: a list of `path` and `maximumNumberOfChannels` (`0`) | Imports XMLTV files. A relative path starts at the directory of the playbook. |
+| `!!xmlTvGuideDataImport` | `xmlTvFiles`: a list of `path` and `maximumNumberOfChannels` (`0`) | Imports XMLTV files. A `path` is a file or an HTTP or HTTPS address, for example `http://192.168.0.10/guide.xml`. A relative path starts at the directory of the playbook. A file that is compressed with gzip, for example `guide.xml.gz`, is also correct. |
 | `!!channelsDVRGuideDataImport` | `channelsDVRServers`: a list of `serverAddress`, `maximumNumberOfChannels` (`0`), `filterOnlyHDChannels` (`false`) and `filterMusicChoiceChannels` (`true`) | Imports the guide of Channels DVR servers, for example `http://192.168.0.10:8089`. `filterOnlyHDChannels: true` imports only the HD channels. `filterMusicChoiceChannels: true` leaves out the channels with a call sign that starts with `MC`. |
 
 `maximumNumberOfChannels` is the maximum number of channels from one file or server. `0` means 200, the maximum of ESQ.

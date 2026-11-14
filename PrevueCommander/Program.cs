@@ -130,13 +130,19 @@ catch (SocketException e)
     Console.Error.WriteLine($"Cannot connect to the serial bridge: {e.Message}");
     return 3;
 }
+catch (OperationCanceledException) when (!cancellation.IsCancellationRequested)
+{
+    // HttpClient reports a timeout as a cancellation.
+    Console.Error.WriteLine("Error: A download took too long.");
+    return 4;
+}
 catch (OperationCanceledException)
 {
     Console.Error.WriteLine("Stopped.");
     return 130;
 }
 catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException or IOException
-                              or HttpRequestException or UnauthorizedAccessException)
+                              or InvalidDataException or HttpRequestException or UnauthorizedAccessException)
 {
     Console.Error.WriteLine($"Error: {e.Message}");
     return 4;
