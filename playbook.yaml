@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/rickz0rz/prevuecommander/main/playbook.schema.json
-# An example PrevueCommander playbook. See the README for all the commands and their settings.
+# An example PrevueCommander playbook. See docs/commands.md for all the commands and their settings.
 configuration:
   hostname: 127.0.0.1
   # The TCP port of the serial bridge of the emulator. Esquire uses 5400.

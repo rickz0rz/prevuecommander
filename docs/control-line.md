@@ -4,7 +4,7 @@
 
 ESQ shows the logos of `LOGO.LST` in turn, with a timer. It counts the seconds, and after 180 seconds it shows the next logo. The logo stays until the next logo, a promo, an ad or a clear.
 
-Each `!!clearTopHalf` removes what the top half shows, and the next logo comes about 3 minutes later. Thus, to keep the genlock video in the top half, send `!!clearTopHalf` again at intervals of less than 3 minutes. The [web server](../README.md#web-server) does this for you with `POST /prevue/ctrl/hold`, and the control page has a button for it. Without the web server, use a playbook. For example, this playbook keeps the top half clear for 10 minutes:
+Each `!!clearTopHalf` removes what the top half shows, and the next logo comes about 3 minutes later. Thus, to keep the genlock video in the top half, send `!!clearTopHalf` again at intervals of less than 3 minutes. The [web server](web-server.md) does this for you with `POST /prevue/ctrl/hold`, and the control page has a button for it. Without the web server, use a playbook. For example, this playbook keeps the top half clear for 10 minutes:
 
 ```yaml
 configuration:
