@@ -411,7 +411,18 @@ A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seco
 |---|---|---|
 | `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. Send `!!configuration` before it. |
 
-ESQ keeps the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines of 40 characters. An alignment token is not a character. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows it at the left. ESQ drops the text after line 6. A test with Esquire showed these limits.
+`localTextAdSource` of `!!newLookConfiguration` (the 'f' command) sets the source of the local ads:
+
+| Value | Local ads | 'L' commands of the data line | Ad editor of the operator menu |
+|---|---|---|---|
+| `'N'` | Off. ESQ shows no local ads. | Ignored | Not available |
+| `'L'` | Local: an operator types the ads on the Amiga. | Ignored | Available |
+| `'R'` | From the data line. | Accepted | Not available |
+| `'S'` (default) | From the data line. | Accepted | Not available |
+
+The code of ESQ 9.0.14 does the same for `'R'` and `'S'`. The names of these two values are not known. Use `'S'` or `'R'` for the ads of `!!localAds`. ESQ also keeps the ads in the file `local.ads` on its drive.
+
+An ad has a maximum of 6 lines of 40 characters. An alignment token is not a character. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows it at the left. ESQ drops the text after line 6. A test with Esquire showed these limits.
 
 `!!localAds` shows each ad as ESQ shows it, with a warning for text that ESQ breaks or drops. For example:
 
@@ -443,7 +454,7 @@ ESQ has no timer for the local ads. ESQ shows a local ad only when the control l
 The packet shows a local ad only when all these conditions are true:
 
 - ESQ has local ads. Send `!!localAds` first.
-- `localTextAdSource` is `'R'` or `'S'`.
+- `localTextAdSource` is `'R'` or `'S'`. With `'L'`, the ads that an operator typed also show.
 - The graphic ad mode of the operator menu is `N`. This is the default.
 - No local avail filter is active (type 22).
 
