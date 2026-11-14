@@ -318,7 +318,16 @@ A channel logo has about 6 to 12 KB. At 2400 baud, each logo takes about 40 seco
 |---|---|---|
 | `!!localAds` | `ads`: a list of texts | Deletes the local ads of ESQ and sends the new ads. ESQ keeps a maximum of 45 ads. Send `!!configuration` before it. |
 
-ESQ shows the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines of 40 characters. ESQ does not wrap words.
+ESQ shows the local ads only when `localTextAdSource` of the 'f' configuration is `'R'` or `'S'` (the default is `'S'`). An ad has a maximum of 6 lines. A line has 41 places. An alignment token at the start of a line uses one place, so that line has 40 characters. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. ESQ drops the text after line 6.
+
+`!!localAds` shows each ad as ESQ shows it, with a warning for text that ESQ breaks or drops. For example:
+
+```text
+Local ad 2:
+  |ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcd |
+  |efghij                                   |
+  Warning: Line 1 is longer than 40 characters. ESQ continues it on line 2, also in the middle of a word.
+```
 
 An ad can have these tokens:
 

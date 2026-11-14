@@ -13,6 +13,21 @@ public record LocalAdsPlaybookCommand : SimplePlaybookCommand
             throw new InvalidOperationException(
                 $"The playbook has {Ads.Count} local ads. ESQ keeps a maximum of {LocalAdCommand.MaximumAds}.");
 
-        return [new ResetLocalAdsCommand(), .. Ads.Select((ad, i) => new LocalAdCommand(i + 1, ad, context.Characters))];
+        var commands = Ads.Select((ad, i) => new LocalAdCommand(i + 1, ad, context.Characters)).ToList();
+        foreach (var ad in commands)
+            ShowPreview(ad, context.Log);
+
+        return [new ResetLocalAdsCommand(), .. commands];
+    }
+
+    /// <summary>Shows the lines of the ad as ESQ shows them, and a warning for text that ESQ breaks or drops.</summary>
+    private static void ShowPreview(LocalAdCommand ad, TextWriter log)
+    {
+        var lines = LocalAdLayout.Lines(ad.EncodedText);
+        log.WriteLine($"Local ad {ad.Number}:");
+        foreach (var line in lines.Take(LocalAdLayout.MaximumLines))
+            log.WriteLine($"  {LocalAdLayout.Preview(line)}");
+        foreach (var problem in LocalAdLayout.Problems(lines))
+            log.WriteLine($"  Warning: {problem}");
     }
 }
