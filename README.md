@@ -54,6 +54,8 @@ An option replaces a setting of the playbook for one run. Thus you can use one p
 | `--now <date>` | `now` | The time of the run, for example `1993-02-23T18:00`. |
 | `--verbose` | `output` | Shows the bytes of each command. |
 | `--validate` | | Makes all the commands and shows them, but does not connect. Use it to check a playbook. |
+| `--output <file>` | | Writes the bytes of the data line to the file, but does not connect. See [Replay a feed file](#replay-a-feed-file). |
+| `--control-output <file>` | | With `--output`, writes the bytes of the control line to the file. Without it, `--output` leaves out the control line commands. |
 | `-h`, `--help` | | Shows the options. |
 
 You can write an option with a value as `--port 5401` or as `--port=5401`. For example, this command sends the playbook to a second Esquire on port 5401:
@@ -463,6 +465,23 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
 `/tmp/prevue-drive` is the copy of the drive. Run Prevue Commander with `--port 5401` when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
 
 To test the control line, add `--prevue-ctrl-port 5402` and run Prevue Commander with `--control-port 5402`. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
+
+### Replay a feed file
+
+`--output` writes the bytes of the data line to a file. The file has no pauses, and Prevue Commander does not connect. Esquire can replay the file, so you can test a playbook again with the same bytes:
+
+```sh
+dotnet run --project PrevueCommander -- --output /tmp/feed.bin playbook.yaml
+```
+
+Then run this command in the Esquire directory:
+
+```sh
+Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-drive --serial-file /tmp/feed.bin \
+    --serial-start 8 --virtual-time --prevue-feed-trace /tmp/feed.log --screenshot /tmp/prevue.png --seconds 120
+```
+
+Esquire sends the file at the speed of the line, 8 seconds after the start of ESQ. `--virtual-time` makes the run the same each time.
 
 ## Test with FS-UAE
 
