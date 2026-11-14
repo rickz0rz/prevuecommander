@@ -520,21 +520,47 @@ An ad can have these tokens:
 
 #### Show a local ad
 
-ESQ has no timer for the local ads. ESQ shows a local ad only when the control line sends a type 12 packet. On a real system, the satellite feed sent this packet at the times of the ads. Each packet shows the next ad, in the order of the ad numbers. The ad stays on the screen until something else replaces it. Prevue Commander has no command for this packet, so send it with `!!controlPacket`:
+ESQ has no timer for the local ads. ESQ shows local ads only when the control line sends a type 12 packet. On a real system, the satellite feed sent this packet at the times of the commercial breaks. Prevue Commander has no command for this packet, so send it with `!!controlPacket`:
 
 ```yaml
 - !!controlPacket
   type: 12
 ```
 
+One type 12 packet starts an ad break of about 30 seconds:
+
+1. ESQ shows the next ad at once.
+2. After 16 seconds, ESQ shows the ad after it.
+3. After 16 more seconds, the break ends. The second ad stays on the screen.
+
+ESQ shows the ads in the order of their numbers. After the last ad, the first ad comes again. During a break, ESQ ignores another type 12 packet. Thus send type 12 at intervals of 35 seconds or more. A test with Esquire showed this behavior. The code of ESQ sets the 16 seconds. A local avail filter can change this time.
+
+An ad stays on the screen until one of these events:
+
+- `!!clearTopHalf` removes it at once.
+- The next ad break shows other ads.
+- A promo replaces it.
+- The logo rotation shows the next logo, about 3 minutes later. See [Keep the top half clear](#keep-the-top-half-clear).
+
 The packet shows a local ad only when all these conditions are true:
 
 - ESQ has local ads. Send `!!localAds` first.
 - `localTextAdSource` is `'R'` or `'S'`. With `'L'`, the ads that an operator typed also show.
-- The graphic ad mode of the operator menu is `N`. This is the default. With another mode, ESQ shows the graphic ads of the file `gfx/g_ads.data` in place of the local ads. These graphic ads are not the pictures of `!!graphicAd`.
+- The graphic ad mode of the operator menu is `N`. This is the default. With another mode, ESQ shows graphic ads in place of the local ads. See [Graphic ads of ESQ](#graphic-ads-of-esq).
 - No local avail filter is active. A type 22 packet starts this filter. See [Packet types](#packet-types).
 
 Otherwise, type 12 does the same as type 1. The key `T` of the operator menu also shows a local ad. But ESQ reads the keys of the operator on a different pin of the serial port. Esquire does not send these keys.
+
+#### Graphic ads of ESQ
+
+ESQ can also show graphic ads from the file `gfx/g_ads.data` of its drive. These graphic ads are not the pictures of `!!graphicAd`. A picture of `!!graphicAd` is a logo, and the logo rotation shows it.
+
+The graphic ads of `gfx/g_ads.data` have no timer, as the local ads. ESQ shows the next graphic ad only at these times:
+
+- At a type 12 packet, if ESQ has graphic ads and the graphic ad mode is not `N`.
+- When an operator presses the key `A` in the operator menu.
+
+Only the operator menu sets the graphic ad mode. Prevue Commander cannot set it. The drive of Esquire does not have `gfx/g_ads.data`, and the format of this file is not known. Thus these rules come from the code of ESQ only. They were not tested.
 
 ### Weather
 
@@ -677,7 +703,7 @@ The control line commands go to `controlPort` or `controlSerialPort`. ESQ reads 
 |---|---|---|
 | `!!promo` | `right`, `left`: a box with `title`, `channels` (`*`) and `brush`. `first` (`Right`). `style` (`Box`) | Shows a promo in the top half of the screen. With `style: Text`, ESQ draws only the text, over what the top half shows at that time. |
 | `!!moveGrid` | `position` (`A0`), `seconds` (`1`), `channels` | Moves the top of the grid up or down. `position` is two hex digits: a larger value is lower on the screen. `seconds` is the time of the move, from 0 to 9.9. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the loaded logo. `!!clearTopHalf` moves the grid back. |
-| `!!clearTopHalf` | | Removes the promo or the logo, and moves the grid back. The top half shows the genlock video. |
+| `!!clearTopHalf` | | Removes the promo, the logo or the local ad, and moves the grid back. The top half shows the genlock video. The next logo of the rotation comes about 3 minutes later. See [Keep the top half clear](#keep-the-top-half-clear). |
 | `!!showLogo` | | Shows the loaded logo of `LOGO.LST`. ESQ then loads the next logo. |
 | `!!showWeather` | | Sends `W0`: shows the current weather. See [Weather](#weather). |
 | `!!controlPacket` | `type` (1 to 22), `body` | Sends one packet, for the types that have no command. See [Packet types](#packet-types). In a double-quoted YAML text, `\x12` is the byte that separates the text of the two boxes. |
@@ -690,6 +716,37 @@ A promo has a box on the right, a box on the left, or both boxes. ESQ finds the 
 - `brush` is the ID of the background in `BRUSH.INI` on the drive, for example `AT` (orange "around town") or `DT` (blue TV Guide). Without it, the box keeps its background.
 
 The box shows the call letters, the title, the next time of the program and the channel number. The box shows the title as the promo gives it, not as the listings give it. For example, `title: family or fiancé` shows "family or fiancé". ESQ shows only one box. It tries the `first` box, and then the other box. If ESQ does not find a title, it shows the loaded logo.
+
+#### Keep the top half clear
+
+ESQ shows the logos of `LOGO.LST` in turn, with a timer. It counts the seconds, and after 180 seconds it shows the next logo. The logo stays until the next logo, a promo, an ad or a clear.
+
+Each `!!clearTopHalf` removes what the top half shows, and the next logo comes about 3 minutes later. Thus, to keep the genlock video in the top half, send `!!clearTopHalf` again at intervals of less than 3 minutes. For example, this playbook keeps the top half clear for 10 minutes:
+
+```yaml
+configuration:
+  controlPort: 5402
+commands:
+- !!clearTopHalf {}
+- !!pause
+  seconds: 150
+- !!clearTopHalf {}
+- !!pause
+  seconds: 150
+- !!clearTopHalf {}
+- !!pause
+  seconds: 150
+- !!clearTopHalf {}
+- !!pause
+  seconds: 150
+- !!clearTopHalf {}
+```
+
+When you stop the clears, the logo rotation starts again. A test with Esquire showed this: with a clear each 150 seconds, no logo showed in 8 minutes. Without the clears, the first logo showed about 3 minutes after the start of ESQ. When the top half has nothing to show, a clear does not change the screen.
+
+The clear does not stop a promo or an ad break that comes later. Do not send `!!promo` or a type 12 packet while you keep the top half clear.
+
+To stop the logos for a long time, `!!logoList` can send a `LOGO.LST` without lines. ESQ then has no logos to show. But this changes the file on the drive, and you must send all the lines again to start the logos. Tests with Esquire showed that an empty `LOGO.LST` stops the logos. The tests did not send the empty file with `!!logoList`.
 
 #### Packet types
 
@@ -720,7 +777,7 @@ The sub-commands of type 1. The results come from tests with Esquire.
 |---|---|
 | `1<channels>[\x12<channels>]` | Shows a promo in a box (`!!promo`). If the program plays now, the box shows "Now showing" and the next time. |
 | `8<channels>[\x12<channels>]` | Shows the text of the promo without the box background, over what the top half shows (`!!promo` with `style: Text`). |
-| `3` | Removes the promo or the logo (`!!clearTopHalf`). |
+| `3` | Removes the promo, the logo or the local ad (`!!clearTopHalf`). |
 | `D` | Shows the loaded logo (`!!showLogo`). |
 | `4<channels>` or `6<channels>` | Finds a channel by its call letters. If ESQ finds the channel, it clears the top half. If not, it shows the logo. |
 | `5<hex><hex><digit><digit>[<channels>]` | Moves the top of the grid up or down. The two hex digits set the position: `A0` is lower than `80`. The two digits set the speed: seconds, and then tenths of a second. This needs `lrbnBannerControl: 'Y'` in `!!newLookConfiguration`. Without it, ESQ shows the logo. `!!clearTopHalf` moves the grid back. `!!moveGrid` sends this sub-command. |
