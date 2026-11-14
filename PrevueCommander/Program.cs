@@ -8,7 +8,24 @@ using YamlDotNet.Core;
 Console.WriteLine("PrevueCommander - https://github.com/rickz0rz/prevuecommander");
 Console.WriteLine();
 
-var playbookPath = Path.GetFullPath(args.Length == 0 ? "playbook.yaml" : args[0]);
+CommandLineOptions options;
+try
+{
+    options = CommandLine.Parse(args);
+}
+catch (CommandLineException e)
+{
+    Console.Error.WriteLine(e.Message);
+    return 5;
+}
+
+if (options.Help)
+{
+    Console.WriteLine(CommandLine.Usage);
+    return 0;
+}
+
+var playbookPath = Path.GetFullPath(options.PlaybookPath);
 if (!File.Exists(playbookPath))
 {
     await File.WriteAllTextAsync(playbookPath, PlaybookLoader.Example());
@@ -27,14 +44,15 @@ Console.CancelKeyPress += (_, e) =>
 try
 {
     var playbook = PlaybookLoader.Parse(await File.ReadAllTextAsync(playbookPath, cancellation.Token));
+    var configuration = options.Apply(playbook.Configuration);
     var now = DateTime.Now;
-    if (!string.IsNullOrWhiteSpace(playbook.Configuration.Now) && !DateTime.TryParse(playbook.Configuration.Now,
+    if (!string.IsNullOrWhiteSpace(configuration.Now) && !DateTime.TryParse(configuration.Now,
             System.Globalization.CultureInfo.InvariantCulture, out now))
         throw new FormatException(
-            $"The setting now is not a date and time: {playbook.Configuration.Now}. Use a date such as 1993-02-23T18:00.");
+            $"The setting now is not a date and time: {configuration.Now}. Use a date such as 1993-02-23T18:00.");
     var context = new PlaybookContext(now, Path.GetDirectoryName(playbookPath)!, Console.Out)
     {
-        Characters = playbook.Configuration.CharacterSet
+        Characters = configuration.CharacterSet
     };
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
@@ -42,8 +60,19 @@ try
     foreach (var playbookCommand in playbook.Commands)
         commands.AddRange(await playbookCommand.TransformAsync(context, cancellation.Token));
 
-    await using var lines = new SerialLines(playbook.Configuration, Console.Out);
+    await using var lines = new SerialLines(configuration, Console.Out);
     lines.Check(commands);
+    if (options.Validate)
+    {
+        // Render each command, so that a command with an error stops here too.
+        foreach (var command in commands)
+            Console.WriteLine(configuration.Output == Output.Verbose
+                ? $"[{command}] {Convert.ToHexString(command.Render())}"
+                : $"[{command}]");
+        Console.WriteLine($"The playbook is valid. It has {commands.Count} commands.");
+        return 0;
+    }
+
     foreach (var command in commands)
         await lines.SendAsync(command, cancellation.Token);
 
