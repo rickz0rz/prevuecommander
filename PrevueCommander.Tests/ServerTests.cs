@@ -198,6 +198,19 @@ public class ServerTests
     }
 
     [Fact]
+    public async Task Weather_WithAForecast_ShowsTheForecast()
+    {
+        var server = new Server();
+
+        await server.Post("/prevue/data/weather",
+            """{"status": {"label": "DETROIT"}, "forecast": {"days": [{"icon": 2, "high": 81, "low": 51}]}}""");
+
+        var batch = Assert.Single(await server.SendAsync());
+        Assert.IsType<WeatherForecastCommand>(batch[3]);
+        Assert.True(Assert.IsType<ShowWeatherCommand>(batch[^1]).Forecast);
+    }
+
+    [Fact]
     public async Task Commands_ReadAYamlList_AndSendItAsWritten()
     {
         var server = new Server();

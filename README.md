@@ -286,12 +286,12 @@ The requests that Esquire also has use the same paths and bodies, so a script wo
 | `POST /prevue/ctrl/clear` | | Removes what the top half shows (`!!clearTopHalf`). |
 | `POST /prevue/ctrl/logo` | | Shows the loaded logo (`!!showLogo`). |
 | `POST /prevue/ctrl/ad` | | Starts an ad break: a type 12 packet. See [Show a local ad](#show-a-local-ad). |
-| `POST /prevue/ctrl/weather` | `{"forecast": false}` | Shows the current weather (`W0`). With `"forecast": true`, shows the forecast (`W3`). |
+| `POST /prevue/ctrl/weather` | `{"forecast": false}` | Shows the current weather (`W0`). With `"forecast": true`, shows the 3-day forecast (`W3`). |
 | `POST /prevue/ctrl/packets` | `[{"type": 17, "body": "Seinfeld"}]` | Sends control packets, as `!!controlPacket`. In JSON, `\u0012` is the separator of the two boxes. |
 | `POST /prevue/ctrl/hold` | `{"minutes": 30, "intervalSeconds": 150}` | Keeps the top half clear. It sends a clear at once and then at each interval. Without `minutes`, the hold has no end. `intervalSeconds` is 5 to 170. The default is 150. |
 | `DELETE /prevue/ctrl/hold` | | Stops the hold. The logo rotation starts again. |
 | `POST /prevue/data/local-ads` | `{"ads": ["%CENTER%Joe's Pizza"], "dryRun": false}` | Replaces the local ads of ESQ, as `!!localAds`. The answer has the preview and the warnings of each ad. With `"dryRun": true`, the server only gives the preview and sends nothing. |
-| `POST /prevue/data/weather` | `{"status": {...}, "text": {...}, "show": true, "pauseSeconds": 5}` | Sends the weather status and the weather text, with the settings of `!!weatherStatus` and `!!weatherText`. With `show`, the server then waits `pauseSeconds` and shows the weather. |
+| `POST /prevue/data/weather` | `{"status": {...}, "text": {...}, "forecast": {...}, "show": true, "pauseSeconds": 5}` | Sends the weather status, the weather text and the 3-day forecast, with the settings of `!!weatherStatus`, `!!weatherText` and `!!weatherForecast`. Each part is optional, but one part is necessary. With `show`, the server then waits `pauseSeconds` and shows the weather. With a forecast, it shows the forecast (`W3`). Without a forecast, it shows the current weather (`W0`). |
 | `POST /prevue/data/clock` | `{"date": "2020-11-01T16:00"}` | Sets the clock of ESQ, as `!!clock`. Without `date`, it sends the current time. |
 | `POST /prevue/guide/refresh` | | Reads the guide of the imports of the playbook again, and sends the changes, as the [watch mode](#watch-mode) does. The answer has the number of listings commands that it sent. The playbook must have a guide data import. |
 | `POST /prevue/commands` | YAML | Sends playbook commands. The body is a YAML list of commands, or a playbook with `commands:`. The server uses only the commands of a playbook. |
@@ -663,16 +663,18 @@ Only the operator menu sets the graphic ad mode. Prevue Commander cannot set it.
 
 ### Weather
 
-ESQ shows the current weather in the top half of the screen. The control line command `!!showWeather` starts it. The weather has two parts:
+ESQ shows the weather in the top half of the screen. The control line command `!!showWeather` starts it. The weather has three parts:
 
 - The status (`!!weatherStatus`, the 'I' command) has the city and a label.
 - The text (`!!weatherText`, the 'W' command) has the lines, for example a forecast.
+- The 3-day forecast (`!!weatherForecast`, the 'w' command) has a picture, a high and a low for each day.
 
-Send them in a session on the data line. Then send `!!showWeather` on the control line.
+Send them in a session on the data line. Then send `!!showWeather` on the control line. `!!showWeather {}` shows the current weather, from the status and the text. `!!showWeather` with `forecast: true` shows the 3-day forecast.
 
 | Command | Settings | Description |
 |---|---|---|
 | `!!weatherStatus` | `digit` (`'1'`), `label`, `text` | Sets the weather status. ESQ shows `text` at the top, for example the city. `label` has a maximum of 10 characters. The digit `'0'` clears the weather. ESQ saves the status in `curday.dat`. |
+| `!!showWeather` | `forecast` (`false`) | Shows the current weather (`W0`). With `forecast: true`, it shows the 3-day forecast (`W3`). |
 | `!!weatherText` | `minutes` (`60`), `icon` (`1`), `label` (`*`), `lines`, `color` (`1`) | Sends the weather text, for example a forecast or an alert. ESQ keeps it only if `label` matches the label of the status. `*` and `?` are wildcards, and upper case and lower case are different. ESQ shows the text for `minutes` (1 to 255). `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive, and `1` shows no picture. `lines` has a maximum of 10 lines. `color` shows only on the diagnostics screen of the operator menu. |
 
 The status text has a maximum of 39 bytes, with the digit, the label, a separator and the end. Prevue Commander stops before it sends a longer status, because ESQ ignores it. ESQ shows the lines of the weather text in pairs: the first line at the left of the picture, the second line at the right, and so on. Use only printable ASCII characters. This example shows a sun and four lines:
@@ -692,6 +694,48 @@ The status text has a maximum of 39 bytes, with the digit, the label, a separato
 - !!pause
   seconds: 5
 - !!showWeather {}
+```
+
+#### 3-day forecast
+
+| Command | Settings | Description |
+|---|---|---|
+| `!!weatherForecast` | `minutes` (`60`), `label` (`*`), `days` | Sends the 3-day forecast. ESQ shows it for `minutes` (1 to 255). `days` has a maximum of 4 days. Each day has `icon`, `high`, `low` and an optional `date`. |
+
+The settings of a day:
+
+- `icon` 2 to 6 shows the picture `PWI1` to `PWI5` of the drive. Without `icon`, the day has no picture.
+- `high` and `low` are -99 to 999. Without a value, ESQ shows `???`.
+- `date` is a day, for example `2026-11-15`. Without dates, the first day is tomorrow, and each next day is one day later.
+
+ESQ shows three panels: tomorrow, the day after, and the day after that. Each panel has the name of the day, the picture, and the high and the low, for example `82/52`. ESQ uses its own clock for the names of the days, so set the clock of ESQ correctly. ESQ keeps four days but shows only three. ESQ ignores a day that is not one of the next four days. A panel without a day shows "No Forecast Weather Data Available".
+
+ESQ shows the panels only when two things are true:
+
+- The forecast time (`minutes`) has not ended.
+- The digit of `!!weatherStatus` is not `'0'`. Send `!!weatherStatus` before the forecast.
+
+Keep `label: '*'`. ESQ compares the label with a forecast label that the 'i' command sets. Prevue Commander does not send the 'i' command, so the forecast label is empty. Only `*` matches an empty label.
+
+This example shows a sun, clouds and rain for the next three days:
+
+```yaml
+- !!address
+  target: '*'
+- !!weatherStatus
+  label: DETROIT
+  text: Detroit, Michigan
+- !!weatherForecast
+  minutes: 30
+  days:
+  - {icon: 2, high: 81, low: 51}
+  - {icon: 3, high: 82, low: 52}
+  - {icon: 4, high: 83, low: 53}
+- !!boxOff {}
+- !!pause
+  seconds: 5
+- !!showWeather
+  forecast: true
 ```
 
 ### Files and utilities
@@ -883,7 +927,7 @@ The sub-commands of type 1. The results come from tests with Esquire.
 | `7<digit><digit>` | Selects a range of channels after a search with `1` or `8`. In the test, it removed the promo and showed nothing. |
 | `F<op><text>` or `X<op><text>` | Sends a command to the text display of the top half. `<op>` is one letter: `C` for a "now showing" line, `J` for a status line, `T` for a highlight frame. In the test, nothing showed. The text display possibly needs a state that the test did not make. |
 | `W0` | Shows the current weather of `!!weatherStatus` and `!!weatherText`. Without weather data, it shows "No Current Weather Data Available". `!!showWeather` sends it. |
-| `W3` | Shows the weather forecast. Without weather data, it shows "No Forecast Weather Data Available". |
+| `W3` | Shows the 3-day forecast of `!!weatherForecast`. Without a forecast, it shows "No Forecast Weather Data Available". `!!showWeather` with `forecast: true` sends it. |
 | `W` and another character | Shows the logo. |
 
 ## Build and test

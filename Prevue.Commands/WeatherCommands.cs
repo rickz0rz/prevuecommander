@@ -124,10 +124,107 @@ public class WeatherTextCommand : BaseCommand
     }
 }
 
-/// <summary>Type 1 with <c>W0</c>: shows the current weather, from the 'I' and 'W' commands.</summary>
-public sealed class ShowWeatherCommand() : ControlCommand(1)
+/// <summary>One day of the 3-day forecast: the picture, the high and the low.</summary>
+/// <param name="Date">The day. ESQ finds the day by its day of the year.</param>
+/// <param name="Icon">The weather picture: 2 to 6 for the brushes PWI1 to PWI5 of the drive. Null shows no picture.</param>
+/// <param name="High">The high temperature, -99 to 999. Null shows "???".</param>
+/// <param name="Low">The low temperature, -99 to 999. Null shows "???".</param>
+public sealed record WeatherForecastDay(DateOnly Date, int? Icon, int? High, int? Low);
+
+/// <summary>
+/// The 'w' command: the 3-day forecast. ESQ shows it when the control line sends <c>W3</c>, until the minutes end
+/// (<c>_UNKNOWN_ParseListAndUpdateEntries</c>, <c>_WDISP_DrawWeatherStatusSummary</c>).
+/// </summary>
+/// <remarks>
+/// <para>
+/// The payload is the label pattern, $12, the minutes, and then each day: '+', the day of the year (3 digits), the
+/// icon (1 character), the high (3 characters) and the low (3 characters). '?' in a field means "no value".
+/// </para>
+/// <para>
+/// ESQ keeps the days from tomorrow to 4 days from now and draws the first 3. It ignores a day that is not in this
+/// range. A day without data shows the text "No Forecast Weather Data Available". ESQ compares the label pattern with the label
+/// of the 'i' command. Without an 'i' command the label is empty, so only the pattern "*" matches. ESQ shows the
+/// panels only when the digit of the 'I' command is not '0'.
+/// </para>
+/// </remarks>
+public class WeatherForecastCommand : BaseCommand
 {
-    protected override string Body => "W0";
+    /// <summary>The most days that ESQ keeps.</summary>
+    public const int MaximumDays = 4;
+
+    private const byte Separator = 0x12;
+
+    /// <param name="minutes">The minutes that ESQ shows the forecast, 1 to 255.</param>
+    /// <param name="labelPattern">The pattern of the label of the 'i' command, 1 to 10 characters.</param>
+    /// <param name="days">The days, a maximum of 4.</param>
+    public WeatherForecastCommand(int minutes, string labelPattern, IReadOnlyList<WeatherForecastDay> days) : base('w')
+    {
+        if (minutes is < 1 or > 255)
+            throw new ArgumentOutOfRangeException(nameof(minutes), minutes, "The minutes must be 1 to 255.");
+        if (labelPattern.Length == 0)
+            throw new ArgumentException("The label pattern must have 1 or more characters. Use \"*\" for all labels.",
+                nameof(labelPattern));
+        WeatherText.CheckLabel(labelPattern, nameof(labelPattern));
+        if (days.Count is 0 or > MaximumDays)
+            throw new ArgumentException($"A forecast has 1 to {MaximumDays} days.", nameof(days));
+        foreach (var day in days)
+        {
+            if (day.Icon is < 2 or > 6)
+                throw new ArgumentOutOfRangeException(nameof(days), day.Icon,
+                    "The icon of a forecast day must be 2 to 6, or empty for no picture.");
+            if (day.High is < -99 or > 999 || day.Low is < -99 or > 999)
+                throw new ArgumentOutOfRangeException(nameof(days), $"{day.High}/{day.Low}",
+                    "A temperature must be -99 to 999.");
+        }
+
+        Minutes = minutes;
+        LabelPattern = labelPattern;
+        Days = days.ToList();
+    }
+
+    public int Minutes { get; }
+
+    public string LabelPattern { get; }
+
+    public IReadOnlyList<WeatherForecastDay> Days { get; }
+
+    /// <summary>The day of the year that ESQ uses for a date: 1 for January 1.</summary>
+    public static int DayKey(DateOnly date) => date.DayOfYear;
+
+    public override string ToString() =>
+        $"{nameof(WeatherForecastCommand)}: {Minutes} min, [{LabelPattern}] " +
+        string.Join(", ", Days.Select(d => $"{d.Date:yyyy-MM-dd} {d.Icon?.ToString() ?? "-"} {d.High}/{d.Low}"));
+
+    protected override byte[] GetPayload()
+    {
+        var text = new List<byte>();
+        foreach (var day in Days)
+        {
+            var fields = $"+{DayKey(day.Date):D3}{(day.Icon is { } icon ? (char)('0' + icon) : '?')}" +
+                         $"{Temperature(day.High)}{Temperature(day.Low)}";
+            text.AddRange(Ascii(fields));
+        }
+
+        return [.. Ascii(LabelPattern), Separator, (byte)Minutes, .. text];
+    }
+
+    private static string Temperature(int? value) => value switch
+    {
+        null => "???",
+        < 0 => $"-{-value:D2}",
+        _ => $"{value:D3}"
+    };
+}
+
+/// <summary>
+/// Type 1 with <c>W0</c>: shows the current weather, from the 'I' and 'W' commands. With <c>W3</c> it shows the
+/// 3-day forecast of the 'w' command.
+/// </summary>
+public sealed class ShowWeatherCommand(bool forecast = false) : ControlCommand(1)
+{
+    public bool Forecast { get; } = forecast;
+
+    protected override string Body => Forecast ? "W3" : "W0";
 }
 
 /// <summary>The rules for the text of the weather commands.</summary>

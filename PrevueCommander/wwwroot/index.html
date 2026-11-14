@@ -30,6 +30,7 @@
   textarea { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; min-height: 120px; }
   .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
   .row > * { flex: 1 1 120px; }
+  .forecast-day > * { flex: 1 1 70px; }
   button { padding: 8px 14px; border: 0; border-radius: 6px; background: var(--accent); color: var(--accent-text); font: inherit; font-weight: 600; cursor: pointer; }
   button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
   button:disabled { opacity: .5; cursor: default; }
@@ -128,6 +129,30 @@
       <div><label for="w-minutes">Minutes</label><input id="w-minutes" type="number" min="1" max="255" value="60"></div>
     </div>
     <div class="buttons"><button id="weather-send">Send and show</button></div>
+  </section>
+
+  <section>
+    <h2>3-day forecast</h2>
+    <p class="help">Sends a picture, a high and a low for the next 3 days, and then shows them in the top half. It also sends the label and the status text of the weather form. An empty field shows "???".</p>
+    <div class="row forecast-day">
+      <div><label for="f0-icon">Tomorrow</label><select id="f0-icon"><option value="">None</option><option value="2">PWI1</option><option value="3">PWI2</option><option value="4">PWI3</option><option value="5">PWI4</option><option value="6">PWI5</option></select></div>
+      <div><label for="f0-high">High</label><input id="f0-high" type="number" min="-99" max="999"></div>
+      <div><label for="f0-low">Low</label><input id="f0-low" type="number" min="-99" max="999"></div>
+    </div>
+    <div class="row forecast-day">
+      <div><label for="f1-icon">Day 2</label><select id="f1-icon"><option value="">None</option><option value="2">PWI1</option><option value="3">PWI2</option><option value="4">PWI3</option><option value="5">PWI4</option><option value="6">PWI5</option></select></div>
+      <div><label for="f1-high">High</label><input id="f1-high" type="number" min="-99" max="999"></div>
+      <div><label for="f1-low">Low</label><input id="f1-low" type="number" min="-99" max="999"></div>
+    </div>
+    <div class="row forecast-day">
+      <div><label for="f2-icon">Day 3</label><select id="f2-icon"><option value="">None</option><option value="2">PWI1</option><option value="3">PWI2</option><option value="4">PWI3</option><option value="5">PWI4</option><option value="6">PWI5</option></select></div>
+      <div><label for="f2-high">High</label><input id="f2-high" type="number" min="-99" max="999"></div>
+      <div><label for="f2-low">Low</label><input id="f2-low" type="number" min="-99" max="999"></div>
+    </div>
+    <div class="row">
+      <div><label for="f-minutes">Minutes</label><input id="f-minutes" type="number" min="1" max="255" value="60"></div>
+    </div>
+    <div class="buttons"><button id="forecast-send">Send and show</button></div>
   </section>
 
   <section>
@@ -263,6 +288,15 @@
       status: { label, text: $('w-city').value },
       text: { label: label || '*', icon: Number($('w-icon').value), minutes: Number($('w-minutes').value) || 60,
               lines: $('w-lines').value.split('\n').map(l => l.trimEnd()).filter(l => l.length) }
+    }).catch(() => {});
+  };
+
+  $('forecast-send').onclick = () => {
+    const number = id => $(id).value === '' ? null : Number($(id).value);
+    const days = [0, 1, 2].map(i => ({ icon: number('f' + i + '-icon'), high: number('f' + i + '-high'), low: number('f' + i + '-low') }));
+    call('POST', '/prevue/data/weather', {
+      status: { label: $('w-label').value, text: $('w-city').value },
+      forecast: { minutes: Number($('f-minutes').value) || 60, days }
     }).catch(() => {});
   };
 

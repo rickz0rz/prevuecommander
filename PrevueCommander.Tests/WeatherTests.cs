@@ -98,4 +98,76 @@ public class WeatherTests
         Assert.Contains(("line 2", "\"Low 32\""), commands[1].Fields);
         Assert.DoesNotContain(commands[1].Fields, f => f.Name == "dropped");
     }
+
+    [Fact]
+    public void Forecast_HasTheLabel_TheMinutes_AndEachDay()
+    {
+        var command = new WeatherForecastCommand(30, "*", [
+            new WeatherForecastDay(new DateOnly(2026, 11, 15), 2, 81, 51),
+            new WeatherForecastDay(new DateOnly(2026, 1, 1), null, -5, null)]);
+
+        // A test in Esquire showed that ESQ finds a day by its day of the year, with 1 for January 1.
+        Assert.Equal("w*\x12\x1E" + "+3192081051" + "+001?-05???", Body(command));
+    }
+
+    [Theory]
+    [InlineData(0, "*", 2, 80, 0)]
+    [InlineData(256, "*", 2, 80, 1)]
+    [InlineData(30, "", 2, 80, 1)]
+    [InlineData(30, "*", 1, 80, 1)]
+    [InlineData(30, "*", 7, 80, 1)]
+    [InlineData(30, "*", 2, 1000, 1)]
+    [InlineData(30, "*", 2, -100, 1)]
+    [InlineData(30, "*", 2, 80, 5)]
+    public void Forecast_RejectsBadValues(int minutes, string label, int icon, int high, int days)
+    {
+        var list = Enumerable.Range(0, days)
+            .Select(i => new WeatherForecastDay(new DateOnly(2026, 11, 15 + i), icon, high, 50)).ToList();
+        Assert.ThrowsAny<ArgumentException>(() => new WeatherForecastCommand(minutes, label, list));
+    }
+
+    [Fact]
+    public void Forecast_Accepts0Days_Never() =>
+        Assert.Throws<ArgumentException>(() => new WeatherForecastCommand(30, "*", []));
+
+    [Fact]
+    public async Task Playbook_ForecastDaysStartTomorrow_AndShowWeatherSendsW3()
+    {
+        var playbook = PlaybookLoader.Parse("""
+            commands:
+            - !!weatherForecast
+              minutes: 30
+              days:
+              - {icon: 2, high: 81, low: 51}
+              - {high: 82}
+              - {date: 2026-12-25, icon: 6, high: 30, low: 20}
+            - !!showWeather
+              forecast: true
+            """);
+        var context = new PlaybookContext(new DateTime(2026, 11, 14, 6, 0, 0), Directory.GetCurrentDirectory(),
+            TextWriter.Null);
+
+        var commands = new List<BaseCommand>();
+        foreach (var command in playbook.Commands)
+            commands.AddRange(await command.TransformAsync(context, TestContext.Current.CancellationToken));
+
+        var forecast = Assert.IsType<WeatherForecastCommand>(commands[0]);
+        Assert.Equal([new DateOnly(2026, 11, 15), new DateOnly(2026, 11, 16), new DateOnly(2026, 12, 25)],
+            forecast.Days.Select(d => d.Date));
+        Assert.Equal(new WeatherForecastDay(new DateOnly(2026, 11, 16), null, 82, null), forecast.Days[1]);
+        Assert.Equal("\x01W3\x0D", string.Concat(commands[1].Render()[..^1].Select(b => (char)b)));
+    }
+
+    [Fact]
+    public void Decoder_ShowsTheForecastDays()
+    {
+        var feed = new WeatherForecastCommand(30, "*", [new WeatherForecastDay(new DateOnly(2026, 11, 15), 2, 81, 51)])
+            .Render();
+
+        var command = Assert.Single(FeedDecoder.DecodeData(feed));
+
+        Assert.Contains(("minutes", "30"), command.Fields);
+        Assert.Contains(("day 1", "\"3192081051\""), command.Fields);
+        Assert.DoesNotContain(command.Fields, f => f.Name == "dropped");
+    }
 }
