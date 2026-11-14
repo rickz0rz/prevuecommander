@@ -18,7 +18,7 @@ public class ChannelProgramCommand : BaseCommand
 
     private const byte SourceEnd = 0x12;
 
-    /// <param name="characters">The characters that the text can have. ESQ 9.0.14 shows Latin-1 characters.</param>
+    /// <param name="characters">The characters that the text can have. ESQ 9.0.4 shows Latin-1 characters.</param>
     public ChannelProgramCommand(DateOnly day, int slot, string sourceName, bool isMovie, string text,
         CharacterSet characters = CharacterSet.Latin1) : base('P')
     {

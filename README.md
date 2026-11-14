@@ -17,9 +17,9 @@ If you had cable TV in the 1980s or 1990s, you may remember [this channel](https
 
 ### ESQ versions
 
-Prevue Commander was developed and tested with ESQ 9.0.14. Other versions of ESQ can support different features. For example, ESQ 7.3.13 does not support colored text in local ads. If a command does not work as this README tells, look at the version of ESQ.
+Prevue Commander was developed and tested with ESQ 9.0.4. Other versions of ESQ can support different features. For example, ESQ 7.3.13 does not support colored text in local ads. If a command does not work as this README tells, look at the version of ESQ.
 
-The fonts of ESQ 9.0.14 have the Latin-1 characters, for example `é`, `ñ` and `©`. Prevue Commander sends these characters by default. For an older version of ESQ, set `characterSet: Ascii`. The fonts of older versions possibly do not have these characters.
+The fonts of ESQ 9.0.4 have the Latin-1 characters, for example `é`, `ñ` and `©`. Prevue Commander sends these characters by default. For an older version of ESQ, set `characterSet: Ascii`. The fonts of older versions possibly do not have these characters.
 
 ## Words in this README
 
@@ -496,7 +496,7 @@ A local ad is a text ad of the cable company, for example for a local shop. ESQ 
 | `'R'` | From the data line. | Accepted | Not available |
 | `'S'` (default) | From the data line. | Accepted | Not available |
 
-The code of ESQ 9.0.14 does the same for `'R'` and `'S'`. The names of these two values are not known. Use `'S'` or `'R'` for the ads of `!!localAds`. ESQ also keeps the ads in the file `local.ads` on its drive.
+The code of ESQ 9.0.4 does the same for `'R'` and `'S'`. The names of these two values are not known. Use `'S'` or `'R'` for the ads of `!!localAds`. ESQ also keeps the ads in the file `local.ads` on its drive.
 
 An ad has a maximum of 6 lines of 40 characters. An alignment token is not a character. ESQ does not wrap words. When a line is full, ESQ continues the text on the next line, also in the middle of a word. The next line has no alignment, so ESQ shows it at the left. ESQ drops the text after line 6. A test with Esquire showed these limits.
 

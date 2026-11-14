@@ -66,7 +66,7 @@ public record Configuration
 
     /// <summary>
     /// The characters that the text of the listings, the local ads and the promos can have. Latin1 keeps letters with
-    /// accents, for example "é", as the fonts of ESQ 9.0.14 have them. Ascii removes the accents, for older versions.
+    /// accents, for example "é", as the fonts of ESQ 9.0.4 have them. Ascii removes the accents, for older versions.
     /// </summary>
     public CharacterSet CharacterSet { get; init; } = CharacterSet.Latin1;
 
