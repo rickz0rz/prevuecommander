@@ -78,6 +78,7 @@ When Prevue Commander stops, it gives one of these exit codes:
 | `3` | Prevue Commander cannot connect to the TCP bridge. |
 | `4` | A command or a connection has an error, for example a file that does not exist or a serial port that cannot open. |
 | `5` | The command line has an unknown option or a bad value. |
+| `6` | `decode` found a command with a bad checksum. |
 | `130` | You stopped Prevue Commander with Ctrl+C. |
 
 ## Configuration
@@ -482,6 +483,30 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
 ```
 
 Esquire sends the file at the speed of the line, 8 seconds after the start of ESQ. `--virtual-time` makes the run the same each time.
+
+### Decode a feed file
+
+`decode` shows the commands of a feed file, their fields and the result of each checksum. Use it to compare the feed of Prevue Commander with a feed from another source.
+
+```sh
+dotnet run --project PrevueCommander -- decode /tmp/feed.bin
+```
+
+The file can come from `--output`, or from another capture of the data line. `--control` reads a file of the control line, for example from `--control-output`. `--verbose` also shows the bytes of each command.
+
+This is the start of the output for the example playbook:
+
+```text
+000000  'A' address (6 bytes)
+        target: "*"
+000006  'F' status packet (25 bytes)
+        scroll speed: "3"
+        time zone: "6"
+        daylight saving time: "Y"
+        clock offset minutes: 0
+```
+
+The first number is the position of the command in the file, in hexadecimal. A command with a bad checksum shows `BAD CHECKSUM`. Bytes before the first `55 AA` show as `junk`.
 
 ## Test with FS-UAE
 
