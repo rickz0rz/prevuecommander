@@ -41,6 +41,12 @@ public sealed record CommandLineOptions
     /// <summary>A file for the bytes of the control line, with <see cref="OutputPath"/>.</summary>
     public string? ControlOutputPath { get; init; }
 
+    /// <summary>A captured feed to decode, for the <c>decode</c> command. Null runs a playbook.</summary>
+    public string? DecodePath { get; init; }
+
+    /// <summary>True if <see cref="DecodePath"/> has the bytes of the control line.</summary>
+    public bool DecodeControl { get; init; }
+
     /// <summary>The configuration of the playbook, with the settings of the command line in place of its settings.</summary>
     public Configuration Apply(Configuration configuration) => configuration with
     {
@@ -62,6 +68,7 @@ public static class CommandLine
 {
     public const string Usage = """
         Usage: PrevueCommander [options] [playbook]
+               PrevueCommander decode [--control] [--verbose] <file>
 
         Sends the commands of a playbook to ESQ. The default playbook is playbook.yaml in the current directory.
         If the playbook does not exist, PrevueCommander writes an example playbook to that path.
@@ -82,10 +89,18 @@ public static class CommandLine
           -h, --help                    Show this help.
 
         An option replaces the setting of the playbook in parentheses.
+
+        decode shows the commands of a captured feed, their fields and the result of the checksums.
+        --control reads the file as the control line. --verbose also shows the bytes of each command.
         """;
+
+    private const string DecodeCommand = "decode";
 
     public static CommandLineOptions Parse(IReadOnlyList<string> args)
     {
+        if (args.Count > 0 && args[0] == DecodeCommand)
+            return ParseDecode(args.Skip(1).ToList());
+
         var options = new CommandLineOptions();
         string? playbook = null;
         for (var i = 0; i < args.Count; i++)
@@ -186,5 +201,37 @@ public static class CommandLine
             throw new CommandLineException("Use --validate or --output, not both.");
 
         return playbook == null ? options : options with { PlaybookPath = playbook };
+    }
+
+    private static CommandLineOptions ParseDecode(IReadOnlyList<string> args)
+    {
+        var options = new CommandLineOptions();
+        string? path = null;
+        foreach (var arg in args)
+        {
+            switch (arg)
+            {
+                case "-h" or "--help":
+                    options = options with { Help = true };
+                    break;
+                case "--control":
+                    options = options with { DecodeControl = true };
+                    break;
+                case "--verbose":
+                    options = options with { Verbose = true };
+                    break;
+                default:
+                    if (arg.StartsWith('-') && arg != "-")
+                        throw new CommandLineException($"The option {arg} is not known for decode. Use --help to show the options.");
+                    if (path != null)
+                        throw new CommandLineException($"Give only one file to decode. The arguments have {path} and {arg}.");
+                    path = arg;
+                    break;
+            }
+        }
+
+        if (path == null && !options.Help)
+            throw new CommandLineException("Give the file to decode, for example: decode feed.bin");
+        return options with { DecodePath = path ?? string.Empty };
     }
 }

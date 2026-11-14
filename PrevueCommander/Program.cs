@@ -25,6 +25,26 @@ if (options.Help)
     return 0;
 }
 
+if (options.DecodePath != null)
+{
+    try
+    {
+        var feed = await File.ReadAllBytesAsync(options.DecodePath);
+        var decoded = options.DecodeControl ? FeedDecoder.DecodeControl(feed) : FeedDecoder.DecodeData(feed);
+        var errors = FeedDecoder.Write(decoded, Console.Out, options.Verbose);
+        if (errors == 0)
+            return 0;
+
+        Console.Error.WriteLine($"{errors} commands have a bad checksum.");
+        return 6;
+    }
+    catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+    {
+        Console.Error.WriteLine($"Error: {e.Message}");
+        return 4;
+    }
+}
+
 var playbookPath = Path.GetFullPath(options.PlaybookPath);
 if (!File.Exists(playbookPath))
 {
