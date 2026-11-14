@@ -93,6 +93,7 @@ An option replaces a setting of the playbook for one run. Thus you can use one p
 | `--control-baud-rate <n>` | `controlBaudRate` | The speed of the control line. |
 | `--now <date>` | `now` | The time of the run, for example `1993-02-23T18:00`. |
 | `--verbose` | `output` | Shows the bytes of each command. |
+| `--watch <minutes>` | `watchMinutes` | After the commands, reads the guide again at this interval and sends only the changes. See [Watch mode](#watch-mode). |
 | `--validate` | | Makes all the commands and shows them, but does not connect. Use it to check a playbook. |
 | `--output <file>` | | Writes the bytes of the data line to the file, but does not connect. See [Replay a feed file](#replay-a-feed-file). |
 | `--control-output <file>` | | With `--output`, writes the bytes of the control line to the file. Without it, `--output` leaves out the control line commands. |
@@ -126,7 +127,7 @@ When Prevue Commander stops, it gives one of these exit codes:
 | `4` | A command or a connection has an error, for example a file that does not exist or a serial port that cannot open. |
 | `5` | The command line has an unknown option or a bad value. |
 | `6` | `decode` found a command with a bad checksum. |
-| `130` | You stopped Prevue Commander with Ctrl+C. |
+| `130` | You stopped Prevue Commander with Ctrl+C, or a service manager stopped it with SIGTERM. This is the usual end of the watch mode. |
 
 ## Configuration
 
@@ -144,9 +145,31 @@ Each line goes to a TCP bridge or to a serial port. A TCP bridge is a TCP port t
 | `controlBaudRate` | `110` | The speed of the control line. ESQ reads it at 110 baud, so a promo takes about 2 seconds. Esquire keeps the bytes and sends them at the speed of the line, so `0` also works with Esquire. |
 | `output` | `Minimal` | `Minimal` shows each command. `Verbose` also shows its bytes. |
 | `now` | | A local date and time that the playbook uses in place of the clock of this computer, for example `1993-02-23T18:00`. The imports send the listings of the broadcast day of this time and of the next day. `!!clock` without `date` sends this time, and `!!configureDst` without `year` uses its year. A Channels DVR server has only current listings, so use an XMLTV file for a date in the past. |
+| `watchMinutes` | `0` | The minutes between two reads of the guide in the [watch mode](#watch-mode). `0` stops after the commands. |
 | `characterSet` | `Latin1` | The characters of the listings, the local ads and the promo titles. `Latin1` sends letters with accents and other Latin-1 characters, for example `Fiancé`. `Ascii` removes the accents, for example `Fiance`, for older versions of ESQ. See [ESQ versions](#esq-versions). |
 
 Prevue Commander connects to a line only when a command needs it. A playbook with only control line commands does not connect to the data line. If a playbook has control line commands, but `controlPort` and `controlSerialPort` are not set, Prevue Commander stops before it sends a command.
+
+## Watch mode
+
+In the watch mode, Prevue Commander stays connected after the commands. At each interval, it reads the guide of the imports again and sends only the changes. Set `watchMinutes` in the configuration, or use `--watch`:
+
+```sh
+dotnet run --project PrevueCommander -- --watch 10 playbook.yaml
+```
+
+At each interval, Prevue Commander follows these rules:
+
+- If the lineup of a day changed, it sends the lineup and all the programs of that day. ESQ deletes the programs of a day when its lineup changes.
+- If the lineup of a day did not change, it sends only the new and changed programs.
+- At 5:30 AM, ESQ changes to the next day. The new next day gets its lineup and all its programs.
+- It sends the changes in a session: the address and the status packet of the playbook, the changes, `!!save` if the playbook has it, and a box off command. If the guide has no changes, it sends nothing.
+- It does not send the channel logos again.
+- If it cannot read the guide, for example because the server does not answer, it shows the error. It tries again at the next interval.
+
+ESQ cannot delete one program. Thus a program that is not in the new guide stays until a new lineup or the next day.
+
+Press Ctrl+C to stop the watch mode. Prevue Commander also stops correctly when a service manager, for example systemd, sends SIGTERM. `--validate` and `--output` do not use the watch mode.
 
 ## Connect to an Amiga
 

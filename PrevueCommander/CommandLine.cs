@@ -35,6 +35,8 @@ public sealed record CommandLineOptions
 
     public bool Verbose { get; init; }
 
+    public int? WatchMinutes { get; init; }
+
     /// <summary>A file for the bytes of the data line, in place of the connection. Null sends the commands.</summary>
     public string? OutputPath { get; init; }
 
@@ -65,7 +67,8 @@ public sealed record CommandLineOptions
         ControlSerialPort = ControlSerialPort ?? (ControlPort != null ? null : configuration.ControlSerialPort),
         ControlBaudRate = ControlBaudRate ?? configuration.ControlBaudRate,
         Now = Now ?? configuration.Now,
-        Output = Verbose ? Output.Verbose : configuration.Output
+        Output = Verbose ? Output.Verbose : configuration.Output,
+        WatchMinutes = WatchMinutes ?? configuration.WatchMinutes
     };
 }
 
@@ -90,6 +93,8 @@ public static class CommandLine
           --control-baud-rate <n>       The speed of the control line (controlBaudRate).
           --now <date>                  The time of the run (now), for example 1993-02-23T18:00.
           --verbose                     Show the bytes of each command (output: Verbose).
+          --watch <minutes>             After the commands, read the guide again at this interval, and send only
+                                        the changes (watchMinutes). 0 stops after the commands.
           --validate                    Make all the commands, and stop. Do not connect.
           --output <file>               Write the bytes of the data line to the file. Do not connect.
           --control-output <file>       With --output, write the bytes of the control line to the file.
@@ -200,6 +205,9 @@ public static class CommandLine
                     break;
                 case "--control-output":
                     options = options with { ControlOutputPath = Value() };
+                    break;
+                case "--watch":
+                    options = options with { WatchMinutes = Number() };
                     break;
                 case "--now":
                     options = options with { Now = Value() };

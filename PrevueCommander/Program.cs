@@ -80,6 +80,15 @@ Console.CancelKeyPress += (_, e) =>
     cancellation.Cancel();
 };
 
+// A service manager, for example systemd, stops a program with SIGTERM. Stop as for Ctrl+C, so that the connections
+// close correctly.
+using var terminate = System.Runtime.InteropServices.PosixSignalRegistration.Create(
+    System.Runtime.InteropServices.PosixSignal.SIGTERM, signal =>
+    {
+        signal.Cancel = true;
+        cancellation.Cancel();
+    });
+
 try
 {
     var playbook = PlaybookLoader.Parse(await File.ReadAllTextAsync(playbookPath, cancellation.Token));
@@ -89,10 +98,17 @@ try
             System.Globalization.CultureInfo.InvariantCulture, out now))
         throw new FormatException(
             $"The setting now is not a date and time: {configuration.Now}. Use a date such as 1993-02-23T18:00.");
-    var context = new PlaybookContext(now, Path.GetDirectoryName(playbookPath)!, Console.Out)
+    PlaybookContext ContextAt(DateTime time) => new(time, Path.GetDirectoryName(playbookPath)!, Console.Out)
     {
         Characters = configuration.CharacterSet
     };
+
+    var context = ContextAt(now);
+    var imports = playbook.Commands.OfType<GuideDataImportPlaybookCommand>().ToList();
+    var watch = configuration.WatchMinutes > 0 && !options.Validate && options.OutputPath == null;
+    if (watch && imports.Count == 0)
+        throw new InvalidOperationException(
+            "The watch mode reads the guide of the imports again, but the playbook has no guide data import.");
 
     // Make all the commands first, so that an error in the playbook or in the guide data sends nothing.
     var commands = new List<BaseCommand>();
@@ -135,6 +151,16 @@ try
     }
 
     Console.WriteLine($"Sent {commands.Count} commands.");
+    if (!watch)
+        return 0;
+
+    // With the setting now, the time of an update is that time plus the time since the start.
+    var started = System.Diagnostics.Stopwatch.StartNew();
+    var watcher = new GuideWatcher(imports, ContextAt,
+        () => string.IsNullOrWhiteSpace(configuration.Now) ? DateTime.Now : now + started.Elapsed,
+        lines.SendAsync, Console.Out);
+    watcher.Start(commands);
+    await watcher.RunAsync(TimeSpan.FromMinutes(configuration.WatchMinutes), cancellation.Token);
     return 0;
 }
 catch (YamlException e)

@@ -69,4 +69,11 @@ public record Configuration
     /// accents, for example "é", as the fonts of ESQ 9.0.14 have them. Ascii removes the accents, for older versions.
     /// </summary>
     public CharacterSet CharacterSet { get; init; } = CharacterSet.Latin1;
+
+    /// <summary>
+    /// The minutes between two reads of the guide in the watch mode. After the commands, Prevue Commander stays
+    /// connected, reads the guide of the imports again at this interval, and sends only the changes. 0 stops after the
+    /// commands.
+    /// </summary>
+    public int WatchMinutes { get; init; }
 }

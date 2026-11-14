@@ -36,6 +36,12 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
     public ChannelLogoSettings? ChannelLogos { get; init; }
 
     public async Task<IReadOnlyList<BaseCommand>> TransformAsync(PlaybookContext context,
+        CancellationToken cancellationToken) =>
+        (await ImportAsync(context, true, cancellationToken)).Commands;
+
+    /// <summary>Reads the guide, and makes the listings commands.</summary>
+    /// <param name="sendLogos">False to leave out the channel logos, for example in a watch mode.</param>
+    public async Task<GuideImport> ImportAsync(PlaybookContext context, bool sendLogos,
         CancellationToken cancellationToken)
     {
         var channels = await LoadChannelsAsync(context, cancellationToken);
@@ -55,9 +61,9 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
         }
 
         var commands = ListingsBuilder.Build(selected, context.Now, SendChannelLineUp, context.Characters, ShowStereo);
-        if (ChannelLogos != null)
+        if (sendLogos && ChannelLogos != null)
             commands.AddRange(await ChannelLogoBuilder.BuildAsync(selected, ChannelLogos, context, cancellationToken));
-        return commands;
+        return new GuideImport(selected, commands);
     }
 
     /// <summary>The channels of all the sources, each source already limited to its maximum number of channels.</summary>
@@ -69,3 +75,8 @@ public abstract record GuideDataImportPlaybookCommand : IPlaybookCommand
         channels.SortByChannelNumber(ChannelNumberOrder, c => c.Number)
             .Take(maximumNumberOfChannels > 0 ? maximumNumberOfChannels : ChannelLineUpCommand.MaximumChannels);
 }
+
+/// <summary>The result of a guide data import.</summary>
+/// <param name="Channels">The channels that the import sends, in the order of the lineup.</param>
+/// <param name="Commands">The commands of the import.</param>
+public sealed record GuideImport(IReadOnlyList<GuideChannel> Channels, List<BaseCommand> Commands);
