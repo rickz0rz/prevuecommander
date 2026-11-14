@@ -38,6 +38,32 @@ If you do not give a playbook, Prevue Commander uses `playbook.yaml` in the curr
 
 A playbook has a `configuration` section and a list of `commands`. [`playbook.yaml`](playbook.yaml) is the example playbook.
 
+### Command-line options
+
+An option replaces a setting of the playbook for one run. Thus you can use one playbook with different systems. Run `dotnet run --project PrevueCommander -- --help` to show the options.
+
+| Option | Setting | Description |
+|---|---|---|
+| `--host <name>` | `hostname` | The host of the TCP bridges. |
+| `--port <n>` | `port` | The TCP port of the data line. It replaces `serialPort` of the playbook. |
+| `--serial-port <name>` | `serialPort` | A serial port for the data line. |
+| `--baud-rate <n>` | `baudRate` | The speed of the data line. |
+| `--control-port <n>` | `controlPort` | The TCP port of the control line. It replaces `controlSerialPort` of the playbook. |
+| `--control-serial-port <name>` | `controlSerialPort` | A serial port for the control line. |
+| `--control-baud-rate <n>` | `controlBaudRate` | The speed of the control line. |
+| `--now <date>` | `now` | The time of the run, for example `1993-02-23T18:00`. |
+| `--verbose` | `output` | Shows the bytes of each command. |
+| `--validate` | | Makes all the commands and shows them, but does not connect. Use it to check a playbook. |
+| `-h`, `--help` | | Shows the options. |
+
+You can write an option with a value as `--port 5401` or as `--port=5401`. For example, this command sends the playbook to a second Esquire on port 5401:
+
+```sh
+dotnet run --project PrevueCommander -- --port 5401 playbook.yaml
+```
+
+### What happens in a run
+
 Prevue Commander makes all the commands before it connects. If a command fails, for example because it cannot read the guide data, Prevue Commander sends nothing. If all the commands are correct, it connects and sends them in the order of the list.
 
 When Prevue Commander stops, it gives one of these exit codes:
@@ -49,6 +75,7 @@ When Prevue Commander stops, it gives one of these exit codes:
 | `2` | The playbook is not valid YAML, or it has an unknown command or setting. |
 | `3` | Prevue Commander cannot connect to the TCP bridge. |
 | `4` | A command or a connection has an error, for example a file that does not exist or a serial port that cannot open. |
+| `5` | The command line has an unknown option or a bad value. |
 | `130` | You stopped Prevue Commander with Ctrl+C. |
 
 ## Configuration
@@ -433,9 +460,9 @@ Esquire build/target/ESQ --listing build/target/ESQ.lst --drive /tmp/prevue-driv
     --screenshot-every 15
 ```
 
-`/tmp/prevue-drive` is the copy of the drive. Set `port: 5401` in the playbook, and run Prevue Commander when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
+`/tmp/prevue-drive` is the copy of the drive. Run Prevue Commander with `--port 5401` when the grid shows. `/tmp/feed.log` shows each command that ESQ reads. A change of `_DATACErrs` shows a checksum error. Esquire saves a screenshot to `/tmp/prevue.png` each 15 seconds, and stops after 120 seconds.
 
-To test the control line, add `--prevue-ctrl-port 5402` and set `controlPort: 5402` in the playbook. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
+To test the control line, add `--prevue-ctrl-port 5402` and run Prevue Commander with `--control-port 5402`. Add `--watch _SCRIPT_CtrlCmdCount --watch _SCRIPT_CtrlCmdChecksumErrorCount` to show the packets that ESQ reads, and the packets with a bad checksum.
 
 ## Test with FS-UAE
 
