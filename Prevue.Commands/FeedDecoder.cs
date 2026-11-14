@@ -226,17 +226,12 @@ public static class FeedDecoder
                 fields.Add(("text", Text(payload)));
                 break;
             case 'I':
-                name = "'I' weather label";
-                if (payload.Length > 0)
-                {
-                    fields.Add(("digit", Text(payload[..1])));
-                    fields.Add(("label and text", Text(payload[1..])));
-                }
-
+                name = "'I' weather status";
+                WeatherStatus(payload, fields);
                 break;
             case 'W':
                 name = "'W' weather text";
-                fields.Add(("payload", Text(payload)));
+                WeatherText(payload, fields);
                 break;
             case '%':
                 name = "'%' save";
@@ -268,6 +263,46 @@ public static class FeedDecoder
         fields.Add(("daylight saving time", Text(payload[10..11])));
         fields.Add(("clock offset minutes", payload[19].ToString(CultureInfo.InvariantCulture)));
         fields.Add(("all", Text(payload)));
+    }
+
+    private static void WeatherStatus(ReadOnlySpan<byte> payload, List<(string, string)> fields)
+    {
+        var separator = IndexOf(payload, 0x12, 1);
+        if (payload.Length == 0 || separator < 0)
+        {
+            fields.Add(("payload", Text(payload)));
+            return;
+        }
+
+        fields.Add(("digit", Text(payload[..1])));
+        fields.Add(("label", Text(payload[1..separator])));
+        fields.Add(("text", Text(payload[(separator + 1)..])));
+    }
+
+    private static void WeatherText(ReadOnlySpan<byte> payload, List<(string, string)> fields)
+    {
+        var separator = IndexOf(payload, 0x12, 4);
+        if (payload.Length < 4 || separator < 0)
+        {
+            fields.Add(("payload", Text(payload)));
+            return;
+        }
+
+        fields.Add(("minutes", payload[0].ToString(CultureInfo.InvariantCulture)));
+        fields.Add(("color", payload[1].ToString(CultureInfo.InvariantCulture)));
+        fields.Add(("icon", payload[2].ToString(CultureInfo.InvariantCulture)));
+        fields.Add(("label pattern", Text(payload[4..separator])));
+        // Each line ends with $18. ESQ drops the text after the last $18.
+        var line = 0;
+        var start = separator + 1;
+        for (var end = IndexOf(payload, 0x18, start); end >= 0; end = IndexOf(payload, 0x18, start))
+        {
+            fields.Add(($"line {++line}", Text(payload[start..end])));
+            start = end + 1;
+        }
+
+        if (start < payload.Length)
+            fields.Add(("dropped", Text(payload[start..])));
     }
 
     private static void Clock(ReadOnlySpan<byte> payload, List<(string, string)> fields)

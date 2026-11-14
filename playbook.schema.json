@@ -682,6 +682,11 @@
           },
           {
             "type": "object",
+            "additionalProperties": false,
+            "title": "!!showWeather"
+          },
+          {
+            "type": "object",
             "properties": {
               "action": {
                 "enum": [
@@ -702,6 +707,49 @@
             },
             "additionalProperties": false,
             "title": "!!utility"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "digit": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 1
+              },
+              "label": {
+                "type": "string"
+              },
+              "text": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!weatherStatus"
+          },
+          {
+            "type": "object",
+            "properties": {
+              "minutes": {
+                "type": "integer"
+              },
+              "icon": {
+                "type": "integer"
+              },
+              "color": {
+                "type": "integer"
+              },
+              "label": {
+                "type": "string"
+              },
+              "lines": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "additionalProperties": false,
+            "title": "!!weatherText"
           },
           {
             "type": "object",
