@@ -54,6 +54,9 @@
             "Latin1",
             "Ascii"
           ]
+        },
+        "watchMinutes": {
+          "type": "integer"
         }
       },
       "additionalProperties": false
